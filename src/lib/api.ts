@@ -85,7 +85,7 @@ class ApiClient {
   }
 
   // Room APIs
-  async createRoom(roomData: any) {
+  async createRoom(roomData: unknown) {
     return this.request('/rooms', {
       method: 'POST',
       body: JSON.stringify(roomData),
@@ -113,7 +113,7 @@ class ApiClient {
   }
 
   // Workout APIs
-  async uploadWorkout(workoutData: any, imageFile: File) {
+  async uploadWorkout(workoutData: { workoutDate: string; workoutType: string; duration: number; }, imageFile: File) {
     const formData = new FormData();
     formData.append('workoutDate', workoutData.workoutDate);
     formData.append('workoutType', workoutData.workoutType);

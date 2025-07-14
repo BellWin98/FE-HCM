@@ -38,7 +38,7 @@ apiClient.interceptors.response.use(
     (error: AxiosError) => {
         if (error.response) {
             const status = error.response.status;
-            const errorData = error.response.data as any;
+            const errorData = error.response.data as { message?: string };
 
             switch (status) {
                 case 401:
