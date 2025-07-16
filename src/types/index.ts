@@ -1,5 +1,5 @@
 export interface Member {
-  id: string;
+  id: number;
   email: string;
   nickname: string;
   createdAt: string;
@@ -9,7 +9,7 @@ export interface Member {
 }
 
 export interface WorkoutRoom {
-  id: string;
+  id: number;
   name: string;
   minWeeklyWorkouts: number;
   penaltyPerMiss: number;
@@ -19,13 +19,12 @@ export interface WorkoutRoom {
   currentMembers: number;
   ownerId: string;
   ownerNickname: string;
-  inviteCode: string;
   members: RoomMember[];
   isActive: boolean;
 }
 
 export interface RoomMember {
-  id: string;
+  id: number;
   userId: string;
   nickname: string;
   joinedAt: string;
@@ -36,7 +35,7 @@ export interface RoomMember {
 }
 
 export interface WorkoutRecord {
-  id: string;
+  id: number;
   userId: string;
   roomId: string;
   date: string;
@@ -56,7 +55,7 @@ export type WorkoutType =
   | '기타';
 
 export interface PenaltyRecord {
-  id: string;
+  id: number;
   userId: string;
   roomId: string;
   weekStartDate: string;
@@ -69,7 +68,7 @@ export interface PenaltyRecord {
 }
 
 export interface RestPeriod {
-  id: string;
+  id: number;
   userId: string;
   roomId: string;
   reason: string;
