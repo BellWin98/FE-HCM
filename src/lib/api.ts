@@ -92,8 +92,8 @@ class ApiClient {
     });
   }
 
-  async joinRoomByCode(inviteCode: string) {
-    return this.request(`/rooms/join/${inviteCode}`, {
+  async joinWorkoutRoomByEntryCode(workoutRoomId: number, entryCode: string) {
+    return this.request(`/workout/rooms/join/${workoutRoomId}?entryCode=${encodeURIComponent(entryCode)}`, {
       method: 'POST',
     });
   }

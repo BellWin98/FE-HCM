@@ -18,6 +18,7 @@ import { api } from '@/lib/api';
 export default function CreateRoomPage() {
   const navigate = useNavigate();
   const [roomName, setRoomName] = useState('');
+  const [entryCode, setEntryCode] = useState('');
   const [minWeeklyWorkouts, setMinWeeklyWorkouts] = useState('3');
   const [penaltyPerMiss, setPenaltyPerMiss] = useState('5000');
   const [startDate, setStartDate] = useState<Date>();
@@ -79,6 +80,16 @@ export default function CreateRoomPage() {
       return false;
     }
 
+    if (!entryCode.trim()) {
+      setError('방 비밀번호를 입력해주세요.');
+      return false;
+    }
+
+    if (entryCode.length < 2 || roomName.length > 10) {
+      setError('방 이름은 2-10자 사이여야 합니다.');
+      return false;
+    }
+
     return true;
   };
 
@@ -99,6 +110,7 @@ export default function CreateRoomPage() {
         startDate: startDate!.toISOString(),
         endDate: enableEndDate && endDate ? endDate.toISOString() : null,
         maxMembers: parseInt(maxMembers),
+        entryCode: entryCode.trim(),
       };
 
       await api.createWorkoutRoom(workoutRoomData);
@@ -238,18 +250,33 @@ export default function CreateRoomPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="max-members">최대 참여 인원</Label>
-                <Input
-                  id="max-members"
-                  type="number"
-                  min="2"
-                  max="10"
-                  value={maxMembers}
-                  onChange={(e) => setMaxMembers(e.target.value)}
-                />
-                <p className="text-xs text-gray-500">방장 포함 최대 참여 가능한 인원수</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="max-members">최대 참여 인원</Label>
+                  <Input
+                    id="max-members"
+                    type="number"
+                    min="2"
+                    max="10"
+                    value={maxMembers}
+                    onChange={(e) => setMaxMembers(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500">방장 포함 최대 참여 가능한 인원수</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="entry-code">방 비밀번호</Label>
+                  <Input
+                    id="entry-code"
+                    value={entryCode}
+                    onChange={(e) => setEntryCode(e.target.value)}
+                    minLength={2}
+                    maxLength={10}
+                  />
+                  <p className="text-xs text-gray-500">2자리 이상 10자리 이하의 방 비밀번호</p>
+                </div> 
               </div>
+             
 
               {error && (
                 <Alert variant="destructive">

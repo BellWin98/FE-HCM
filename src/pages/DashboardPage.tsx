@@ -11,8 +11,11 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar } from '@/components/ui/calendar';
 import { ko, tr } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input'
 import { format } from 'date-fns';
 import { api } from '@/lib/api';
+import { WorkoutRoom } from '@/types';
 
 // --- Types (실제로는 /types/index.ts 파일에 위치해야 합니다) ---
 interface TodayWorkout {
@@ -31,39 +34,11 @@ interface WorkoutRecord {
   status: 'completed' | 'rest' | 'pending';
 }
 
-interface RoomMember {
-  id: string;
-  nickname: string;
-  avatarUrl?: string;
-  weeklyProgress: number;
-  isWorkoutDoneToday: boolean;
-  workoutHistory: WorkoutRecord[];
-}
-
-interface RoomDetails {
-  id: string;
-  name: string;
-  currentMembers: number;
-  maxMembers: number;
-  minWeeklyWorkouts: number;
-  penaltyPerMiss: number;
-  members: RoomMember[];
-}
-
-interface AvailableRoom {
-  id: string;
-  name: string;
-  currentMembers: number;
-  maxMembers: number;
-  minWeeklyWorkouts: number;
-  penaltyPerMiss: number;
-}
-
 interface DashboardStats {
   todayWorkout: TodayWorkout | null;
   weeklyProgress: WeeklyProgress;
-  currentRoom: RoomDetails | null;
-  availableRooms: AvailableRoom[];
+  currentRoom: WorkoutRoom | null;
+  availableRooms: WorkoutRoom[];
   pendingPenalties: number;
 }
 
@@ -73,35 +48,22 @@ const mockUserInRoomData: DashboardStats = {
   todayWorkout: null,
   weeklyProgress: { current: 2, goal: 3, percentage: 67 },
   currentRoom: {
-    id: 'room1',
+    id: 1,
     name: '헬창마을 인증방 🔥',
     currentMembers: 4,
     maxMembers: 5,
     minWeeklyWorkouts: 3,
     penaltyPerMiss: 5000,
     members: [
-      { id: 'user1', nickname: '한종승', weeklyProgress: 3, isWorkoutDoneToday: true, avatarUrl: 'https://github.com/shadcn.png', workoutHistory: [{ date: '2024-07-14', status: 'completed' }] },
-      { id: 'user2', nickname: '복민주', weeklyProgress: 2, isWorkoutDoneToday: true, workoutHistory: [{ date: '2025-07-14', status: 'completed' }] },
-      { id: 'user3', nickname: '이해람', weeklyProgress: 1, isWorkoutDoneToday: false, workoutHistory: [{ date: '2024-07-14', status: 'pending' }] },
-      { id: 'user4', nickname: '김준형', weeklyProgress: 1, isWorkoutDoneToday: false, workoutHistory: [{ date: '2025-07-11', status: 'rest' }] },
+      { id: 1, nickname: '한종승', weeklyProgress: 3, isWorkoutDoneToday: true, avatarUrl: 'https://github.com/shadcn.png', workoutHistory: [{ date: '2024-07-14', status: 'completed' }] },
+      { id: 2, nickname: '복민주', weeklyProgress: 2, isWorkoutDoneToday: true, workoutHistory: [{ date: '2025-07-14', status: 'completed' }] },
+      { id: 3, nickname: '이해람', weeklyProgress: 1, isWorkoutDoneToday: false, workoutHistory: [{ date: '2024-07-14', status: 'pending' }] },
+      { id: 4, nickname: '김준형', weeklyProgress: 1, isWorkoutDoneToday: false, workoutHistory: [{ date: '2025-07-11', status: 'rest' }] },
     ],
   },
   availableRooms: [],
   pendingPenalties: 15000,
 };
-
-const mockUserNotInRoomData: DashboardStats = {
-  todayWorkout: null,
-  weeklyProgress: { current: 0, goal: 0, percentage: 0 },
-  currentRoom: null,
-  availableRooms: [
-    { id: 'room2', name: '매일 아침 10분 스트레칭', currentMembers: 8, maxMembers: 10, minWeeklyWorkouts: 5, penaltyPerMiss: 1000 },
-    { id: 'room3', name: '주 3회 헬스 인증방', currentMembers: 3, maxMembers: 7, minWeeklyWorkouts: 3, penaltyPerMiss: 5000 },
-    { id: 'room4', name: '주말 등산 클럽', currentMembers: 5, maxMembers: 15, minWeeklyWorkouts: 1, penaltyPerMiss: 10000 },
-  ],
-  pendingPenalties: 0,
-};
-
 
 export default function DashboardPage() {
   const { member } = useAuth();
@@ -109,22 +71,30 @@ export default function DashboardPage() {
   
   // API 로딩 및 방 참여 여부 시뮬레이션 상태
   const [isLoading, setIsLoading] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const [isInRoom, setIsInRoom] = useState(false); 
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [availableWorkoutRooms, setAvailableWorkoutRooms] = useState<WorkoutRoom[]>([]);
+  const [currentWorkoutRoom, setCurrentWorkoutRoom] = useState<WorkoutRoom | null>(null);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     const loadDashboardStats = async () => {
       setIsLoading(true);
       // --- 실제 API 호출 로직 ---
-      const memberWorkoutRoom = await api.getCurrentWorkoutRoom();
+      const memberWorkoutRoom = await api.getCurrentWorkoutRoom() as WorkoutRoom;
+      const availableWorkoutRooms = await api.getAvailableWorkoutRooms() as WorkoutRoom[];
       setIsInRoom(memberWorkoutRoom ? true : false);
       // const data = userRoomStatus.isInRoom ? await getRoomData() : await getAvailableRooms();
       // setStats(data);
 
       if (isInRoom) {
+        setCurrentWorkoutRoom(memberWorkoutRoom);
         setStats(mockUserInRoomData);
       } else {
-        setStats(mockUserNotInRoomData);
+        setAvailableWorkoutRooms(availableWorkoutRooms);
       }
       setIsLoading(false);
     };
@@ -133,22 +103,42 @@ export default function DashboardPage() {
   }, [isInRoom]);
 
   const handleWorkoutUpload = () => navigate('/workout/upload');
-  const handleCreateRoom = () => navigate('/rooms/create');
-  const handleJoinRoom = (roomId: string) => navigate(`/rooms/join/${roomId}`);
+  const handleCreateWorkoutRoom = () => navigate('/rooms/create');
+  const handleJoinWorkoutRoom = async (workoutRoomId: number) => {
+    setSelectedRoomId(workoutRoomId);
+    setShowPasswordDialog(true);
+  }
+  const handlePasswordSubmit = async () => {
+    if (!selectedRoomId || !password.trim()) return;
 
-  if (isLoading || !stats) {
+    setIsJoining(true);
+    try {
+      await api.joinWorkoutRoomByEntryCode(selectedRoomId, password);
+      setShowPasswordDialog(false);
+      setPassword('');
+      setSelectedRoomId(null);
+
+      // 방 참여 후 페이지 새로고침 또는 상태 업데이트
+      window.location.reload();
+    } catch (error) {
+      throw new Error(error.message);
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleDialogClose = () => {
+    setShowPasswordDialog(false);
+    setPassword('');
+    setSelectedRoomId(null);
+  }
+
+  if (isLoading || !availableWorkoutRooms) {
     return <Layout><div>Loading...</div></Layout>; // TODO: 스켈레톤 UI 적용
   }
 
   return (
     <Layout>
-      {/* 개발용: 방 참여 상태 토글 */}
-      <div className="absolute top-28 right-6">
-        <Button onClick={() => setIsInRoom(prev => !prev)}>
-          {isInRoom ? '방 없는 상태 보기' : '방 있는 상태 보기'}
-        </Button>
-      </div>
-
       <div className="space-y-6">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-6">
           <h1 className="text-2xl font-bold mb-2">
@@ -207,7 +197,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {stats.currentRoom && (
+        {currentWorkoutRoom && (
           <Card>
             <CardHeader>
               <CardTitle>오늘의 운동 현황</CardTitle>
@@ -246,11 +236,38 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {stats.currentRoom ? (
-          <MyWorkoutRoom room={stats.currentRoom} />
+        {currentWorkoutRoom ? (
+          <MyWorkoutRoom workoutRoom={currentWorkoutRoom} />
         ) : (
-          <AvailableRooms rooms={stats.availableRooms} onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} />
+          <AvailableWorkoutRooms workoutRooms={availableWorkoutRooms} onCreateWorkoutRoom={handleCreateWorkoutRoom} onJoinWorkoutRoom={handleJoinWorkoutRoom} />
         )}
+        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>운동방 참여</DialogTitle>
+            </DialogHeader>
+            <div className='space-y-4'>
+              <div>
+                <Input
+                  type='password'
+                  placeholder='방 비밀번호를 입력하세요'
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                  disabled={isJoining}
+                />
+              </div>
+              <div className='flex justify-end space-x-2'>
+                <Button variant='outline' onClick={handleDialogClose}>
+                  취소
+                </Button>
+                <Button onClick={handlePasswordSubmit} disabled={isJoining || !password.trim()}>
+                  {isJoining ? '참여 중...' : '참여하기'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
@@ -258,12 +275,12 @@ export default function DashboardPage() {
 
 // --- 컴포넌트 ---
 
-function MyWorkoutRoom({ room }: { room: RoomDetails }) {
+function MyWorkoutRoom({ workoutRoom }: { workoutRoom: WorkoutRoom }) {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   const renderDayContent = (day: Date) => {
     const dateStr = format(day, 'yyyy-MM-dd');
-    const dailyStatus = room.members.map(member => {
+    const dailyStatus = workoutRoom.members.map(member => {
       const record = member.workoutHistory.find(h => h.date === dateStr);
       return {
         nickname: member.nickname,
@@ -329,26 +346,26 @@ function MyWorkoutRoom({ room }: { room: RoomDetails }) {
           />
         </CardContent>
       </Card>
-      <MemberStatus room={room} />
+      <MemberStatus workoutRoom={workoutRoom} />
     </div>
   );
 }
 
-function MemberStatus({ room }: { room: RoomDetails }) {
-  const weeklyGoal = room.minWeeklyWorkouts;
+function MemberStatus({ workoutRoom }: { workoutRoom: WorkoutRoom }) {
+  const weeklyGoal = workoutRoom.minWeeklyWorkouts;
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-xl font-bold">🔥 {room.name}</CardTitle>
+            <CardTitle className="text-xl font-bold">🔥 {workoutRoom.name}</CardTitle>
             <CardDescription>함께 운동하는 멤버들의 주간 현황입니다.</CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {room.members.map(member => (
+        {workoutRoom.members.map(member => (
           <div key={member.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
             <div className="flex items-center gap-3">
               <Avatar>
@@ -377,35 +394,35 @@ function MemberStatus({ room }: { room: RoomDetails }) {
   );
 }
 
-function AvailableRooms({ rooms, onCreateRoom, onJoinRoom }: { rooms: AvailableRoom[], onCreateRoom: () => void, onJoinRoom: (roomId: string) => void }) {
+function AvailableWorkoutRooms({ workoutRooms, onCreateWorkoutRoom, onJoinWorkoutRoom }: { workoutRooms: WorkoutRoom[], onCreateWorkoutRoom: () => void, onJoinWorkoutRoom: (workoutRoomId: number) => void }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">참여 가능한 운동방</h2>
-        <Button onClick={onCreateRoom}>
+        <Button onClick={onCreateWorkoutRoom}>
           <Plus className="mr-2 h-4 w-4" /> 방 만들기
         </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {rooms.map(room => (
-          <Card key={room.id} className="flex flex-col">
+        {workoutRooms.map(workoutRoom => (
+          <Card key={workoutRoom.id} className="flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-yellow-500" />
-                {room.name}
+                {workoutRoom.name}
               </CardTitle>
               <CardDescription>
-                주 {room.minWeeklyWorkouts}회 • 벌금 {room.penaltyPerMiss.toLocaleString()}원
+                주 {workoutRoom.minWeeklyWorkouts}회 • 벌금 {workoutRoom.penaltyPerMiss.toLocaleString()}원
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
               <div className="flex items-center text-sm text-muted-foreground">
                 <Users className="mr-2 h-4 w-4" />
-                <span>참여인원 {room.currentMembers} / {room.maxMembers}</span>
+                <span>참여인원 {workoutRoom.currentMembers} / {workoutRoom.maxMembers}</span>
               </div>
             </CardContent>
             <div className="p-4 pt-0">
-              <Button className="w-full" onClick={() => onJoinRoom(room.id)}>
+              <Button className="w-full" onClick={() => onJoinWorkoutRoom(workoutRoom.id)}>
                 <LogIn className="mr-2 h-4 w-4" />
                 참여하기
               </Button>
