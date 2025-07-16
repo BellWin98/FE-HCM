@@ -49,11 +49,6 @@ const AppRoutes = () => (
         <CreateRoomPage />
       </ProtectedRoute>
     } />
-    <Route path="/rooms/join" element={
-      <ProtectedRoute>
-        <JoinRoomPage />
-      </ProtectedRoute>
-    } />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
