@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const value: AuthContextType = {
-    user: member,
+    member: member,
     isAuthenticated: !!member,
     login,
     register,

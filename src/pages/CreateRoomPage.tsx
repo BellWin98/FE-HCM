@@ -12,6 +12,8 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
+import { api } from '@/lib/api';
 
 export default function CreateRoomPage() {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ export default function CreateRoomPage() {
   const [penaltyPerMiss, setPenaltyPerMiss] = useState('5000');
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const [enableEndDate, setEnableEndDate] = useState(false);
   const [maxMembers, setMaxMembers] = useState('10');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -35,19 +38,24 @@ export default function CreateRoomPage() {
       return false;
     }
 
-    if (!startDate || !endDate) {
-      setError('운동 인증 기간을 설정해주세요.');
+    if (!startDate) {
+      setError('운동 인증 시작일을 설정해주세요.');
       return false;
     }
 
-    if (startDate >= endDate) {
-      setError('종료일은 시작일보다 늦어야 합니다.');
-      return false;
+    if (enableEndDate && endDate) {
+      if (startDate >= endDate) {
+        setError('종료일은 시작일보다 늦어야 합니다.');
+        return false;
+      }
+      if (endDate < new Date()) {
+        setError('종료일은 오늘 이후여야 합니다.');
+        return false;
+      }
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
     if (startDate < today) {
       setError('시작일은 오늘 이후여야 합니다.');
       return false;
@@ -84,15 +92,16 @@ export default function CreateRoomPage() {
 
     setLoading(true);
     try {
-      // TODO: 실제 API 호출로 교체
-      const roomData = {
+      const workoutRoomData = {
         name: roomName.trim(),
         minWeeklyWorkouts: parseInt(minWeeklyWorkouts),
         penaltyPerMiss: parseInt(penaltyPerMiss),
         startDate: startDate!.toISOString(),
-        endDate: endDate!.toISOString(),
+        endDate: enableEndDate && endDate ? endDate.toISOString() : null,
         maxMembers: parseInt(maxMembers),
       };
+
+      await api.createWorkoutRoom(workoutRoomData);
 
       // 임시 지연
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -189,19 +198,27 @@ export default function CreateRoomPage() {
                   </Popover>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>종료일 *</Label>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 ">
+                    <Label className="mb-0">종료일</Label>
+                    <Checkbox id="enable-end-date" checked={enableEndDate} onCheckedChange={(checked) => {
+                      setEnableEndDate(!!checked);
+                      if (!checked) setEndDate(undefined);
+                    }} />
+                    <span className="text-xs text-gray-500">종료일 설정</span>
+                  </div>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal",
-                          !endDate && "text-muted-foreground"
+                          (!endDate || !enableEndDate) && "text-muted-foreground"
                         )}
+                        disabled={!enableEndDate}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {endDate ? (
+                        {endDate && enableEndDate ? (
                           format(endDate, "PPP", { locale: ko })
                         ) : (
                           <span>종료일 선택</span>

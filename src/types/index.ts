@@ -81,7 +81,7 @@ export interface RestPeriod {
 }
 
 export interface AuthContextType {
-  user: Member | null;
+  member: Member | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, nickname: string) => Promise<void>;

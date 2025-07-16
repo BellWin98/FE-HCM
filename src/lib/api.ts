@@ -34,7 +34,7 @@ class ApiClient {
 
       const data = await response.json();
       console.log(data);
-      return data.data || data;
+      return data.data;
     } catch (error) {
       console.error(error.message);
       throw error;
@@ -85,10 +85,10 @@ class ApiClient {
   }
 
   // Room APIs
-  async createRoom(roomData: unknown) {
-    return this.request('/rooms', {
+  async createWorkoutRoom(workoutRoomData: unknown) {
+    return this.request('/workout/rooms', {
       method: 'POST',
-      body: JSON.stringify(roomData),
+      body: JSON.stringify(workoutRoomData),
     });
   }
 
@@ -98,8 +98,12 @@ class ApiClient {
     });
   }
 
-  async getCurrentRoom() {
-    return this.request('/rooms/current');
+  async getCurrentWorkoutRoom() {
+    return this.request('/workout/rooms/current');
+  }
+
+  async getAvailableWorkoutRooms() {
+    return this.request('/workout/rooms');
   }
 
   async searchUsers(nickname: string) {

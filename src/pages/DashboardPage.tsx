@@ -9,9 +9,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Calendar as CalendarIcon, Users, Camera, TrendingUp, AlertTriangle, Plus, Trophy, LogIn, CheckCircle2, Circle, Check, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar } from '@/components/ui/calendar';
-import { ko } from 'date-fns/locale';
+import { ko, tr } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
+import { api } from '@/lib/api';
 
 // --- Types (실제로는 /types/index.ts 파일에 위치해야 합니다) ---
 interface TodayWorkout {
@@ -103,20 +104,20 @@ const mockUserNotInRoomData: DashboardStats = {
 
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { member } = useAuth();
   const navigate = useNavigate();
   
   // API 로딩 및 방 참여 여부 시뮬레이션 상태
-  const [isLoading, setIsLoading] = useState(true);
-  const [isInRoom, setIsInRoom] = useState(true); 
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInRoom, setIsInRoom] = useState(false); 
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
     const loadDashboardStats = async () => {
       setIsLoading(true);
       // --- 실제 API 호출 로직 ---
-      // const userRoomStatus = await checkUserRoomStatus(); // 예시
-      // setIsInRoom(userRoomStatus.isInRoom);
+      const memberWorkoutRoom = await api.getCurrentWorkoutRoom();
+      setIsInRoom(memberWorkoutRoom ? true : false);
       // const data = userRoomStatus.isInRoom ? await getRoomData() : await getAvailableRooms();
       // setStats(data);
 
@@ -126,16 +127,6 @@ export default function DashboardPage() {
         setStats(mockUserNotInRoomData);
       }
       setIsLoading(false);
-      
-      // --- 시뮬레이션 로직 ---
-      // setTimeout(() => {
-      //   if (isInRoom) {
-      //     setStats(mockUserInRoomData);
-      //   } else {
-      //     setStats(mockUserNotInRoomData);
-      //   }
-      //   setIsLoading(false);
-      // }, 1000);
     };
 
     loadDashboardStats();
@@ -161,7 +152,7 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-6">
           <h1 className="text-2xl font-bold mb-2">
-            안녕하세요, {user?.nickname ?? '사용자'}님! 👋
+            안녕하세요, {member?.nickname ?? '사용자'}님! 👋
           </h1>
           <p className="text-blue-100">
             {isInRoom ? '오늘도 팀원들과 함께 목표를 달성해보세요!' : '새로운 운동방에 참여하고 건강한 습관을 만들어보세요!'}
@@ -192,9 +183,9 @@ export default function DashboardPage() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{user?.totalWorkoutDays}일</div>
+                <div className="text-2xl font-bold">{member?.totalWorkoutDays}일</div>
                 <p className="text-xs text-muted-foreground">
-                  평균 달성률 {user?.achievementRate}%
+                  평균 달성률 {member?.achievementRate}%
                 </p>
               </CardContent>
             </Card>
@@ -209,7 +200,7 @@ export default function DashboardPage() {
                   {stats.pendingPenalties.toLocaleString()}원
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  누적 벌금 {user?.totalPenalty.toLocaleString()}원
+                  누적 벌금 {member?.totalPenalty.toLocaleString()}원
                 </p>
               </CardContent>
             </Card>
