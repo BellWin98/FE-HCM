@@ -11,7 +11,7 @@ class ApiClient {
   }
 
   private getFormDataHeaders() {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     return {
       ...(token && { Authorization: `Bearer ${token}` })
     };

@@ -14,6 +14,8 @@ import { ko } from 'date-fns/locale';
 import { CalendarIcon, Upload, Loader2 } from 'lucide-react';
 import { WorkoutType } from '@/types';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 const workoutTypes: WorkoutType[] = ['헬스', '러닝', '수영', '사이클링', '요가', '필라테스', '기타'];
 
@@ -23,6 +25,7 @@ export default function WorkoutUploadPage() {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [workoutDate, setWorkoutDate] = useState<Date>(new Date());
   const [workoutType, setWorkoutType] = useState<WorkoutType>('헬스');
+  const [customWorkoutType, setCustomWorkoutType] = useState<string>('');
   const [duration, setDuration] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,6 +68,11 @@ export default function WorkoutUploadPage() {
       return false;
     }
 
+    if (workoutType === '기타' && !customWorkoutType.trim()) {
+      setError('기타 운동 종류를 입력해주세요.');
+      return false;
+    }
+
     // 날짜 검증 (7일 이내)
     const today = new Date();
     const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -87,17 +95,18 @@ export default function WorkoutUploadPage() {
 
     setLoading(true);
     try {
-      // TODO: 실제 API 호출로 교체
-      // 1. S3 Pre-signed URL 요청
-      // 2. 이미지 업로드
-      // 3. 운동 기록 저장
-      
-      // 임시 지연
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const workoutData = {
+        workoutDate: format(workoutDate, 'yyyy-MM-dd'),
+        workoutType: workoutType === '기타' ? customWorkoutType : workoutType,
+        duration: parseInt(duration)
+      };
+
+      await api.uploadWorkout(workoutData, selectedImage!);
       
       navigate('/dashboard');
     } catch (err) {
-      setError('운동 인증 업로드에 실패했습니다.');
+      console.error('운동 인증 업로드 실패:', err);
+      setError(err instanceof Error ? err.message : '운동 인증 업로드에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -217,6 +226,15 @@ export default function WorkoutUploadPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {workoutType === '기타' && (
+                  <div className="mt-2">
+                    <Input
+                      placeholder="운동 종류를 직접 입력하세요"
+                      value={customWorkoutType}
+                      onChange={(e) => setCustomWorkoutType(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* 운동 시간 */}

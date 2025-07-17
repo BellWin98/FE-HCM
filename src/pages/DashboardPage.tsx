@@ -109,7 +109,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {0}/{currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts}회
+                  {currentWorkoutRoom.workoutRoomMembers.find(roomMember => roomMember.nickname === member.nickname)?.weeklyWorkouts}/{currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts}회
                 </div>
               </CardContent>
             </Card>
@@ -119,7 +119,7 @@ export default function DashboardPage() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{member?.totalWorkoutDays}일</div>
+                <div className="text-2xl font-bold">{currentWorkoutRoom.workoutRoomMembers.find(roomMember => roomMember.nickname === member.nickname)?.totalWorkouts}일</div>
               </CardContent>
             </Card>
 
@@ -343,14 +343,14 @@ function MemberStatus({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomD
                 <AvatarFallback>{member.nickname.slice(0, 2)}</AvatarFallback>
               </Avatar>
               <span className="font-medium">{member.nickname}</span>
-              {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.workoutDate ? (
+              {member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.workoutDate ? (
                 <Badge variant="secondary" className="bg-green-100 text-green-800">오늘 인증 완료</Badge>
               ) : (
                 <Badge variant="outline">미인증</Badge>
               )}
             </div>
             <div className="flex items-center gap-2">
-              {/* <span className="text-sm text-muted-foreground mr-2">인증 횟수:</span> */}
+              <span className="text-sm text-muted-foreground mr-2">주간 운동 횟수:</span>
               {Array.from({ length: weeklyGoal }).map((_, i) => (
                 i < member.weeklyWorkouts
                   ? <CheckCircle2 key={i} className="w-5 h-5 text-green-500" /> 

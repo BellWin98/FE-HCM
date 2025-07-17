@@ -133,7 +133,7 @@ export default function CreateRoomPage() {
           <CardHeader>
             <CardTitle>운동 인증 방 만들기</CardTitle>
             <CardDescription>
-              친구들과 함께할 운동 인증 방을 만들어보세요. 방을 만든 후 친구들을 초대할 수 있습니다.
+              친구들과 함께할 운동 인증 방을 만들어보세요.
             </CardDescription>
           </CardHeader>
           <CardContent>
