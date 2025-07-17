@@ -2,10 +2,10 @@ export interface Member {
   id: number;
   email: string;
   nickname: string;
-  createdAt: string;
+  profileUrl: string;
   totalWorkoutDays: number;
-  achievementRate: number;
   totalPenalty: number;
+  createdAt: string;
 }
 
 export interface WorkoutRoom {
@@ -17,28 +17,32 @@ export interface WorkoutRoom {
   endDate: string;
   maxMembers: number;
   currentMembers: number;
-  ownerId: string;
   ownerNickname: string;
-  members: RoomMember[];
   isActive: boolean;
+}
+
+export interface WorkoutRoomDetail {
+  workoutRoomInfo: WorkoutRoom | null;
+  workoutRoomMembers: RoomMember[];
+  currentMemberTodayWorkoutRecord: WorkoutRecord | null;
 }
 
 export interface RoomMember {
   id: number;
-  userId: string;
   nickname: string;
-  joinedAt: string;
+  profileUrl: string;
+  totalWorkouts: number;
   weeklyWorkouts: number;
-  weeklyGoal: number;
   totalPenalty: number;
   isOnBreak: boolean;
+  joinedAt: string;
+  workoutRecords: WorkoutRecord[];
+  restInfoList: RestInfo[];
 }
 
 export interface WorkoutRecord {
   id: number;
-  userId: string;
-  roomId: string;
-  date: string;
+  workoutDate: string;
   workoutType: WorkoutType;
   duration: number; // minutes
   imageUrl: string;
@@ -67,16 +71,11 @@ export interface PenaltyRecord {
   paidAt?: string;
 }
 
-export interface RestPeriod {
+export interface RestInfo {
   id: number;
-  userId: string;
-  roomId: string;
   reason: string;
   startDate: string;
   endDate: string;
-  status: 'pending' | 'approved' | 'rejected';
-  appliedAt: string;
-  reviewedAt?: string;
 }
 
 export interface AuthContextType {
@@ -86,15 +85,4 @@ export interface AuthContextType {
   register: (email: string, password: string, nickname: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
-}
-
-export interface DashboardStats {
-  todayWorkout: WorkoutRecord | null;
-  weeklyProgress: {
-    current: number;
-    goal: number;
-    percentage: number;
-  };
-  currentRoom: WorkoutRoom | null;
-  pendingPenalties: number;
 }

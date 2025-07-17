@@ -34,7 +34,7 @@ class ApiClient {
 
       const data = await response.json();
       console.log(data);
-      return data.data;
+      return data.data || data;
     } catch (error) {
       console.error(error.message);
       throw error;
@@ -105,6 +105,11 @@ class ApiClient {
   async getAvailableWorkoutRooms() {
     return this.request('/workout/rooms');
   }
+
+  async isMemberInWorkoutRoom() {
+    return this.request('/workout/rooms/validate');
+  }
+
 
   async searchUsers(nickname: string) {
     return this.request(`/rooms/search-users?nickname=${encodeURIComponent(nickname)}`);

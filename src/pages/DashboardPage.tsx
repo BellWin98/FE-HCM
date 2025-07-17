@@ -1,69 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar as CalendarIcon, Users, Camera, TrendingUp, AlertTriangle, Plus, Trophy, LogIn, CheckCircle2, Circle, Check, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { ko, tr } from 'date-fns/locale';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input'
-import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import { WorkoutRoom } from '@/types';
-
-// --- Types (실제로는 /types/index.ts 파일에 위치해야 합니다) ---
-interface TodayWorkout {
-  workoutType: string;
-  duration: number;
-}
-
-interface WeeklyProgress {
-  current: number;
-  goal: number;
-  percentage: number;
-}
-
-interface WorkoutRecord {
-  date: string; // "YYYY-MM-DD"
-  status: 'completed' | 'rest' | 'pending';
-}
-
-interface DashboardStats {
-  todayWorkout: TodayWorkout | null;
-  weeklyProgress: WeeklyProgress;
-  currentRoom: WorkoutRoom | null;
-  availableRooms: WorkoutRoom[];
-  pendingPenalties: number;
-}
-
-// --- Mock Data ---
-const mockUserInRoomData: DashboardStats = {
-  // todayWorkout: { workoutType: '헬스', duration: 60 },
-  todayWorkout: null,
-  weeklyProgress: { current: 2, goal: 3, percentage: 67 },
-  currentRoom: {
-    id: 1,
-    name: '헬창마을 인증방 🔥',
-    currentMembers: 4,
-    maxMembers: 5,
-    minWeeklyWorkouts: 3,
-    penaltyPerMiss: 5000,
-    members: [
-      { id: 1, nickname: '한종승', weeklyProgress: 3, isWorkoutDoneToday: true, avatarUrl: 'https://github.com/shadcn.png', workoutHistory: [{ date: '2024-07-14', status: 'completed' }] },
-      { id: 2, nickname: '복민주', weeklyProgress: 2, isWorkoutDoneToday: true, workoutHistory: [{ date: '2025-07-14', status: 'completed' }] },
-      { id: 3, nickname: '이해람', weeklyProgress: 1, isWorkoutDoneToday: false, workoutHistory: [{ date: '2024-07-14', status: 'pending' }] },
-      { id: 4, nickname: '김준형', weeklyProgress: 1, isWorkoutDoneToday: false, workoutHistory: [{ date: '2025-07-11', status: 'rest' }] },
-    ],
-  },
-  availableRooms: [],
-  pendingPenalties: 15000,
-};
+import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { AlertTriangle, Calendar as CalendarIcon, Camera, CheckCircle2, Circle, LogIn, Plus, TrendingUp, Trophy, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function DashboardPage() {
   const { member } = useAuth();
@@ -72,35 +24,32 @@ export default function DashboardPage() {
   // API 로딩 및 방 참여 여부 시뮬레이션 상태
   const [isLoading, setIsLoading] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
-  const [isInRoom, setIsInRoom] = useState(false); 
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isMemberInWorkoutRoom, setIsMemberInWorkoutRoom] = useState(false); 
   const [availableWorkoutRooms, setAvailableWorkoutRooms] = useState<WorkoutRoom[]>([]);
-  const [currentWorkoutRoom, setCurrentWorkoutRoom] = useState<WorkoutRoom | null>(null);
+  const [currentWorkoutRoom, setCurrentWorkoutRoom] = useState<WorkoutRoomDetail | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
+  const [error, setError] = useState('');
   const [password, setPassword] = useState('');
 
   useEffect(() => {
     const loadDashboardStats = async () => {
       setIsLoading(true);
-      // --- 실제 API 호출 로직 ---
-      const memberWorkoutRoom = await api.getCurrentWorkoutRoom() as WorkoutRoom;
-      const availableWorkoutRooms = await api.getAvailableWorkoutRooms() as WorkoutRoom[];
-      setIsInRoom(memberWorkoutRoom ? true : false);
-      // const data = userRoomStatus.isInRoom ? await getRoomData() : await getAvailableRooms();
-      // setStats(data);
+      const isMemberInWorkoutRoom = await api.isMemberInWorkoutRoom() as boolean;
+      setIsMemberInWorkoutRoom(isMemberInWorkoutRoom);
 
-      if (isInRoom) {
-        setCurrentWorkoutRoom(memberWorkoutRoom);
-        setStats(mockUserInRoomData);
+      if (isMemberInWorkoutRoom) {
+        const currentWorkoutRoom = await api.getCurrentWorkoutRoom() as WorkoutRoomDetail;
+        setCurrentWorkoutRoom(currentWorkoutRoom);
       } else {
+        const availableWorkoutRooms = await api.getAvailableWorkoutRooms() as WorkoutRoom[];
         setAvailableWorkoutRooms(availableWorkoutRooms);
       }
       setIsLoading(false);
     };
 
     loadDashboardStats();
-  }, [isInRoom]);
+  }, [isMemberInWorkoutRoom]);
 
   const handleWorkoutUpload = () => navigate('/workout/upload');
   const handleCreateWorkoutRoom = () => navigate('/rooms/create');
@@ -109,6 +58,7 @@ export default function DashboardPage() {
     setShowPasswordDialog(true);
   }
   const handlePasswordSubmit = async () => {
+    setError('');
     if (!selectedRoomId || !password.trim()) return;
 
     setIsJoining(true);
@@ -121,7 +71,7 @@ export default function DashboardPage() {
       // 방 참여 후 페이지 새로고침 또는 상태 업데이트
       window.location.reload();
     } catch (error) {
-      throw new Error(error.message);
+      setError(error instanceof Error ? error.message : '방에 입장할 수 없습니다.');
     } finally {
       setIsJoining(false);
     }
@@ -145,12 +95,12 @@ export default function DashboardPage() {
             안녕하세요, {member?.nickname ?? '사용자'}님! 👋
           </h1>
           <p className="text-blue-100">
-            {isInRoom ? '오늘도 팀원들과 함께 목표를 달성해보세요!' : '새로운 운동방에 참여하고 건강한 습관을 만들어보세요!'}
+            {isMemberInWorkoutRoom ? '오늘도 팀원들과 함께 목표를 달성해보세요!' : '새로운 운동방에 참여하고 건강한 습관을 만들어보세요!'}
           </p>
         </div>
 
         {/* 통계 카드 */}
-        {isInRoom && (
+        {isMemberInWorkoutRoom && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -159,12 +109,8 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats.weeklyProgress.current}/{stats.weeklyProgress.goal}회
+                  {0}/{currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts}회
                 </div>
-                <Progress value={stats.weeklyProgress.percentage} className="mt-2" />
-                <p className="text-xs text-muted-foreground mt-2">
-                  목표 달성률 {stats.weeklyProgress.percentage}%
-                </p>
               </CardContent>
             </Card>
             <Card>
@@ -174,9 +120,6 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{member?.totalWorkoutDays}일</div>
-                <p className="text-xs text-muted-foreground">
-                  평균 달성률 {member?.achievementRate}%
-                </p>
               </CardContent>
             </Card>
 
@@ -187,7 +130,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
-                  {stats.pendingPenalties.toLocaleString()}원
+                  {0}원
                 </div>
                 <p className="text-xs text-muted-foreground">
                   누적 벌금 {member?.totalPenalty.toLocaleString()}원
@@ -203,7 +146,7 @@ export default function DashboardPage() {
               <CardTitle>오늘의 운동 현황</CardTitle>
             </CardHeader>
             <CardContent>
-              {stats.todayWorkout ? (
+              {currentWorkoutRoom.currentMemberTodayWorkoutRecord ? (
                 <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
@@ -212,7 +155,7 @@ export default function DashboardPage() {
                     <div>
                       <p className="font-medium">운동 인증 완료!</p>
                       <p className="text-sm text-muted-foreground">
-                        {stats.todayWorkout.workoutType} - {stats.todayWorkout.duration}분
+                        {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.workoutType} - {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.duration}분
                       </p>
                     </div>
                   </div>
@@ -237,7 +180,7 @@ export default function DashboardPage() {
         )}
 
         {currentWorkoutRoom ? (
-          <MyWorkoutRoom workoutRoom={currentWorkoutRoom} />
+          <MyWorkoutRoom currentWorkoutRoom={currentWorkoutRoom} />
         ) : (
           <AvailableWorkoutRooms workoutRooms={availableWorkoutRooms} onCreateWorkoutRoom={handleCreateWorkoutRoom} onJoinWorkoutRoom={handleJoinWorkoutRoom} />
         )}
@@ -257,6 +200,11 @@ export default function DashboardPage() {
                   disabled={isJoining}
                 />
               </div>
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <div className='flex justify-end space-x-2'>
                 <Button variant='outline' onClick={handleDialogClose}>
                   취소
@@ -275,16 +223,38 @@ export default function DashboardPage() {
 
 // --- 컴포넌트 ---
 
-function MyWorkoutRoom({ workoutRoom }: { workoutRoom: WorkoutRoom }) {
+function MyWorkoutRoom({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomDetail }) {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   const renderDayContent = (day: Date) => {
     const dateStr = format(day, 'yyyy-MM-dd');
-    const dailyStatus = workoutRoom.members.map(member => {
-      const record = member.workoutHistory.find(h => h.date === dateStr);
+    const dailyStatus = currentWorkoutRoom.workoutRoomMembers.map(member => {
+      let record = 'pending';
+      
+
+      const hasWorkoutRecord = member.workoutRecords.some(
+        workoutRecord => workoutRecord?.workoutDate === dateStr
+      );
+
+      if (hasWorkoutRecord) {
+        record = 'completed';
+      } else {
+        const isOnRest = member.restInfoList.some(restInfo => {
+          const startDate = new Date(restInfo?.startDate);
+          const endDate = new Date(restInfo?.endDate);
+          const targetDate = new Date(dateStr);
+
+          return targetDate >= startDate && targetDate <= endDate;
+        });
+
+        if (isOnRest) {
+          record = 'rest';
+        }
+      }
+
       return {
         nickname: member.nickname,
-        status: record ? record.status : 'pending',
+        status: record,
       };
     });
 
@@ -346,34 +316,34 @@ function MyWorkoutRoom({ workoutRoom }: { workoutRoom: WorkoutRoom }) {
           />
         </CardContent>
       </Card>
-      <MemberStatus workoutRoom={workoutRoom} />
+      <MemberStatus currentWorkoutRoom={currentWorkoutRoom} />
     </div>
   );
 }
 
-function MemberStatus({ workoutRoom }: { workoutRoom: WorkoutRoom }) {
-  const weeklyGoal = workoutRoom.minWeeklyWorkouts;
+function MemberStatus({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomDetail }) {
+  const weeklyGoal = currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts;
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-xl font-bold">🔥 {workoutRoom.name}</CardTitle>
+            <CardTitle className="text-xl font-bold">🔥 {currentWorkoutRoom.workoutRoomInfo.name}</CardTitle>
             <CardDescription>함께 운동하는 멤버들의 주간 현황입니다.</CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {workoutRoom.members.map(member => (
+        {currentWorkoutRoom.workoutRoomMembers.map(member => (
           <div key={member.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
             <div className="flex items-center gap-3">
               <Avatar>
-                <AvatarImage src={member.avatarUrl} alt={member.nickname} />
+                <AvatarImage src={member.profileUrl} alt={member.nickname} />
                 <AvatarFallback>{member.nickname.slice(0, 2)}</AvatarFallback>
               </Avatar>
               <span className="font-medium">{member.nickname}</span>
-              {member.isWorkoutDoneToday ? (
+              {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.workoutDate ? (
                 <Badge variant="secondary" className="bg-green-100 text-green-800">오늘 인증 완료</Badge>
               ) : (
                 <Badge variant="outline">미인증</Badge>
@@ -382,7 +352,7 @@ function MemberStatus({ workoutRoom }: { workoutRoom: WorkoutRoom }) {
             <div className="flex items-center gap-2">
               {/* <span className="text-sm text-muted-foreground mr-2">인증 횟수:</span> */}
               {Array.from({ length: weeklyGoal }).map((_, i) => (
-                i < member.weeklyProgress 
+                i < member.weeklyWorkouts
                   ? <CheckCircle2 key={i} className="w-5 h-5 text-green-500" /> 
                   : <Circle key={i} className="w-5 h-5 text-gray-300" />
               ))}
