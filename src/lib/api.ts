@@ -17,6 +17,38 @@ class ApiClient {
     };
   }
 
+  private async refreshAccessToken(): Promise<string> {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      localStorage.clear();
+      alert('로그인 유효시간이 만료되었습니다.');
+      window.location.reload();
+      throw new Error('Failed to refresh token');
+    }
+
+    const data = await response.json();
+    const newAccessToken = data.data?.accessToken || data.accessToken;
+    
+    if (newAccessToken) {
+      localStorage.setItem('accessToken', newAccessToken);
+      return newAccessToken;
+    }
+    
+    throw new Error('Invalid refresh token response');
+  }
+
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     const config: RequestInit = {
@@ -26,6 +58,27 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
+
+      if (response.status === 401) {
+        try {
+          await this.refreshAccessToken();
+          const retryConfig: RequestInit = {
+            ...config,
+            headers: this.getAuthHeaders(),
+          };
+          const retryResponse = await fetch(url, retryConfig);
+
+          if (!retryResponse.ok) {
+            const errorData = await retryResponse.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP error! status: ${retryResponse.status}`);
+          }
+          const retryData = await retryResponse.json();
+          console.log(retryData);
+          return retryData.data || retryData;
+        } catch (refreshError) {
+          throw new Error('Authentication failed. Please login again.');
+        }
+      }
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -51,6 +104,27 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
+      
+      if (response.status === 401) {
+        try {
+          await this.refreshAccessToken();
+          const retryConfig: RequestInit = {
+            ...config,
+            headers: this.getFormDataHeaders(),
+          };
+          const retryResponse = await fetch(url, retryConfig);
+          
+          if (!retryResponse.ok) {
+            const errorData = await retryResponse.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP error! status: ${retryResponse.status}`);
+          }
+
+          const retryData = await retryResponse.json();
+          return retryData.data || retryData;
+        } catch (refreshError) {
+          throw new Error('Authentication failed. Please login again.');
+        }
+      }
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

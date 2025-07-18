@@ -102,7 +102,7 @@ export default function DashboardPage() {
         {/* 통계 카드 */}
         {isMemberInWorkoutRoom && (
           // <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">이번 주 운동</CardTitle>
@@ -124,20 +124,20 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* <Card>
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">미납 벌금</CardTitle>
+                <CardTitle className="text-sm font-medium">1회 미인증 시 벌금</CardTitle>
                 <AlertTriangle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
-                  {0}원
+                  {currentWorkoutRoom.workoutRoomInfo.penaltyPerMiss}원
                 </div>
-                <p className="text-xs text-muted-foreground">
+                {/* <p className="text-xs text-muted-foreground">
                   누적 벌금 {member?.totalPenalty.toLocaleString()}원
-                </p>
+                </p> */}
               </CardContent>
-            </Card> */}
+            </Card>
           </div>
         )}
 
