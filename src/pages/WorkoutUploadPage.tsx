@@ -117,9 +117,9 @@ export default function WorkoutUploadPage() {
       <div className="max-w-2xl mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle>운동 인증 업로드</CardTitle>
+            <CardTitle>운동 인증 사진 업로드</CardTitle>
             <CardDescription>
-              오늘의 운동을 인증해보세요! 사진과 함께 운동 정보를 입력해주세요.
+              오늘의 운동을 인증해보세요! <br/> 사진과 함께 운동 정보를 입력해주세요.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -241,6 +241,7 @@ export default function WorkoutUploadPage() {
               <div className="space-y-2">
                 <Label htmlFor="duration">운동 시간 (분) *</Label>
                 <Input
+                  className='text-sm'
                   id="duration"
                   type="number"
                   min="10"

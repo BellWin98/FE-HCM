@@ -91,17 +91,18 @@ export default function DashboardPage() {
     <Layout>
       <div className="space-y-6">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-6">
-          <h1 className="text-2xl font-bold mb-2">
-            안녕하세요, {member?.nickname ?? '사용자'}님! 👋
+          <h1 className="text-3xl font-bold mb-5">
+            {currentWorkoutRoom?.workoutRoomInfo.name}
           </h1>
-          <p className="text-blue-100">
-            {isMemberInWorkoutRoom ? '오늘도 팀원들과 함께 목표를 달성해보세요!' : '새로운 운동방에 참여하고 건강한 습관을 만들어보세요!'}
+          <p className="text-medium">
+            {isMemberInWorkoutRoom ? `안녕하세요 ${member?.nickname ?? '사용자'}님!` : '새로운 운동방에 참여하고 건강한 습관을 만들어보세요!'}
           </p>
         </div>
 
         {/* 통계 카드 */}
         {isMemberInWorkoutRoom && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          // <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">이번 주 운동</CardTitle>
@@ -123,7 +124,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            {/* <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">미납 벌금</CardTitle>
                 <AlertTriangle className="h-4 w-4 text-muted-foreground" />
@@ -136,7 +137,7 @@ export default function DashboardPage() {
                   누적 벌금 {member?.totalPenalty.toLocaleString()}원
                 </p>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         )}
 
@@ -168,11 +169,11 @@ export default function DashboardPage() {
                       <Camera className="h-6 w-6 text-gray-600" />
                     </div>
                     <div>
-                      <p className="font-medium">아직 운동 인증을 하지 않았어요</p>
-                      <p className="text-sm text-muted-foreground">오늘의 운동을 인증해보세요!</p>
+                      {/* <p className="font-medium">미인증</p> */}
+                      <p className="text-sm text-muted-foreground">운동을 인증하세요</p>
                     </div>
                   </div>
-                  <Button onClick={handleWorkoutUpload}>인증하기</Button>
+                  <Button className="px-3"onClick={handleWorkoutUpload}>인증</Button>
                 </div>
               )}
             </CardContent>
@@ -278,14 +279,42 @@ function MyWorkoutRoom({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoom
         <PopoverContent className="w-60">
           <div className="space-y-2">
             <p className="font-bold text-center pb-2 border-b">{format(day, 'PPP', { locale: ko })}</p>
-            {dailyStatus.map((s, i) => (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <span>{s.nickname}</span>
-                {s.status === 'completed' && <Badge variant="secondary" className="bg-green-100 text-green-800">운동 완료</Badge>}
-                {s.status === 'rest' && <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">휴식</Badge>}
-                {s.status === 'pending' && <Badge variant="outline">미인증</Badge>}
-              </div>
-            ))}
+            {dailyStatus.map((s, i) => {
+              // 해당 멤버 찾기
+              const memberObj = currentWorkoutRoom.workoutRoomMembers.find(m => m.nickname === s.nickname);
+              // 해당 날짜의 인증 기록 찾기
+              const record = memberObj?.workoutRecords.find(record => record.workoutDate === format(day, 'yyyy-MM-dd'));
+              return (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span>{s.nickname}</span>
+                  {s.status === 'completed' ? (
+                    <Popover>
+                      <PopoverTrigger>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 cursor-pointer">
+                          인증
+                        </Badge>
+                      </PopoverTrigger>
+                      <PopoverContent>
+                        
+                        {record?.imageUrl ? (
+                          <img
+                            src={record.imageUrl}
+                            alt="운동 인증 사진"
+                            className="max-w-xs max-h-60 rounded"
+                          />
+                        ) : (
+                          <div>인증 사진이 없습니다.</div>
+                        )}
+                      </PopoverContent>
+                    </Popover>
+                  ) : s.status === 'rest' ? (
+                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">휴식</Badge>
+                  ) : (
+                    <Badge variant="outline">미인증</Badge>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </PopoverContent>
       </Popover>
@@ -297,7 +326,7 @@ function MyWorkoutRoom({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoom
       <Card>
         <CardHeader>
           <CardTitle className="text-xl font-bold">📅 월별 운동 현황</CardTitle>
-          <CardDescription>달력에서 날짜를 선택하여 멤버별 운동 상태를 확인하세요.</CardDescription>
+          {/* <CardDescription>달력에서 날짜를 선택하여 멤버별 운동 상태를 확인하세요.</CardDescription> */}
         </CardHeader>
         <CardContent className="flex justify-center">
           <Calendar
@@ -323,14 +352,15 @@ function MyWorkoutRoom({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoom
 
 function MemberStatus({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomDetail }) {
   const weeklyGoal = currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts;
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-xl font-bold">🔥 {currentWorkoutRoom.workoutRoomInfo.name}</CardTitle>
-            <CardDescription>함께 운동하는 멤버들의 주간 현황입니다.</CardDescription>
+            <CardTitle className="text-xl font-bold">🔥 주간 현황</CardTitle>
+            {/* <CardDescription>주간 현황</CardDescription> */}
           </div>
         </div>
       </CardHeader>
@@ -338,19 +368,41 @@ function MemberStatus({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomD
         {currentWorkoutRoom.workoutRoomMembers.map(member => (
           <div key={member.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
             <div className="flex items-center gap-3">
-              <Avatar>
+              {/* <Avatar>
                 <AvatarImage src={member.profileUrl} alt={member.nickname} />
                 <AvatarFallback>{member.nickname.slice(0, 2)}</AvatarFallback>
-              </Avatar>
-              <span className="font-medium">{member.nickname}</span>
+              </Avatar> */}
+              <span 
+                className="font-bold text-sm"
+              >
+                {member.nickname}
+                {member.nickname === currentWorkoutRoom.workoutRoomInfo.ownerNickname ? ' 👑' : ''}
+              </span>
               {member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.workoutDate ? (
-                <Badge variant="secondary" className="bg-green-100 text-green-800">오늘 인증 완료</Badge>
+                <>
+                  <Popover>
+                    <PopoverTrigger>
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 cursor-pointer">
+                        오늘 인증
+                      </Badge>
+                    </PopoverTrigger>
+                    <PopoverContent>
+                      <img 
+                        src={member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.imageUrl}
+                        alt="운동 인증 사진"
+                        className='max-w-xs max-h-60 rounded cursor-zoom-in'
+                        onClick={() => setZoomImageUrl(member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.imageUrl || null)}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </>
               ) : (
-                <Badge variant="outline">미인증</Badge>
+                // <Badge variant="outline">미인증</Badge>
+                <div></div>
               )}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground mr-2">주간 운동 횟수:</span>
+              {/* <span className="text-sm text-muted-foreground mr-2">주간 운동 횟수:</span> */}
               {Array.from({ length: weeklyGoal }).map((_, i) => (
                 i < member.weeklyWorkouts
                   ? <CheckCircle2 key={i} className="w-5 h-5 text-green-500" /> 
@@ -360,6 +412,13 @@ function MemberStatus({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomD
           </div>
         ))}
       </CardContent>
+      <Dialog open={!!zoomImageUrl} onOpenChange={() => setZoomImageUrl(null)}>
+        <DialogContent>
+          {zoomImageUrl && (
+            <img src={zoomImageUrl} alt="확대된 운동 인증 사진" className="w-full h-auto rounded" />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
