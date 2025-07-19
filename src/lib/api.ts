@@ -216,9 +216,12 @@ class ApiClient {
     });
   }
 
-  // Dashboard API
-  async getDashboard() {
-    return this.request('/dashboard');
+  // Rest Day APIs
+  async registerRestDay(restData: { reason: string; startDate: string; endDate: string }) {
+    return this.request('/rest', {
+      method: 'POST',
+      body: JSON.stringify(restData),
+    });
   }
 }
 

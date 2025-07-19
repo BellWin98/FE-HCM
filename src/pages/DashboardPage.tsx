@@ -7,13 +7,15 @@ import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { AlertTriangle, Calendar as CalendarIcon, Camera, CheckCircle2, Circle, LogIn, Plus, TrendingUp, Trophy, Users } from 'lucide-react';
+import { AlertTriangle, Calendar as CalendarIcon, Camera, CheckCircle2, Circle, LogIn, Pause, Plus, TrendingUp, Trophy, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,6 +33,11 @@ export default function DashboardPage() {
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [password, setPassword] = useState('');
+  const [showRestDialog, setShowRestDialog] = useState(false);
+  const [restReason, setRestReason] = useState('');
+  const [restStartDate, setRestStartDate] = useState<Date | undefined>(new Date());
+  const [restEndDate, setRestEndDate] = useState<Date | undefined>(new Date());
+  const [isRegisteringRest, setIsRegisteringRest] = useState(false);
 
   const convertKoreanToEnglish = (text: string) => {
     const koreanToEnglishMap: { [key: string]: string } = {
@@ -93,6 +100,51 @@ export default function DashboardPage() {
     setPassword('');
     setSelectedRoomId(null);
   }
+
+  const handleRestRegister = () => {
+    setShowRestDialog(true);
+  };
+
+  const handleRestSubmit = async () => {
+    setError('');
+    if (!restReason.trim() || !restStartDate || !restEndDate) {
+      setError('모든 필드를 입력해주세요.');
+      return;
+    }
+
+    if (restStartDate > restEndDate) {
+      setError('시작일은 종료일보다 이전이어야 합니다.');
+      return;
+    }
+
+    setIsRegisteringRest(true);
+    try {
+      await api.registerRestDay({
+        reason: restReason,
+        startDate: format(restStartDate, 'yyyy-MM-dd'),
+        endDate: format(restEndDate, 'yyyy-MM-dd')
+      });
+      
+      setShowRestDialog(false);
+      setRestReason('');
+      setRestStartDate(new Date());
+      setRestEndDate(new Date());
+      
+      window.location.reload();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '휴식일을 등록할 수 없습니다.');
+    } finally {
+      setIsRegisteringRest(false);
+    }
+  };
+
+  const handleRestDialogClose = () => {
+    setShowRestDialog(false);
+    setRestReason('');
+    setRestStartDate(new Date());
+    setRestEndDate(new Date());
+    setError('');
+  };
 
   if (isLoading || !availableWorkoutRooms) {
     return <Layout><div>Loading...</div></Layout>; // TODO: 스켈레톤 UI 적용
@@ -184,7 +236,13 @@ export default function DashboardPage() {
                       <p className="text-sm text-muted-foreground">운동을 인증하세요</p>
                     </div>
                   </div>
-                  <Button className="px-3"onClick={handleWorkoutUpload}>인증</Button>
+                  <div className="flex gap-2">
+                    <Button className="px-3" onClick={handleWorkoutUpload}>인증</Button>
+                    <Button variant="outline" className="px-3" onClick={handleRestRegister}>
+                      <Pause className="w-4 h-4 mr-1" />
+                      휴식
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -230,6 +288,95 @@ export default function DashboardPage() {
                 </Button>
                 <Button onClick={handlePasswordSubmit} disabled={isJoining || !password.trim()}>
                   {isJoining ? '참여 중...' : '참여하기'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showRestDialog} onOpenChange={setShowRestDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>휴식일 등록</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="rest-reason">휴식 사유</Label>
+                <Textarea
+                  id="rest-reason"
+                  placeholder="휴식 사유를 입력하세요 (예: 부상, 개인사정 등)"
+                  value={restReason}
+                  onChange={(e) => setRestReason(e.target.value)}
+                  disabled={isRegisteringRest}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>시작일</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal mt-1"
+                        disabled={isRegisteringRest}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {restStartDate ? format(restStartDate, 'yyyy-MM-dd', { locale: ko }) : '날짜 선택'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={restStartDate}
+                        onSelect={setRestStartDate}
+                        locale={ko}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div>
+                  <Label>종료일</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal mt-1"
+                        disabled={isRegisteringRest}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {restEndDate ? format(restEndDate, 'yyyy-MM-dd', { locale: ko }) : '날짜 선택'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={restEndDate}
+                        onSelect={setRestEndDate}
+                        locale={ko}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={handleRestDialogClose}>
+                  취소
+                </Button>
+                <Button 
+                  onClick={handleRestSubmit} 
+                  disabled={isRegisteringRest || !restReason.trim() || !restStartDate || !restEndDate}
+                >
+                  {isRegisteringRest ? '등록 중...' : '등록'}
                 </Button>
               </div>
             </div>
