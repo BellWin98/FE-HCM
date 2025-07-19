@@ -32,6 +32,17 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [password, setPassword] = useState('');
 
+  const convertKoreanToEnglish = (text: string) => {
+    const koreanToEnglishMap: { [key: string]: string } = {
+      'ㅂ': 'q', 'ㅈ': 'w', 'ㄷ': 'e', 'ㄱ': 'r', 'ㅅ': 't', 'ㅛ': 'y', 'ㅕ': 'u', 'ㅑ': 'i', 'ㅐ': 'o', 'ㅔ': 'p',
+      'ㅁ': 'a', 'ㄴ': 's', 'ㅇ': 'd', 'ㄹ': 'f', 'ㅎ': 'g', 'ㅗ': 'h', 'ㅓ': 'j', 'ㅏ': 'k', 'ㅣ': 'l',
+      'ㅋ': 'z', 'ㅌ': 'x', 'ㅊ': 'c', 'ㅍ': 'v', 'ㅠ': 'b', 'ㅜ': 'n', 'ㅡ': 'm',
+      'ㅃ': 'Q', 'ㅉ': 'W', 'ㄸ': 'E', 'ㄲ': 'R', 'ㅆ': 'T', 'ㅒ': 'O', 'ㅖ': 'P'
+    };
+
+    return text.split('').map(char => koreanToEnglishMap[char] || char).join('');
+  }
+
   useEffect(() => {
     const loadDashboardStats = async () => {
       setIsLoading(true);
@@ -196,7 +207,14 @@ export default function DashboardPage() {
                   type='password'
                   placeholder='방 비밀번호를 입력하세요'
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    const processedValue = convertKoreanToEnglish(e.target.value.replace(/\s/g, ''));
+                    if (processedValue.length <= 10) {
+                      setPassword(processedValue);
+                    }
+                  }}
+                  minLength={2}
+                  maxLength={10}
                   onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
                   disabled={isJoining}
                 />
