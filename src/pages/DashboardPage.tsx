@@ -39,6 +39,26 @@ export default function DashboardPage() {
   const [restEndDate, setRestEndDate] = useState<Date | undefined>(new Date());
   const [isRegisteringRest, setIsRegisteringRest] = useState(false);
 
+  // 오늘이 휴식일인지 확인하는 함수
+  const isTodayRestDay = () => {
+    if (!currentWorkoutRoom) return false;
+    
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const currentMember = currentWorkoutRoom.workoutRoomMembers.find(
+      roomMember => roomMember.nickname === member?.nickname
+    );
+    
+    if (!currentMember) return false;
+    
+    return currentMember.restInfoList.some(restInfo => {
+      const startDate = new Date(restInfo.startDate);
+      const endDate = new Date(restInfo.endDate);
+      const todayDate = new Date(today);
+      
+      return todayDate >= startDate && todayDate <= endDate;
+    });
+  };
+
   const convertKoreanToEnglish = (text: string) => {
     const koreanToEnglishMap: { [key: string]: string } = {
       'ㅂ': 'q', 'ㅈ': 'w', 'ㄷ': 'e', 'ㄱ': 'r', 'ㅅ': 't', 'ㅛ': 'y', 'ㅕ': 'u', 'ㅑ': 'i', 'ㅐ': 'o', 'ㅔ': 'p',
@@ -155,7 +175,7 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-6">
           <h1 className="text-3xl font-bold mb-5">
-            {currentWorkoutRoom?.workoutRoomInfo.name}
+            {isMemberInWorkoutRoom ? currentWorkoutRoom?.workoutRoomInfo.name : '운동방 목록'}
           </h1>
           <p className="text-medium">
             {isMemberInWorkoutRoom ? `안녕하세요 ${member?.nickname ?? '사용자'}님!` : '새로운 운동방에 참여하고 건강한 습관을 만들어보세요!'}
@@ -172,9 +192,16 @@ export default function DashboardPage() {
                 <CalendarIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {currentWorkoutRoom.workoutRoomMembers.find(roomMember => roomMember.nickname === member.nickname)?.weeklyWorkouts}/{currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts}회
-                </div>
+                {isTodayRestDay() ? (
+                  <div className="flex items-center gap-2">
+                    <Pause className="w-6 h-6 text-blue-500" />
+                    <span className="text-2xl font-bold text-blue-600">휴식</span>
+                  </div>
+                ) : (
+                  <div className="text-2xl font-bold">
+                    {currentWorkoutRoom.workoutRoomMembers.find(roomMember => roomMember.nickname === member.nickname)?.weeklyWorkouts}/{currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts}회
+                  </div>
+                )}
               </CardContent>
             </Card>
             <Card>
@@ -224,6 +251,19 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <Badge variant="secondary" className="bg-green-100 text-green-800">완료</Badge>
+                </div>
+              ) : isTodayRestDay() ? (
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                      <Pause className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-blue-800">오늘은 휴식일입니다</p>
+                      <p className="text-sm text-blue-600">편안히 쉬세요!</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">휴식</Badge>
                 </div>
               ) : (
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -332,6 +372,11 @@ export default function DashboardPage() {
                         selected={restStartDate}
                         onSelect={setRestStartDate}
                         locale={ko}
+                        disabled={(date) => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          return date < today || date.getDay() !== 1;
+                        }}
                       />
                     </PopoverContent>
                   </Popover>
@@ -356,6 +401,11 @@ export default function DashboardPage() {
                         selected={restEndDate}
                         onSelect={setRestEndDate}
                         locale={ko}
+                        disabled={(date) => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          return date < today || date.getDay() !== 0;
+                        }}
                       />
                     </PopoverContent>
                   </Popover>
@@ -396,8 +446,6 @@ function MyWorkoutRoom({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoom
     const dateStr = format(day, 'yyyy-MM-dd');
     const dailyStatus = currentWorkoutRoom.workoutRoomMembers.map(member => {
       let record = 'pending';
-      
-
       const hasWorkoutRecord = member.workoutRecords.some(
         workoutRecord => workoutRecord?.workoutDate === dateStr
       );
@@ -449,6 +497,14 @@ function MyWorkoutRoom({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoom
               const memberObj = currentWorkoutRoom.workoutRoomMembers.find(m => m.nickname === s.nickname);
               // 해당 날짜의 인증 기록 찾기
               const record = memberObj?.workoutRecords.find(record => record.workoutDate === format(day, 'yyyy-MM-dd'));
+              // 해당 날짜의 휴식 정보 찾기
+              const restInfo = memberObj?.restInfoList.find(restInfo => {
+                const startDate = new Date(restInfo?.startDate);
+                const endDate = new Date(restInfo?.endDate);
+                const targetDate = new Date(format(day, 'yyyy-MM-dd'));
+                return targetDate >= startDate && targetDate <= endDate;
+              });
+              
               return (
                 <div key={i} className="flex items-center justify-between text-sm">
                   <span>{s.nickname}</span>
@@ -460,7 +516,7 @@ function MyWorkoutRoom({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoom
                         </Badge>
                       </PopoverTrigger>
                       <PopoverContent>
-                        
+                        {record.workoutType}
                         {record?.imageUrl ? (
                           <img
                             src={record.imageUrl}
@@ -473,7 +529,17 @@ function MyWorkoutRoom({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoom
                       </PopoverContent>
                     </Popover>
                   ) : s.status === 'rest' ? (
-                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">휴식</Badge>
+                    <Popover>
+                      <PopoverTrigger>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 cursor-pointer">휴식</Badge>
+                      </PopoverTrigger>
+                      <PopoverContent>
+                        <div className="p-2">
+                          <p className="font-medium mb-1">휴식 사유</p>
+                          <p className="text-sm text-gray-600">{restInfo?.reason || '사유를 확인할 수 없습니다.'}</p>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   ) : (
                     <Badge variant="outline">미인증</Badge>
                   )}
@@ -519,6 +585,19 @@ function MemberStatus({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomD
   const weeklyGoal = currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts;
   const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
 
+  // 특정 멤버가 오늘 휴식일인지 확인하는 함수
+  const isMemberRestToday = (member: any) => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    
+    return member.restInfoList.some((restInfo: any) => {
+      const startDate = new Date(restInfo.startDate);
+      const endDate = new Date(restInfo.endDate);
+      const todayDate = new Date(today);
+      
+      return todayDate >= startDate && todayDate <= endDate;
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -530,52 +609,81 @@ function MemberStatus({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomD
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {currentWorkoutRoom.workoutRoomMembers.map(member => (
-          <div key={member.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
-            <div className="flex items-center gap-3">
-              {/* <Avatar>
-                <AvatarImage src={member.profileUrl} alt={member.nickname} />
-                <AvatarFallback>{member.nickname.slice(0, 2)}</AvatarFallback>
-              </Avatar> */}
-              <span 
-                className="font-bold text-sm"
-              >
-                {member.nickname}
-                {member.nickname === currentWorkoutRoom.workoutRoomInfo.ownerNickname ? ' 👑' : ''}
-              </span>
-              {member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.workoutDate ? (
-                <>
-                  <Popover>
-                    <PopoverTrigger>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800 cursor-pointer">
-                        오늘 인증
-                      </Badge>
-                    </PopoverTrigger>
-                    <PopoverContent>
-                      <img 
-                        src={member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.imageUrl}
-                        alt="운동 인증 사진"
-                        className='max-w-xs max-h-60 rounded cursor-zoom-in'
-                        onClick={() => setZoomImageUrl(member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.imageUrl || null)}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </>
-              ) : (
-                // <Badge variant="outline">미인증</Badge>
-                <div></div>
-              )}
+        {currentWorkoutRoom.workoutRoomMembers.map(member => {
+          const restInfo = member?.restInfoList.find(restInfo => {
+            const startDate = new Date(restInfo?.startDate);
+            const endDate = new Date(restInfo?.endDate);
+            const targetDate = new Date(format(new Date(), 'yyyy-MM-dd'));
+            return targetDate >= startDate && targetDate <= endDate;
+          });
+          const isRestToday = isMemberRestToday(member);
+          const hasWorkoutToday = member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.workoutDate;
+          
+          return (
+            <div key={member.id} className={`flex items-center justify-between p-3 rounded-md ${isRestToday ? 'bg-blue-50 border-2 border-blue-200' : 'bg-slate-50'}`}>
+              <div className="flex items-center gap-3">
+                <span 
+                  className="font-bold text-sm"
+                >
+                  {member.nickname}
+                  {member.nickname === currentWorkoutRoom.workoutRoomInfo.ownerNickname ? ' 👑' : ''}
+                </span>
+                {hasWorkoutToday ? (
+                  <>
+                    <Popover>
+                      <PopoverTrigger>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 cursor-pointer">
+                          오늘 인증
+                        </Badge>
+                      </PopoverTrigger>
+                      <PopoverContent>
+                        <div className="space-y-2">
+                          <p className="font-medium text-sm">
+                            {member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.workoutType}
+                          </p>
+                          <img 
+                            src={member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.imageUrl}
+                            alt="운동 인증 사진"
+                            className='max-w-xs max-h-60 rounded cursor-zoom-in'
+                            onClick={() => setZoomImageUrl(member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.imageUrl || null)}
+                          />
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </>
+                ) : isRestToday ? (
+                <Popover>
+                  <PopoverTrigger>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 cursor-pointer">휴식</Badge>
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <div className="p-2">
+                      <p className="font-medium mb-1">휴식 사유</p>
+                      <p className="text-sm text-gray-600">{restInfo?.reason || '사유를 확인할 수 없습니다.'}</p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                ) : (
+                  <div></div>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {isRestToday ? (
+                  <div className="flex items-center gap-1 text-blue-600">
+                    <Pause className="w-4 h-4" />
+                    <span className="text-sm font-medium">휴식일</span>
+                  </div>
+                ) : (
+                  Array.from({ length: weeklyGoal }).map((_, i) => (
+                    i < member.weeklyWorkouts
+                      ? <CheckCircle2 key={i} className="w-5 h-5 text-green-500" /> 
+                      : <Circle key={i} className="w-5 h-5 text-gray-300" />
+                  ))
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              {/* <span className="text-sm text-muted-foreground mr-2">주간 운동 횟수:</span> */}
-              {Array.from({ length: weeklyGoal }).map((_, i) => (
-                i < member.weeklyWorkouts
-                  ? <CheckCircle2 key={i} className="w-5 h-5 text-green-500" /> 
-                  : <Circle key={i} className="w-5 h-5 text-gray-300" />
-              ))}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </CardContent>
       <Dialog open={!!zoomImageUrl} onOpenChange={() => setZoomImageUrl(null)}>
         <DialogContent>

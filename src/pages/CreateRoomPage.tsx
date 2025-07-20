@@ -96,8 +96,8 @@ export default function CreateRoomPage() {
       return false;
     }
 
-    if (entryCode.length < 2 || roomName.length > 10) {
-      setError('방 이름은 2-10자 사이여야 합니다.');
+    if (entryCode.length < 2 || entryCode.length > 10) {
+      setError('방 비밀번호는 2-10자 사이여야 합니다.');
       return false;
     }
 
@@ -156,7 +156,8 @@ export default function CreateRoomPage() {
                   placeholder="예: 헬스 3개월 도전"
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
-                  maxLength={50}
+                  minLength={2}
+                  maxLength={20}
                 />
               </div>
 
@@ -214,7 +215,11 @@ export default function CreateRoomPage() {
                         mode="single"
                         selected={startDate}
                         onSelect={setStartDate}
-                        disabled={(date) => date < new Date()}
+                        disabled={(date) => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          return date < today || date.getDay() !== 1;
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
@@ -253,7 +258,11 @@ export default function CreateRoomPage() {
                         mode="single"
                         selected={endDate}
                         onSelect={setEndDate}
-                        disabled={(date) => date < new Date() || (startDate && date <= startDate)}
+                        disabled={(date) => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          return date < today || date.getDay() !== 0;
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
