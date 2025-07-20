@@ -122,6 +122,33 @@ export default function DashboardPage() {
   }
 
   const handleRestRegister = () => {
+    // 가장 최근 enabled 날짜 찾기 (월요일 중에서)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const nextMonday = new Date(today);
+    // 다음 월요일 찾기
+    const daysUntilMonday = (8 - nextMonday.getDay()) % 7;
+    if (daysUntilMonday === 0 && nextMonday.getDay() === 1) {
+      // 오늘이 월요일이면 오늘을 선택
+      setRestStartDate(nextMonday);
+    } else {
+      nextMonday.setDate(nextMonday.getDate() + daysUntilMonday);
+      setRestStartDate(nextMonday);
+    }
+    
+    // 종료일 - 가장 최근 enabled 날짜 찾기 (일요일 중에서)
+    const nextSunday = new Date(today);
+    // 다음 일요일 찾기
+    const daysUntilSunday = (7 - nextSunday.getDay()) % 7;
+    if (daysUntilSunday === 0 && nextSunday.getDay() === 0) {
+      // 오늘이 일요일이면 오늘을 선택
+      setRestEndDate(nextSunday);
+    } else {
+      nextSunday.setDate(nextSunday.getDate() + daysUntilSunday);
+      setRestEndDate(nextSunday);
+    }
+    
     setShowRestDialog(true);
   };
 
