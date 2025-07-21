@@ -1,25 +1,27 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { api } from '@/lib/api';
+import { cn } from '@/lib/utils';
+import { WorkoutType } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { CalendarIcon, Upload, Loader2 } from 'lucide-react';
-import { WorkoutType } from '@/types';
-import { cn } from '@/lib/utils';
-import { api } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
+import { CalendarIcon, Loader2, Upload } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const workoutTypes: WorkoutType[] = ['헬스', '러닝', '수영', '사이클링', '요가', '필라테스', '기타'];
+const today = new Date();
+const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
 export default function WorkoutUploadPage() {
+  
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -74,9 +76,6 @@ export default function WorkoutUploadPage() {
     }
 
     // 날짜 검증 (7일 이내)
-    const today = new Date();
-    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
     if (workoutDate > today || workoutDate < sevenDaysAgo) {
       setError('운동 일자는 오늘부터 7일 이내만 선택 가능합니다.');
       return false;
@@ -201,8 +200,6 @@ export default function WorkoutUploadPage() {
                       selected={workoutDate}
                       onSelect={(date) => date && setWorkoutDate(date)}
                       disabled={(date) => {
-                        const today = new Date();
-                        const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
                         return date > today || date < sevenDaysAgo;
                       }}
                       initialFocus

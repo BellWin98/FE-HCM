@@ -1,6 +1,5 @@
 import { Layout } from '@/components/layout/Layout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -18,6 +17,9 @@ import { ko } from 'date-fns/locale';
 import { AlertTriangle, Calendar as CalendarIcon, Camera, CheckCircle2, Circle, LogIn, Pause, Plus, TrendingUp, Trophy, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
 
 export default function DashboardPage() {
   const { member } = useAuth();
@@ -43,7 +45,7 @@ export default function DashboardPage() {
   const isTodayRestDay = () => {
     if (!currentWorkoutRoom) return false;
     
-    const today = format(new Date(), 'yyyy-MM-dd');
+    // const today = format(new Date(), 'yyyy-MM-dd');
     const currentMember = currentWorkoutRoom.workoutRoomMembers.find(
       roomMember => roomMember.nickname === member?.nickname
     );
@@ -123,8 +125,6 @@ export default function DashboardPage() {
 
   const handleRestRegister = () => {
     // 가장 최근 enabled 날짜 찾기 (월요일 중에서)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     
     const nextMonday = new Date(today);
     // 다음 월요일 찾기
@@ -400,8 +400,6 @@ export default function DashboardPage() {
                         onSelect={setRestStartDate}
                         locale={ko}
                         disabled={(date) => {
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
                           return date < today || date.getDay() !== 1;
                         }}
                       />
@@ -429,8 +427,6 @@ export default function DashboardPage() {
                         onSelect={setRestEndDate}
                         locale={ko}
                         disabled={(date) => {
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
                           return date < today || date.getDay() !== 0;
                         }}
                       />
@@ -614,7 +610,7 @@ function MemberStatus({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomD
 
   // 특정 멤버가 오늘 휴식일인지 확인하는 함수
   const isMemberRestToday = (member: any) => {
-    const today = format(new Date(), 'yyyy-MM-dd');
+    // const today = format(new Date(), 'yyyy-MM-dd');
     
     return member.restInfoList.some((restInfo: any) => {
       const startDate = new Date(restInfo.startDate);

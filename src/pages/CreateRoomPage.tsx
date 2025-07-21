@@ -28,6 +28,16 @@ export default function CreateRoomPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const formatDateToLocal = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const convertKoreanToEnglish = (text: string) => {
     const koreanToEnglishMap: { [key: string]: string } = {
       'ㅂ': 'q', 'ㅈ': 'w', 'ㄷ': 'e', 'ㄱ': 'r', 'ㅅ': 't', 'ㅛ': 'y', 'ㅕ': 'u', 'ㅑ': 'i', 'ㅐ': 'o', 'ㅔ': 'p',
@@ -55,22 +65,20 @@ export default function CreateRoomPage() {
       return false;
     }
 
+    if (startDate < today) {
+      setError('시작일은 오늘 이후여야 합니다.');
+      return false;
+    }
+
     if (enableEndDate && endDate) {
       if (startDate >= endDate) {
         setError('종료일은 시작일보다 늦어야 합니다.');
         return false;
       }
-      if (endDate < new Date()) {
+      if (endDate < today) {
         setError('종료일은 오늘 이후여야 합니다.');
         return false;
       }
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (startDate < today) {
-      setError('시작일은 오늘 이후여야 합니다.');
-      return false;
     }
 
     const minWorkouts = parseInt(minWeeklyWorkouts);
@@ -118,16 +126,13 @@ export default function CreateRoomPage() {
         name: roomName.trim(),
         minWeeklyWorkouts: parseInt(minWeeklyWorkouts),
         penaltyPerMiss: parseInt(penaltyPerMiss),
-        startDate: startDate!.toISOString(),
-        endDate: enableEndDate && endDate ? endDate.toISOString() : null,
+        startDate: formatDateToLocal(startDate),
+        endDate: enableEndDate && endDate ? formatDateToLocal(endDate) : null,
         maxMembers: parseInt(maxMembers),
         entryCode: entryCode.trim(),
       };
 
       await api.createWorkoutRoom(workoutRoomData);
-
-      // 임시 지연
-      await new Promise(resolve => setTimeout(resolve, 1500));
       
       navigate('/dashboard');
     } catch (err) {
@@ -138,6 +143,7 @@ export default function CreateRoomPage() {
   };
 
   return (
+    
     <Layout>
       <div className="max-w-2xl mx-auto">
         <Card>
@@ -216,8 +222,6 @@ export default function CreateRoomPage() {
                         selected={startDate}
                         onSelect={setStartDate}
                         disabled={(date) => {
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
                           return date < today || date.getDay() !== 1;
                         }}
                         initialFocus
@@ -259,8 +263,6 @@ export default function CreateRoomPage() {
                         selected={endDate}
                         onSelect={setEndDate}
                         disabled={(date) => {
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
                           return date < today || date.getDay() !== 0;
                         }}
                         initialFocus
