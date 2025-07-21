@@ -28,15 +28,14 @@ export default function CreateRoomPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   const formatDateToLocal = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
+
+  const today = formatDateToLocal(new Date);
 
   const convertKoreanToEnglish = (text: string) => {
     const koreanToEnglishMap: { [key: string]: string } = {
@@ -65,7 +64,7 @@ export default function CreateRoomPage() {
       return false;
     }
 
-    if (startDate < today) {
+    if (formatDateToLocal(startDate) < today) {
       setError('시작일은 오늘 이후여야 합니다.');
       return false;
     }
@@ -75,7 +74,7 @@ export default function CreateRoomPage() {
         setError('종료일은 시작일보다 늦어야 합니다.');
         return false;
       }
-      if (endDate < today) {
+      if (formatDateToLocal(endDate) < today) {
         setError('종료일은 오늘 이후여야 합니다.');
         return false;
       }
@@ -222,7 +221,8 @@ export default function CreateRoomPage() {
                         selected={startDate}
                         onSelect={setStartDate}
                         disabled={(date) => {
-                          return date < today || date.getDay() !== 1;
+                          const formattedDate = formatDateToLocal(date);
+                          return formattedDate < today || date.getDay() !== 1;
                         }}
                         initialFocus
                       />
@@ -263,7 +263,8 @@ export default function CreateRoomPage() {
                         selected={endDate}
                         onSelect={setEndDate}
                         disabled={(date) => {
-                          return date < today || date.getDay() !== 0;
+                          const formattedDate = formatDateToLocal(date);
+                          return formattedDate < today || date.getDay() !== 0;
                         }}
                         initialFocus
                       />

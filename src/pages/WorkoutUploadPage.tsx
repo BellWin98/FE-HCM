@@ -11,14 +11,18 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { WorkoutType } from '@/types';
 import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { da, ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+function toDateOnly(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 const workoutTypes: WorkoutType[] = ['헬스', '러닝', '수영', '사이클링', '요가', '필라테스', '기타'];
-const today = new Date();
-const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+const today = toDateOnly(new Date());
+const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000));
 
 export default function WorkoutUploadPage() {
   
@@ -76,7 +80,7 @@ export default function WorkoutUploadPage() {
     }
 
     // 날짜 검증 (7일 이내)
-    if (workoutDate > today || workoutDate < sevenDaysAgo) {
+    if (toDateOnly(workoutDate) > today || toDateOnly(workoutDate) < sevenDaysAgo) {
       setError('운동 일자는 오늘부터 7일 이내만 선택 가능합니다.');
       return false;
     }
@@ -200,7 +204,8 @@ export default function WorkoutUploadPage() {
                       selected={workoutDate}
                       onSelect={(date) => date && setWorkoutDate(date)}
                       disabled={(date) => {
-                        return date > today || date < sevenDaysAgo;
+                        const formattedDate = toDateOnly(date);
+                        return formattedDate > today || formattedDate < sevenDaysAgo;
                       }}
                       initialFocus
                     />
