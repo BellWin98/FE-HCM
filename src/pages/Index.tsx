@@ -20,7 +20,7 @@ export default function WelcomePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">FB</span>
+              <span className="text-white font-bold text-sm">HCM</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900">헬창마을</h1>
           </div>
