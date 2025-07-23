@@ -213,7 +213,7 @@ export default function WorkoutUploadPage() {
                   </PopoverContent>
                 </Popover>
                 <p className="text-xs text-gray-500 px-3">
-                  이번주 이전 날짜 인증 시 이번주 운동 횟수에 반영되지 않습니다.
+                이번주 운동일자만 이번주 운동횟수에 반영됩니다.
                 </p>                
               </div>
 
