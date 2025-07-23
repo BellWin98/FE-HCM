@@ -301,11 +301,11 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       {/* <p className="font-medium">미인증</p> */}
-                      <p className="text-sm text-muted-foreground">운동을 인증하세요</p>
+                      {/* <p className="text-sm text-muted-foreground">운동을 인증하세요</p> */}
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button className="px-3" onClick={handleWorkoutUpload}>인증</Button>
+                    <Button className="px-3" onClick={handleWorkoutUpload}>인증하기</Button>
                     <Button variant="outline" className="px-3" onClick={handleRestRegister}>
                       <Pause className="w-4 h-4 mr-1" />
                       휴식
@@ -435,6 +435,7 @@ export default function DashboardPage() {
                   </Popover>
                 </div>
               </div>
+              <p className="text-xs text-gray-500 px-3">휴식일은 일주일 단위로 선택하세요.</p>
 
               {error && (
                 <Alert variant="destructive">
@@ -581,7 +582,14 @@ function MyWorkoutRoom({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoom
       <Card>
         <CardHeader>
           <CardTitle className="text-xl font-bold">📅 월별 운동 현황</CardTitle>
-          {/* <CardDescription>달력에서 날짜를 선택하여 멤버별 운동 상태를 확인하세요.</CardDescription> */}
+          <CardDescription className='p-2'>
+            <div>
+              달력에서 날짜를 선택하여
+            </div>   
+            <div>
+              멤버별 운동 상태를 확인하세요.
+            </div>
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
           <Calendar
