@@ -223,6 +223,14 @@ class ApiClient {
       body: JSON.stringify(restData),
     });
   }
+
+  // FCM Token API
+  async updateFcmToken(fcmToken: string) {
+    return this.request('/members/fcm-token', {
+      method: 'POST',
+      body: JSON.stringify({ fcmToken }),
+    });
+  }
 }
 
 export const api = new ApiClient();
