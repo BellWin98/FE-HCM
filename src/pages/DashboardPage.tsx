@@ -406,6 +406,7 @@ export default function DashboardPage() {
                       />
                     </PopoverContent>
                   </Popover>
+                  <p className="text-xs text-gray-500 p-2">시작일: 월요일</p>
                 </div>
                 
                 <div>
@@ -433,10 +434,10 @@ export default function DashboardPage() {
                       />
                     </PopoverContent>
                   </Popover>
+                  <p className="text-xs text-gray-500 p-2">종료일: 일요일</p>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 px-3">휴식일은 일주일 단위로 선택하세요.</p>
-
+              
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
