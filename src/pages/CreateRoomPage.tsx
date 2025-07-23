@@ -228,6 +228,7 @@ export default function CreateRoomPage() {
                       />
                     </PopoverContent>
                   </Popover>
+                  <p className="text-xs text-gray-500">매주 월요일만 선택 가능합니다.</p>
                 </div>
 
                 <div className="space-y-4">
@@ -270,6 +271,7 @@ export default function CreateRoomPage() {
                       />
                     </PopoverContent>
                   </Popover>
+                  <p className="text-xs text-gray-500" style={{marginTop: 7}}>매주 일요일만 선택 가능합니다.</p>
                 </div>
               </div>
 

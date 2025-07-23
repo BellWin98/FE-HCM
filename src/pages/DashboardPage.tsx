@@ -146,6 +146,9 @@ export default function DashboardPage() {
       setRestEndDate(nextSunday);
     } else {
       nextSunday.setDate(nextSunday.getDate() + daysUntilSunday);
+      if (nextMonday > nextSunday) {
+        nextSunday.setDate(nextSunday.getDate() + 7);
+      }
       setRestEndDate(nextSunday);
     }
     
@@ -188,8 +191,6 @@ export default function DashboardPage() {
   const handleRestDialogClose = () => {
     setShowRestDialog(false);
     setRestReason('');
-    setRestStartDate(new Date());
-    setRestEndDate(new Date());
     setError('');
   };
 
