@@ -205,12 +205,16 @@ export default function WorkoutUploadPage() {
                       onSelect={(date) => date && setWorkoutDate(date)}
                       disabled={(date) => {
                         const formattedDate = toDateOnly(date);
-                        return formattedDate > today || formattedDate < sevenDaysAgo;
+                        // return formattedDate > today || formattedDate < sevenDaysAgo;
+                        return formattedDate > today;
                       }}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
+                <p className="text-xs text-gray-500 px-3">
+                  이번주 이전 날짜 인증 시 이번주 운동 횟수에 반영되지 않습니다.
+                </p>                
               </div>
 
               {/* 운동 종류 */}
@@ -252,7 +256,7 @@ export default function WorkoutUploadPage() {
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 px-3">
                   최소 10분, 최대 720분(12시간)까지 입력 가능합니다.
                 </p>
               </div>
