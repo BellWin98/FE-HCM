@@ -9,7 +9,6 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import WorkoutUploadPage from './pages/WorkoutUploadPage';
 import CreateRoomPage from './pages/CreateRoomPage';
-import JoinRoomPage from './pages/JoinRoomPage';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();

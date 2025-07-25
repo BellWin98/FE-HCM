@@ -11,12 +11,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
+import { WorkoutRoom, WorkoutRoomDetail, RoomMember, RestInfo } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { AlertTriangle, Calendar as CalendarIcon, Camera, CheckCircle2, Circle, LogIn, Pause, Plus, TrendingUp, Trophy, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChatRoom } from '@/components/ui/ChatRoom';
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -610,6 +611,7 @@ function MyWorkoutRoom({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoom
         </CardContent>
       </Card>
       <MemberStatus currentWorkoutRoom={currentWorkoutRoom} />
+      {currentWorkoutRoom && <ChatRoom currentWorkoutRoom={currentWorkoutRoom} />}
     </div>
   );
 }
@@ -619,10 +621,10 @@ function MemberStatus({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomD
   const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
 
   // 특정 멤버가 오늘 휴식일인지 확인하는 함수
-  const isMemberRestToday = (member: any) => {
+  const isMemberRestToday = (member: RoomMember) => {
     // const today = format(new Date(), 'yyyy-MM-dd');
     
-    return member.restInfoList.some((restInfo: any) => {
+    return member.restInfoList.some((restInfo: RestInfo) => {
       const startDate = new Date(restInfo.startDate);
       const endDate = new Date(restInfo.endDate);
       const todayDate = new Date(today);

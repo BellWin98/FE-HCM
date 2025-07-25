@@ -223,6 +223,10 @@ class ApiClient {
       body: JSON.stringify(restData),
     });
   }
+
+  async getChatHistory(roomId: number) {
+    return this.request(`/chat/rooms/${roomId}/messages`);
+  }
 }
 
 export const api = new ApiClient();
