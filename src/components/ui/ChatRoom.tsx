@@ -50,7 +50,6 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
         if (clientRef.current && clientRef.current.active) {
             clientRef.current.deactivate();
             clientRef.current = null;
-            console.log('운동방에 없거나 로그아웃으로 WebSocket 연결 해제');
         }
         return;
     }
@@ -58,7 +57,6 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
     const fetchChatHistory = async () => {
         const chatHistoryData = await api.getChatHistory(roomId) as ChatMessage[];
         setMessages(chatHistoryData);
-        console.log(chatHistoryData);   
     }
 
     // 이미 연결된 경우, 중복 연결 방지
@@ -72,12 +70,11 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
         connectHeaders: {
             Authorization: `Bearer ${accessToken}`,
         },
-        debug: (str) => {
-            console.log(new Date(), str);
-        },
+        // debug: (str) => {
+        //     console.log(new Date(), str);
+        // },
         reconnectDelay: 5000,
         onConnect: () => {
-            console.log('WebSocket 연결 성공!');
             setIsConnected(true);
 
             // 구독
@@ -87,7 +84,6 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
             // (선택) 입장 메시지 전송 등
         },
         onDisconnect: () => {
-            console.log('WebSocket 연결 해제됨');
             setIsConnected(false);
         },
         onStompError: (frame) => {
@@ -100,7 +96,6 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
     return () => {
         if (clientRef.current && clientRef.current.active) {
             client.deactivate();
-            console.log('컴포넌트 언마운트로 WebSocket 연결 해제');
         }
     };
   }, [roomId, accessToken]);
