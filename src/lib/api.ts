@@ -73,7 +73,6 @@ class ApiClient {
             throw new Error(errorData.message || `HTTP error! status: ${retryResponse.status}`);
           }
           const retryData = await retryResponse.json();
-          console.log(retryData);
           return retryData.data || retryData;
         } catch (refreshError) {
           throw new Error('Authentication failed. Please login again.');
@@ -86,7 +85,6 @@ class ApiClient {
       }
 
       const data = await response.json();
-      console.log(data);
       return data.data || data;
     } catch (error) {
       console.error(error.message);
