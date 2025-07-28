@@ -178,7 +178,16 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
                 ) : (
                   <span className={`text-sm px-3 py-1 rounded-lg ${isMine ? 'bg-blue-100 text-blue-900' : 'bg-white text-gray-900 border'}`}>{msg.content}</span>
                 )}
-                <span className={`text-[10px] text-gray-400 ${isMine ? 'self-end' : 'self-start'}`}>{msg.timestamp && new Date(msg.timestamp).toLocaleTimeString()}</span>
+                <span className={`text-[10px] text-gray-400 ${isMine ? 'self-end' : 'self-start'}`}>
+                  {msg.timestamp && new Date(msg.timestamp).toLocaleString('ko-KR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                  })}
+                </span>
               </div>
             );
           })}
