@@ -16,16 +16,14 @@ import { CalendarIcon, Loader2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function toDateOnly(date: Date) {
+const toDateOnly = (date) => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
-
 const workoutTypes: WorkoutType[] = ['헬스', '러닝', '수영', '사이클링', '요가', '필라테스', '기타'];
 const today = toDateOnly(new Date());
 const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000));
 
-export default function WorkoutUploadPage() {
-  
+export const WorkoutUploadPage = () => {
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -288,3 +286,5 @@ export default function WorkoutUploadPage() {
     </Layout>
   );
 }
+
+export default WorkoutUploadPage;

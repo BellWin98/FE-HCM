@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Users, Target, Trophy, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export default function WelcomePage() {
+export const WelcomePage = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -147,3 +147,5 @@ export default function WelcomePage() {
     </div>
   );
 }
+
+export default WelcomePage;

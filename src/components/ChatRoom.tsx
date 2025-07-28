@@ -1,26 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Client, IMessage } from '@stomp/stompjs';
-import SockJS from "sockjs-client";
-import { Button } from './button';
-import { Input } from './input';
-import { Card, CardContent, CardHeader, CardTitle } from './card';
-import { RoomMember, WorkoutRoomDetail } from '@/types';
-import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface ChatMessage {
-  id: string;
-  sender: string;
-  content: string;
-  timestamp: string;
-  type: 'TEXT' | 'IMAGE';
-  imageUrl?: string;
-  readBy: string[];
-}
-
-interface ChatRoomProps {
-  currentWorkoutRoom: WorkoutRoomDetail;
-}
+import { api } from '@/lib/api';
+import { ChatMessage } from '@/types';
+import { Client, IMessage } from '@stomp/stompjs';
+import React, { useEffect, useRef, useState } from 'react';
+import SockJS from "sockjs-client";
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Input } from './ui/input';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080';
 

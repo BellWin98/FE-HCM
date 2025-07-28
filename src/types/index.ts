@@ -86,3 +86,13 @@ export interface AuthContextType {
   logout: () => void;
   loading: boolean;
 }
+
+export interface ChatMessage {
+  id: string;
+  sender: string;
+  content: string;
+  timestamp: string;
+  type: 'TEXT' | 'IMAGE';
+  imageUrl?: string;
+  readBy: string[];
+}

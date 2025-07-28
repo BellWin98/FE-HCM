@@ -1,9 +1,11 @@
+import AvailableWorkoutRooms from '@/components/AvailableWorkoutRooms';
 import { Layout } from '@/components/layout/Layout';
+import MyWorkoutRoom from '@/components/MyWorkoutRoom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,18 +13,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import { WorkoutRoom, WorkoutRoomDetail, RoomMember, RestInfo } from '@/types';
+import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { AlertTriangle, Calendar as CalendarIcon, Camera, CheckCircle2, Circle, LogIn, Pause, Plus, TrendingUp, Trophy, Users } from 'lucide-react';
+import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChatRoom } from '@/components/ui/ChatRoom';
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-export default function DashboardPage() {
+export const DashboardPage = () => {
   const { member } = useAuth();
   const navigate = useNavigate();
   
@@ -319,7 +320,7 @@ export default function DashboardPage() {
         )}
 
         {currentWorkoutRoom ? (
-          <MyWorkoutRoom currentWorkoutRoom={currentWorkoutRoom} />
+          <MyWorkoutRoom currentWorkoutRoom={currentWorkoutRoom} today={today} />
         ) : (
           <AvailableWorkoutRooms workoutRooms={availableWorkoutRooms} onCreateWorkoutRoom={handleCreateWorkoutRoom} onJoinWorkoutRoom={handleJoinWorkoutRoom} />
         )}
@@ -464,309 +465,4 @@ export default function DashboardPage() {
   );
 }
 
-// --- 컴포넌트 ---
-
-function MyWorkoutRoom({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomDetail }) {
-  const [date, setDate] = useState<Date | undefined>(new Date());
-
-  const renderDayContent = (day: Date) => {
-    const dateStr = format(day, 'yyyy-MM-dd');
-    const dailyStatus = currentWorkoutRoom.workoutRoomMembers.map(member => {
-      let record = 'pending';
-      const hasWorkoutRecord = member.workoutRecords.some(
-        workoutRecord => workoutRecord?.workoutDate === dateStr
-      );
-
-      if (hasWorkoutRecord) {
-        record = 'completed';
-      } else {
-        const isOnRest = member.restInfoList.some(restInfo => {
-          const startDate = new Date(restInfo?.startDate);
-          const endDate = new Date(restInfo?.endDate);
-          const targetDate = new Date(dateStr);
-
-          return targetDate >= startDate && targetDate <= endDate;
-        });
-
-        if (isOnRest) {
-          record = 'rest';
-        }
-      }
-
-      return {
-        nickname: member.nickname,
-        status: record,
-      };
-    });
-
-    const hasActivity = dailyStatus.some(s => s.status === 'completed' || s.status === 'rest');
-    const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-
-    return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <div
-            className={`flex flex-col items-center justify-center p-1 ${isToday ? 'bg-indigo-200' : ''} cursor-pointer`}
-          >
-            <span className="text-xs">{format(day, 'd')}</span>
-            <div className="flex items-center justify-center mt-1 h-4">
-              {hasActivity && (
-                <span className="text-blue-500 text-2xl leading-none -mt-1">•</span>
-              )}
-            </div>
-          </div>
-        </PopoverTrigger>
-        <PopoverContent className="w-60">
-          <div className="space-y-2">
-            <p className="font-bold text-center pb-2 border-b">{format(day, 'PPP', { locale: ko })}</p>
-            {dailyStatus.map((s, i) => {
-              // 해당 멤버 찾기
-              const memberObj = currentWorkoutRoom.workoutRoomMembers.find(m => m.nickname === s.nickname);
-              // 해당 날짜의 인증 기록 찾기
-              const record = memberObj?.workoutRecords.find(record => record.workoutDate === format(day, 'yyyy-MM-dd'));
-              // 해당 날짜의 휴식 정보 찾기
-              const restInfo = memberObj?.restInfoList.find(restInfo => {
-                const startDate = new Date(restInfo?.startDate);
-                const endDate = new Date(restInfo?.endDate);
-                const targetDate = new Date(format(day, 'yyyy-MM-dd'));
-                return targetDate >= startDate && targetDate <= endDate;
-              });
-              
-              return (
-                <div key={i} className="flex items-center justify-between text-sm">
-                  <span>{s.nickname}</span>
-                  {s.status === 'completed' ? (
-                    <Popover>
-                      <PopoverTrigger>
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 cursor-pointer">
-                          인증
-                        </Badge>
-                      </PopoverTrigger>
-                      <PopoverContent>
-                        {record.workoutType}
-                        {record?.imageUrl ? (
-                          <img
-                            src={record.imageUrl}
-                            alt="운동 인증 사진"
-                            className="max-w-xs max-h-60 rounded"
-                          />
-                        ) : (
-                          <div>인증 사진이 없습니다.</div>
-                        )}
-                      </PopoverContent>
-                    </Popover>
-                  ) : s.status === 'rest' ? (
-                    <Popover>
-                      <PopoverTrigger>
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 cursor-pointer">휴식</Badge>
-                      </PopoverTrigger>
-                      <PopoverContent>
-                        <div className="p-2">
-                          <p className="font-medium mb-1">휴식 사유</p>
-                          <p className="text-sm text-gray-600">{restInfo?.reason || '사유를 확인할 수 없습니다.'}</p>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  ) : (
-                    <Badge variant="outline">미인증</Badge>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </PopoverContent>
-      </Popover>
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">📅 월별 운동 현황</CardTitle>
-          <CardDescription className='p-2'>
-            <div>
-              달력에서 날짜를 선택하여
-            </div>   
-            <div>
-              멤버별 운동 상태를 확인하세요.
-            </div>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={setDate}
-            className="p-0"
-            locale={ko}
-            components={{
-              Day: ({ date }) => renderDayContent(date as Date),
-            }}
-            // classNames={{
-            //   day: 'h-20 w-24 text-center rounded-md',
-            //   day_today: 'bg-accent text-accent-foreground',
-            // }}
-          />
-        </CardContent>
-      </Card>
-      <MemberStatus currentWorkoutRoom={currentWorkoutRoom} />
-      {currentWorkoutRoom && <ChatRoom currentWorkoutRoom={currentWorkoutRoom} />}
-    </div>
-  );
-}
-
-function MemberStatus({ currentWorkoutRoom }: { currentWorkoutRoom: WorkoutRoomDetail }) {
-  const weeklyGoal = currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts;
-  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
-
-  // 특정 멤버가 오늘 휴식일인지 확인하는 함수
-  const isMemberRestToday = (member: RoomMember) => {
-    // const today = format(new Date(), 'yyyy-MM-dd');
-    
-    return member.restInfoList.some((restInfo: RestInfo) => {
-      const startDate = new Date(restInfo.startDate);
-      const endDate = new Date(restInfo.endDate);
-      const todayDate = new Date(today);
-      
-      return todayDate >= startDate && todayDate <= endDate;
-    });
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl font-bold">🔥 주간 현황</CardTitle>
-            {/* <CardDescription>주간 현황</CardDescription> */}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {currentWorkoutRoom.workoutRoomMembers.map(member => {
-          const restInfo = member?.restInfoList.find(restInfo => {
-            const startDate = new Date(restInfo?.startDate);
-            const endDate = new Date(restInfo?.endDate);
-            const targetDate = new Date(format(new Date(), 'yyyy-MM-dd'));
-            return targetDate >= startDate && targetDate <= endDate;
-          });
-          const isRestToday = isMemberRestToday(member);
-          const hasWorkoutToday = member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.workoutDate;
-          
-          return (
-            <div key={member.id} className={`flex items-center justify-between p-3 rounded-md ${isRestToday ? 'bg-blue-50 border-2 border-blue-200' : 'bg-slate-50'}`}>
-              <div className="flex items-center gap-3">
-                <span 
-                  className="font-bold text-sm"
-                >
-                  {member.nickname}
-                  {member.nickname === currentWorkoutRoom.workoutRoomInfo.ownerNickname ? ' 👑' : ''}
-                </span>
-                {hasWorkoutToday ? (
-                  <>
-                    <Popover>
-                      <PopoverTrigger>
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 cursor-pointer">
-                          오늘 인증
-                        </Badge>
-                      </PopoverTrigger>
-                      <PopoverContent>
-                        <div className="space-y-2">
-                          <p className="font-medium text-sm">
-                            {member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.workoutType}
-                          </p>
-                          <img 
-                            src={member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.imageUrl}
-                            alt="운동 인증 사진"
-                            className='max-w-xs max-h-60 rounded cursor-zoom-in'
-                            onClick={() => setZoomImageUrl(member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.imageUrl || null)}
-                          />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </>
-                ) : isRestToday ? (
-                <Popover>
-                  <PopoverTrigger>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 cursor-pointer">휴식</Badge>
-                  </PopoverTrigger>
-                  <PopoverContent>
-                    <div className="p-2">
-                      <p className="font-medium mb-1">휴식 사유</p>
-                      <p className="text-sm text-gray-600">{restInfo?.reason || '사유를 확인할 수 없습니다.'}</p>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                ) : (
-                  <div></div>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {isRestToday ? (
-                  <div className="flex items-center gap-1 text-blue-600">
-                    <Pause className="w-4 h-4" />
-                    <span className="text-sm font-medium">휴식일</span>
-                  </div>
-                ) : (
-                  Array.from({ length: weeklyGoal }).map((_, i) => (
-                    i < member.weeklyWorkouts
-                      ? <CheckCircle2 key={i} className="w-5 h-5 text-green-500" /> 
-                      : <Circle key={i} className="w-5 h-5 text-gray-300" />
-                  ))
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </CardContent>
-      <Dialog open={!!zoomImageUrl} onOpenChange={() => setZoomImageUrl(null)}>
-        <DialogContent>
-          {zoomImageUrl && (
-            <img src={zoomImageUrl} alt="확대된 운동 인증 사진" className="w-full h-auto rounded" />
-          )}
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
-}
-
-function AvailableWorkoutRooms({ workoutRooms, onCreateWorkoutRoom, onJoinWorkoutRoom }: { workoutRooms: WorkoutRoom[], onCreateWorkoutRoom: () => void, onJoinWorkoutRoom: (workoutRoomId: number) => void }) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">참여 가능한 운동방</h2>
-        <Button onClick={onCreateWorkoutRoom}>
-          <Plus className="mr-2 h-4 w-4" /> 방 만들기
-        </Button>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {workoutRooms.map(workoutRoom => (
-          <Card key={workoutRoom.id} className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-yellow-500" />
-                {workoutRoom.name}
-              </CardTitle>
-              <CardDescription>
-                주 {workoutRoom.minWeeklyWorkouts}회 • 벌금 {workoutRoom.penaltyPerMiss.toLocaleString()}원
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Users className="mr-2 h-4 w-4" />
-                <span>참여인원 {workoutRoom.currentMembers} / {workoutRoom.maxMembers}</span>
-              </div>
-            </CardContent>
-            <div className="p-4 pt-0">
-              <Button className="w-full" onClick={() => onJoinWorkoutRoom(workoutRoom.id)}>
-                <LogIn className="mr-2 h-4 w-4" />
-                참여하기
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
+export default DashboardPage;

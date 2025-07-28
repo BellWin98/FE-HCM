@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { api } from '@/lib/api';
 
-export default function CreateRoomPage() {
+export const CreateRoomPage = () => {
   const navigate = useNavigate();
   const [roomName, setRoomName] = useState('');
   const [entryCode, setEntryCode] = useState('');
@@ -142,7 +142,6 @@ export default function CreateRoomPage() {
   };
 
   return (
-    
     <Layout>
       <div className="max-w-2xl mx-auto">
         <Card>
@@ -335,3 +334,5 @@ export default function CreateRoomPage() {
     </Layout>
   );
 }
+
+export default CreateRoomPage;
