@@ -1,3 +1,5 @@
+import { ChatHistoryResponse } from "@/types";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 // API 유틸리티 함수
@@ -222,8 +224,18 @@ class ApiClient {
     });
   }
 
-  async getChatHistory(roomId: number) {
-    return this.request(`/chat/rooms/${roomId}/messages`);
+  async getChatHistory(roomId: number, cursorId?: number | null): Promise<ChatHistoryResponse> {
+    const endpoint = cursorId
+      ? `/chat/rooms/${roomId}/messages?cursorId=${cursorId}&size=20`
+      : `/chat/rooms/${roomId}/messages?size=20`;
+    return this.request<ChatHistoryResponse>(endpoint);
+  }
+
+  // '읽음' 상태 업데이트 API 호출 메서드 추가
+  async updateLastRead(roomId: number): Promise<void> {
+    return this.request(`/chat/rooms/${roomId}/read`, {
+      method: 'POST',
+    });
   }
 }
 
