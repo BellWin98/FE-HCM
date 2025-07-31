@@ -30,11 +30,13 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
   const roomId = currentWorkoutRoom.workoutRoomInfo?.id;
   const accessToken = localStorage.getItem('accessToken');
 
-  // 맨 처음 로드 시 또는 새 메시지 수신 시 스크롤 하단으로 이동
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }
-  useEffect(scrollToBottom, [messages]);
+  // 맨 처음 로드 시 또는 새 메시지 수신 시 채팅방 내부 스크롤만 하단으로 이동
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    }
+  }, [messages]);
 
   // 스크롤 시 이전 대화 기록 불러오기
   const fetchOlderMessages = useCallback(async () => {
