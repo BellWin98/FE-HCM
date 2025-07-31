@@ -96,3 +96,9 @@ export interface ChatMessage {
   imageUrl?: string;
   readBy: string[];
 }
+
+export interface ChatHistoryResponse {
+  messages: ChatMessage[];
+  nextCursorId: number | null;
+  hasNext: boolean;
+}
