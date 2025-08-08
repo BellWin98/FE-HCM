@@ -282,7 +282,7 @@ export const DashboardPage = () => {
                   </div>
                   <Badge variant="secondary" className="bg-green-100 text-green-800">완료</Badge>
                 </div>
-              ) : isTodayRestDay() ? (
+              ) /*: isTodayRestDay() ? (
                 <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
@@ -295,7 +295,7 @@ export const DashboardPage = () => {
                   </div>
                   <Badge variant="secondary" className="bg-blue-100 text-blue-800">휴식</Badge>
                 </div>
-              ) : (
+              )*/ : (
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
