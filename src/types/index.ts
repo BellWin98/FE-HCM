@@ -49,14 +49,19 @@ export interface WorkoutRecord {
   createdAt: string;
 }
 
-export type WorkoutType = 
-  | '헬스' 
-  | '러닝' 
-  | '수영' 
-  | '사이클링' 
-  | '요가' 
-  | '필라테스' 
-  | '기타';
+export const WORKOUT_TYPES = [
+  '헬스(가슴)', 
+  '헬스(등)', 
+  '헬스(어깨)', 
+  '헬스(하체)',  
+  '테니스', 
+  '러닝', 
+  '자전거', 
+  '구기종목', 
+  '수영', 
+  '기타'
+] as const;
+export type WorkoutType = typeof WORKOUT_TYPES[number];
 
 export interface PenaltyRecord {
   id: number;

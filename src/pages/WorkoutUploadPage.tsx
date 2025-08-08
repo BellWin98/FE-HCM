@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { WorkoutType } from '@/types';
+import { WorkoutType, WORKOUT_TYPES } from '@/types';
 import { format } from 'date-fns';
 import { da, ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload } from 'lucide-react';
@@ -19,7 +19,6 @@ import { useNavigate } from 'react-router-dom';
 const toDateOnly = (date) => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
-const workoutTypes: WorkoutType[] = ['헬스', '러닝', '수영', '사이클링', '요가', '필라테스', '기타'];
 const today = toDateOnly(new Date());
 const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000));
 
@@ -223,7 +222,7 @@ export const WorkoutUploadPage = () => {
                     <SelectValue placeholder="운동 종류를 선택하세요" />
                   </SelectTrigger>
                   <SelectContent>
-                    {workoutTypes.map((type) => (
+                    {WORKOUT_TYPES.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}
                       </SelectItem>
