@@ -42,7 +42,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
       });
   
       const hasActivity = dailyStatus.some(s => s.status === 'completed' || s.status === 'rest');
-      const currentMemberActivity = dailyStatus.find(ds => ds.nickname === currentMember?.nickname && (ds.status === 'completed' || ds.status === 'rest'));
+      const currentMemberActivity = dailyStatus.find(ds => ds.nickname === currentMember?.nickname && (ds.status === 'completed'));
       const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
   
       return (
@@ -137,7 +137,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
               <div className="flex items-center gap-4 mt-3 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="text-green-500 text-lg">•</span>
-                  <span className="text-gray-600">내 활동</span>
+                  <span className="text-gray-600">내 활동(휴식일 제외)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-blue-500 text-lg">•</span>
