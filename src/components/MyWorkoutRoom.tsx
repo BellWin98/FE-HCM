@@ -8,7 +8,7 @@ import { Calendar } from "./ui/calendar";
 import MemberStatus from "./MemberStatus";
 import ChatRoom from "./ChatRoom";
 
-export const MyWorkoutRoom = ( {currentWorkoutRoom, today }) => {
+export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
     const [date, setDate] = useState<Date | undefined>(new Date());
 
     const renderDayContent = (day: Date) => {
@@ -42,6 +42,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today }) => {
       });
   
       const hasActivity = dailyStatus.some(s => s.status === 'completed' || s.status === 'rest');
+      const currentMemberActivity = dailyStatus.find(ds => ds.nickname === currentMember?.nickname && (ds.status === 'completed' || ds.status === 'rest'));
       const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
   
       return (
@@ -53,7 +54,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today }) => {
               <span className="text-xs">{format(day, 'd')}</span>
               <div className="flex items-center justify-center mt-1 h-4">
                 {hasActivity && (
-                  <span className="text-blue-500 text-2xl leading-none -mt-1">•</span>
+                  <span className={`${currentMemberActivity ? 'text-green-500' : 'text-blue-500'} text-2xl leading-none -mt-1`}>•</span>
                 )}
               </div>
             </div>
@@ -132,6 +133,16 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today }) => {
               </div>   
               <div>
                 멤버별 운동 상태를 확인하세요.
+              </div>
+              <div className="flex items-center gap-4 mt-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500 text-lg">•</span>
+                  <span className="text-gray-600">내 활동</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-500 text-lg">•</span>
+                  <span className="text-gray-600">다른 멤버 활동</span>
+                </div>
               </div>
             </CardDescription>
           </CardHeader>

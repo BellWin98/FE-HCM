@@ -320,7 +320,7 @@ export const DashboardPage = () => {
         )}
 
         {currentWorkoutRoom ? (
-          <MyWorkoutRoom currentWorkoutRoom={currentWorkoutRoom} today={today} />
+          <MyWorkoutRoom currentWorkoutRoom={currentWorkoutRoom} today={today} currentMember={member} />
         ) : (
           <AvailableWorkoutRooms workoutRooms={availableWorkoutRooms} onCreateWorkoutRoom={handleCreateWorkoutRoom} onJoinWorkoutRoom={handleJoinWorkoutRoom} />
         )}
