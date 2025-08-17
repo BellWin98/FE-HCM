@@ -128,6 +128,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
   
     return (
       <div className="space-y-6">
+        <MemberStatus currentWorkoutRoom={currentWorkoutRoom} today={today} />
         <Card>
           <CardHeader>
             <CardTitle className="text-xl font-bold">📅 월별 운동 현황</CardTitle>
@@ -229,8 +230,6 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
             </div>
           </CardContent>
         </Card>
-        
-        <MemberStatus currentWorkoutRoom={currentWorkoutRoom} today={today} />
         {currentWorkoutRoom && <ChatRoom currentWorkoutRoom={currentWorkoutRoom} />}
       </div>
     );
