@@ -29,7 +29,7 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl font-bold">🔥 주간 현황</CardTitle>
+                <CardTitle className="text-xl font-bold">🔥 이번주 현황</CardTitle>
                 {/* <CardDescription>주간 현황</CardDescription> */}
               </div>
             </div>
