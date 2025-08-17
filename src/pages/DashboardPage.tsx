@@ -264,7 +264,7 @@ export const DashboardPage = () => {
         {currentWorkoutRoom && (
           <Card>
             <CardHeader>
-              <CardTitle>오늘의 운동 현황</CardTitle>
+              <CardTitle>내 활동</CardTitle>
             </CardHeader>
             <CardContent>
               {currentWorkoutRoom.currentMemberTodayWorkoutRecord ? (
