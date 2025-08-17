@@ -163,6 +163,71 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
             />
           </CardContent>
         </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl font-bold">👥 순위</CardTitle>
+            <CardDescription>
+              각 멤버의 총 운동 인증 횟수와 순위를 확인하세요.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {currentWorkoutRoom.workoutRoomMembers
+                .sort((a, b) => b.totalWorkouts - a.totalWorkouts)
+                .map((member, index) => (
+                <div 
+                  key={index} 
+                  className={`p-4 rounded-lg border-2 relative ${
+                    member.nickname === currentMember?.nickname 
+                      ? 'border-green-200 bg-green-50' 
+                      : 'border-gray-200 bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                        index === 0 ? 'bg-yellow-100 text-yellow-800' :
+                        index === 1 ? 'bg-gray-100 text-gray-800' :
+                        index === 2 ? 'bg-orange-100 text-orange-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className={`font-medium ${
+                          member.nickname === currentMember?.nickname 
+                            ? 'text-green-800' 
+                            : 'text-gray-800'
+                        }`}>
+                          {member.nickname}
+                          {member.nickname === currentMember?.nickname && (
+                            <span className="ml-2 text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full">나</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={`text-2xl font-bold ${
+                      member.nickname === currentMember?.nickname 
+                        ? 'text-green-600' 
+                        : 'text-gray-600'
+                    }`}>
+                      {member.totalWorkouts}일
+                    </div>
+                  </div>
+                  {index <= 2 && (
+                    <div className="absolute -top-2 -right-2">
+                      <span className="text-2xl">
+                        {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
         <MemberStatus currentWorkoutRoom={currentWorkoutRoom} today={today} />
         {currentWorkoutRoom && <ChatRoom currentWorkoutRoom={currentWorkoutRoom} />}
       </div>
