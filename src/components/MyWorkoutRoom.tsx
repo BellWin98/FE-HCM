@@ -10,6 +10,10 @@ import ChatRoom from "./ChatRoom";
 
 export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
     const [date, setDate] = useState<Date | undefined>(new Date());
+    
+    // 순위용 정렬된 멤버 목록 (원본 배열은 변경하지 않음)
+    const sortedMembersByWorkouts = [...currentWorkoutRoom.workoutRoomMembers]
+      .sort((a, b) => b.totalWorkouts - a.totalWorkouts);
 
     const renderDayContent = (day: Date) => {
       const dateStr = format(day, 'yyyy-MM-dd');
@@ -173,9 +177,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {currentWorkoutRoom.workoutRoomMembers
-                .sort((a, b) => b.totalWorkouts - a.totalWorkouts)
-                .map((member, index) => (
+              {sortedMembersByWorkouts.map((member, index) => (
                 <div 
                   key={index} 
                   className={`p-4 rounded-lg border-2 relative ${
