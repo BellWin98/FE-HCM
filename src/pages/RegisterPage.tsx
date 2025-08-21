@@ -21,18 +21,19 @@ export const RegisterPage = () => {
   }
 
   const validateForm = () => {
-    if (!email || !password || !confirmPassword || !nickname) {
-      setError('모든 필드를 입력해주세요.');
-      return false;
-    }
-
+    
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('올바른 이메일 형식을 입력해주세요.');
       return false;
     }
 
-    if (password.length < 8) {
-      setError('비밀번호는 8자 이상이어야 합니다.');
+    if (nickname.length < 2 || nickname.length > 10) {
+      setError('닉네임은 2-10자 사이여야 합니다.');
+      return false;
+    }
+
+    if (password.length < 8 || password.length > 20) {
+      setError('비밀번호는 8-20자 사이여야 합니다.');
       return false;
     }
 
@@ -41,13 +42,23 @@ export const RegisterPage = () => {
       return false;
     }
 
-    if (password !== confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.');
+    if (confirmPassword.length < 8 || confirmPassword.length > 20) {
+      setError('확인 비밀번호는 8-20자 사이여야 합니다.');
       return false;
     }
 
-    if (nickname.length < 2 || nickname.length > 10) {
-      setError('닉네임은 2-10자 사이여야 합니다.');
+    if (!/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*])/.test(confirmPassword)) {
+      setError('확인 비밀번호는 영문, 숫자, 특수문자를 포함해야 합니다.');
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      setError('비밀번호와 확인 비밀번호가 일치하지 않습니다.');
+      return false;
+    }
+
+    if (!email || !password || !confirmPassword || !nickname) {
+      setError('모든 필드를 입력해주세요.');
       return false;
     }
 
@@ -97,6 +108,8 @@ export const RegisterPage = () => {
                 id="nickname"
                 type="text"
                 placeholder="닉네임 (2-10자)"
+                minLength={2}
+                maxLength={10}
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 disabled={loading}
@@ -107,8 +120,10 @@ export const RegisterPage = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="8자 이상, 영문/숫자/특수문자 포함"
+                placeholder="8-20자, 영문/숫자/특수문자 포함"
                 value={password}
+                minLength={8}
+                maxLength={20}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
               />
@@ -120,6 +135,8 @@ export const RegisterPage = () => {
                 type="password"
                 placeholder="비밀번호를 다시 입력하세요"
                 value={confirmPassword}
+                minLength={8}
+                maxLength={20}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={loading}
               />
