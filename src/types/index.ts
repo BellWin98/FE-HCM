@@ -90,6 +90,9 @@ export interface AuthContextType {
   register: (email: string, password: string, nickname: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  checkEmailDuplicate: (email: string) => Promise<{ success: boolean }>;
+  sendVerificationEmail: (email: string) => Promise<{ success: boolean }>;
+  verifyEmailCode: (email: string, code: string) => Promise<{ success: boolean }>;
 }
 
 export interface ChatMessage {

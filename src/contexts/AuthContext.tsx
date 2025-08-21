@@ -69,6 +69,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // 이메일 중복 확인
+  const checkEmailDuplicate = async (email: string) => {
+    try {
+      await api.checkEmailDuplicate(email);
+      return { success: true };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  };
+
+  // 이메일 인증 코드 발송
+  const sendVerificationEmail = async (email: string) => {
+    try {
+      await api.sendVerificationEmail(email);
+      return { success: true };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  };
+
+  // 이메일 인증 코드 확인
+  const verifyEmailCode = async (email: string, code: string) => {
+    try {
+      await api.verifyEmailCode(email, code);
+      return { success: true };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  };
+
   const logout = () => {
     // localStorage.removeItem('user');
     // localStorage.removeItem('token');
@@ -83,6 +113,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     loading,
+    checkEmailDuplicate,
+    sendVerificationEmail,
+    verifyEmailCode,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
