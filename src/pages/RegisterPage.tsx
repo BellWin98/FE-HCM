@@ -355,13 +355,13 @@ export const RegisterPage = () => {
               />
             </div>
             
-            {/* {error && (
+            {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             
-            {success && (
+            {/* {success && (
               <Alert className="border-green-200 bg-green-50 text-green-800">
                 <AlertDescription>{success}</AlertDescription>
               </Alert>
