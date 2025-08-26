@@ -126,9 +126,14 @@ export const DashboardPage = () => {
   }
 
   const handleRestRegister = () => {
+
+    setRestStartDate(today);
+
     // 가장 최근 enabled 날짜 찾기 (월요일 중에서)
-    
     const nextMonday = new Date(today);
+
+    /* 오늘부터 휴식일 등록 가능
+
     // 다음 월요일 찾기
     const daysUntilMonday = (8 - nextMonday.getDay()) % 7;
     if (daysUntilMonday === 0 && nextMonday.getDay() === 1) {
@@ -138,6 +143,7 @@ export const DashboardPage = () => {
       nextMonday.setDate(nextMonday.getDate() + daysUntilMonday);
       setRestStartDate(nextMonday);
     }
+    */
     
     // 종료일 - 가장 최근 enabled 날짜 찾기 (일요일 중에서)
     const nextSunday = new Date(today);
@@ -403,12 +409,13 @@ export const DashboardPage = () => {
                         onSelect={setRestStartDate}
                         locale={ko}
                         disabled={(date) => {
-                          return date < today || date.getDay() !== 1;
+                          // return date < today || date.getDay() !== 1;
+                          return date < today;
                         }}
                       />
                     </PopoverContent>
                   </Popover>
-                  <p className="text-xs text-gray-500 p-2">시작일: 월요일</p>
+                  <p className="text-xs text-gray-500 p-2"></p>
                 </div>
                 
                 <div>
@@ -436,7 +443,7 @@ export const DashboardPage = () => {
                       />
                     </PopoverContent>
                   </Popover>
-                  <p className="text-xs text-gray-500 p-2">종료일: 일요일</p>
+                  <p className="text-xs text-gray-500 p-2">종료일은 일요일만 선택</p>
                 </div>
               </div>
               
