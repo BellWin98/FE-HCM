@@ -49,24 +49,23 @@ export const RegisterPage = () => {
       setError('올바른 이메일 형식을 입력해주세요.');
       return;
     }
-
     setEmailStatus('checking');
     setError('');
-    
     try {
       const result = await checkEmailDuplicate(email);
       if (result) {
         setEmailStatus('available');
         setSuccess('사용 가능한 이메일입니다.');
         setError('');
-      } else {
-        setEmailStatus('unavailable');
-        setError('이미 사용 중인 이메일입니다.');
-        setSuccess('');
       }
     } catch (err) {
-      setEmailStatus('idle');
-      setError('이메일 확인 중 오류가 발생했습니다.');
+      if (err.message == '이미 존재하는 이메일입니다.') {
+        setEmailStatus('unavailable');
+        setSuccess('');
+      } else {
+        setEmailStatus('idle');
+        setError('이메일 확인 중 오류가 발생했습니다.');
+      }
     }
   };
 
