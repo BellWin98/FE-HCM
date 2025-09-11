@@ -6,6 +6,7 @@ import { CheckCircle2, Circle, Pause } from "lucide-react";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { startOfDay, endOfDay } from 'date-fns';
 
 export const MemberStatus = ({ currentWorkoutRoom, today }) => {
     const weeklyGoal = currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts;
@@ -13,12 +14,10 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
   
     // 특정 멤버가 오늘 휴식일인지 확인하는 함수
     const isMemberRestToday = (member: RoomMember) => {
-      // const today = format(new Date(), 'yyyy-MM-dd');
-      
       return member.restInfoList.some((restInfo: RestInfo) => {
-        const startDate = new Date(restInfo.startDate);
-        const endDate = new Date(restInfo.endDate);
-        const todayDate = new Date(today);
+        const startDate = startOfDay(new Date(restInfo.startDate));
+        const endDate = endOfDay(new Date(restInfo.endDate));
+        const todayDate = startOfDay(new Date(today));
         
         return todayDate >= startDate && todayDate <= endDate;
       });
@@ -37,9 +36,9 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
           <CardContent className="space-y-4">
             {currentWorkoutRoom.workoutRoomMembers.map(member => {
               const restInfo = member?.restInfoList.find(restInfo => {
-                const startDate = new Date(restInfo?.startDate);
-                const endDate = new Date(restInfo?.endDate);
-                const targetDate = new Date(format(new Date(), 'yyyy-MM-dd'));
+                const startDate = startOfDay(new Date(restInfo?.startDate));
+                const endDate = endOfDay(new Date(restInfo?.endDate));
+                const targetDate = startOfDay(new Date());
                 return targetDate >= startDate && targetDate <= endDate;
               });
               const isRestToday = isMemberRestToday(member);
