@@ -5,20 +5,21 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp, List, Eye, Trophy, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -26,6 +27,7 @@ today.setHours(0, 0, 0, 0);
 export const DashboardPage = () => {
   const { member } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // API 로딩 및 방 참여 여부 시뮬레이션 상태
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +44,8 @@ export const DashboardPage = () => {
   const [restStartDate, setRestStartDate] = useState<Date | undefined>(new Date());
   const [restEndDate, setRestEndDate] = useState<Date | undefined>(new Date());
   const [isRegisteringRest, setIsRegisteringRest] = useState(false);
+  const [showAvailableRoomsDialog, setShowAvailableRoomsDialog] = useState(false);
+  const [isLoadingAvailableRooms, setIsLoadingAvailableRooms] = useState(false);
 
   // 오늘이 휴식일인지 확인하는 함수
   const isTodayRestDay = () => {
@@ -79,19 +83,22 @@ export const DashboardPage = () => {
       setIsLoading(true);
       const isMemberInWorkoutRoom = await api.isMemberInWorkoutRoom() as boolean;
       setIsMemberInWorkoutRoom(isMemberInWorkoutRoom);
+      const availableWorkoutRooms = await api.getAvailableWorkoutRooms() as WorkoutRoom[];
+      setAvailableWorkoutRooms(availableWorkoutRooms);
 
-      if (isMemberInWorkoutRoom) {
+      // 라우터 state에 currentWorkoutRoom이 오면 우선 반영
+      const state = location.state as { currentWorkoutRoom?: WorkoutRoomDetail } | null;
+      if (state?.currentWorkoutRoom) {
+        setCurrentWorkoutRoom(state.currentWorkoutRoom);
+      } else if (isMemberInWorkoutRoom) {
         const currentWorkoutRoom = await api.getCurrentWorkoutRoom() as WorkoutRoomDetail;
         setCurrentWorkoutRoom(currentWorkoutRoom);
-      } else {
-        const availableWorkoutRooms = await api.getAvailableWorkoutRooms() as WorkoutRoom[];
-        setAvailableWorkoutRooms(availableWorkoutRooms);
       }
       setIsLoading(false);
     };
 
     loadDashboardStats();
-  }, [isMemberInWorkoutRoom]);
+  }, [isMemberInWorkoutRoom, location.state]);
 
   const handleWorkoutUpload = () => navigate('/workout/upload');
   const handleCreateWorkoutRoom = () => navigate('/rooms/create');
@@ -202,6 +209,23 @@ export const DashboardPage = () => {
     setError('');
   };
 
+  const handleShowAvailableRooms = async () => {
+    setIsLoadingAvailableRooms(true);
+    try {
+      setAvailableWorkoutRooms(availableWorkoutRooms);
+      setShowAvailableRoomsDialog(true);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '운동방 목록을 불러올 수 없습니다.');
+    } finally {
+      setIsLoadingAvailableRooms(false);
+    }
+  };
+
+  const handleAvailableRoomsDialogClose = () => {
+    setShowAvailableRoomsDialog(false);
+    setAvailableWorkoutRooms([]);
+  };
+
   if (isLoading || !availableWorkoutRooms) {
     return <Layout><div>Loading...</div></Layout>; // TODO: 스켈레톤 UI 적용
   }
@@ -210,12 +234,38 @@ export const DashboardPage = () => {
     <Layout>
       <div className="space-y-6">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-6">
-          <h1 className="text-3xl font-bold mb-5">
-            {isMemberInWorkoutRoom ? currentWorkoutRoom?.workoutRoomInfo.name : '운동방 목록'}
-          </h1>
-          <p className="text-medium">
-            {isMemberInWorkoutRoom ? `안녕하세요 ${member?.nickname ?? '사용자'}님!` : '새로운 운동방에 참여하고 건강한 습관을 만들어보세요!'}
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-5">
+                {isMemberInWorkoutRoom ? currentWorkoutRoom?.workoutRoomInfo.name : '운동방 목록'}
+              </h1>
+              <p className="text-medium">
+                {isMemberInWorkoutRoom ? `안녕하세요 ${member?.nickname ?? '사용자'}님!` : '새로운 운동방에 참여하고 건강한 습관을 만들어보세요!'}
+              </p>
+            </div>
+            {member?.role === 'ADMIN' && (
+              <div className="flex gap-2">
+                {isMemberInWorkoutRoom && (
+                  <Button 
+                    variant="outline" 
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    onClick={handleShowAvailableRooms}
+                    disabled={isLoadingAvailableRooms}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    {isLoadingAvailableRooms ? '로딩 중...' : '모든 운동방 보기'}
+                  </Button>
+                )}
+                <Button 
+                  variant="outline" 
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  onClick={() => navigate('/admin/rooms')}
+                >
+                  내가 들어간 방 보기
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 통계 카드 */}
@@ -464,6 +514,69 @@ export const DashboardPage = () => {
                   {isRegisteringRest ? '등록 중...' : '등록'}
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* 모든 운동방 보기 다이얼로그 */}
+        <Dialog open={showAvailableRoomsDialog} onOpenChange={setShowAvailableRoomsDialog}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <List className="h-5 w-5" />
+                모든 운동방 목록
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {isLoadingAvailableRooms ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-muted-foreground">로딩 중...</div>
+                </div>
+              ) : availableWorkoutRooms.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-muted-foreground">등록된 운동방이 없습니다.</div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {availableWorkoutRooms.map(workoutRoom => (
+                    <Card key={workoutRoom.id} className="flex flex-col">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Trophy className="w-5 h-5 text-yellow-500" />
+                          {workoutRoom.name}
+                        </CardTitle>
+                        <CardDescription>
+                          주 {workoutRoom.minWeeklyWorkouts}회 • 벌금 {workoutRoom.penaltyPerMiss.toLocaleString()}원
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex-grow">
+                        <div className="space-y-2">
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Users className="mr-2 h-4 w-4" />
+                            <span>참여인원 {workoutRoom.currentMembers} / {workoutRoom.maxMembers}</span>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            방장: {workoutRoom.ownerNickname}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            기간: {format(new Date(workoutRoom.startDate), 'yyyy-MM-dd')} ~ {workoutRoom.endDate ? format(new Date(workoutRoom.endDate), 'yyyy-MM-dd') : ""}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={workoutRoom.isActive ? "default" : "secondary"}>
+                              {workoutRoom.isActive ? "활성" : "비활성"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end pt-4">
+              <Button variant="outline" onClick={handleAvailableRoomsDialogClose}>
+                닫기
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

@@ -6,6 +6,7 @@ export interface Member {
   totalWorkoutDays: number;
   totalPenalty: number;
   createdAt: string;
+  role: 'USER' | 'ADMIN';
 }
 
 export interface WorkoutRoom {

@@ -208,6 +208,16 @@ class ApiClient {
     return this.request('/workout/rooms/validate');
   }
 
+  // ADMIN: 자신이 참여 중인 모든 운동방 목록 조회 (멀티-조인 전용)
+  async getMyJoinedWorkoutRooms() {
+    return this.request('/workout/rooms/joined');
+  }
+
+  // 특정 운동방 상세 조회
+  async getWorkoutRoomDetail(roomId: number) {
+    return this.request(`/workout/rooms/joined/${roomId}`);
+  }
+
 
   async searchUsers(nickname: string) {
     return this.request(`/rooms/search-users?nickname=${encodeURIComponent(nickname)}`);
