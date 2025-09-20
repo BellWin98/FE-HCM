@@ -17,7 +17,7 @@ import { api } from '@/lib/api';
 import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp, List, Eye, Trophy, Users } from 'lucide-react';
+import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp, List, Trophy, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -46,6 +46,7 @@ export const DashboardPage = () => {
   const [isRegisteringRest, setIsRegisteringRest] = useState(false);
   const [showAvailableRoomsDialog, setShowAvailableRoomsDialog] = useState(false);
   const [isLoadingAvailableRooms, setIsLoadingAvailableRooms] = useState(false);
+  const [joinedRoomIds, setJoinedRoomIds] = useState<number[]>([]);
 
   // 오늘이 휴식일인지 확인하는 함수
   const isTodayRestDay = () => {
@@ -90,9 +91,28 @@ export const DashboardPage = () => {
       const state = location.state as { currentWorkoutRoom?: WorkoutRoomDetail } | null;
       if (state?.currentWorkoutRoom) {
         setCurrentWorkoutRoom(state.currentWorkoutRoom);
+        try {
+          localStorage.setItem('lastViewedWorkoutRoomId', String(state.currentWorkoutRoom.workoutRoomInfo.id));
+        } catch {
+          // ignore: storage may be unavailable
+        }
       } else if (isMemberInWorkoutRoom) {
-        const currentWorkoutRoom = await api.getCurrentWorkoutRoom() as WorkoutRoomDetail;
-        setCurrentWorkoutRoom(currentWorkoutRoom);
+        let restored: WorkoutRoomDetail | null = null;
+        try {
+          const lastId = localStorage.getItem('lastViewedWorkoutRoomId');
+          if (lastId) {
+            restored = await api.getWorkoutRoomDetail(Number(lastId)) as WorkoutRoomDetail;
+          }
+        } catch {
+          // ignore: best-effort restore
+        }
+
+        if (restored) {
+          setCurrentWorkoutRoom(restored);
+        } else {
+          const currentWorkoutRoom = await api.getCurrentWorkoutRoom() as WorkoutRoomDetail;
+          setCurrentWorkoutRoom(currentWorkoutRoom);
+        }
       }
       setIsLoading(false);
     };
@@ -195,7 +215,8 @@ export const DashboardPage = () => {
       setRestStartDate(new Date());
       setRestEndDate(new Date());
       
-      window.location.reload();
+      navigate('/dashboard');
+      // window.location.reload();
     } catch (error) {
       setError(error instanceof Error ? error.message : '휴식일을 등록할 수 없습니다.');
     } finally {
@@ -213,6 +234,15 @@ export const DashboardPage = () => {
     setIsLoadingAvailableRooms(true);
     try {
       setAvailableWorkoutRooms(availableWorkoutRooms);
+      // ADMIN 전용: 내가 이미 참여한 방 목록을 불러와서 표시/제어
+      if (member?.role === 'ADMIN') {
+        try {
+          const myRooms = await api.getMyJoinedWorkoutRooms() as WorkoutRoom[];
+          setJoinedRoomIds(myRooms.map(r => r.id));
+        } catch (e) {
+          // 무시: 실패해도 다이얼로그는 열림
+        }
+      }
       setShowAvailableRoomsDialog(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : '운동방 목록을 불러올 수 없습니다.');
@@ -244,24 +274,23 @@ export const DashboardPage = () => {
               </p>
             </div>
             {member?.role === 'ADMIN' && (
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-1.5">
                 {isMemberInWorkoutRoom && (
-                  <Button 
-                    variant="outline" 
-                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  <Button
+                    variant="outline"
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-sm px-3 py-2"
                     onClick={handleShowAvailableRooms}
                     disabled={isLoadingAvailableRooms}
                   >
-                    <Eye className="mr-2 h-4 w-4" />
-                    {isLoadingAvailableRooms ? '로딩 중...' : '모든 운동방 보기'}
+                    <span className="truncate">{isLoadingAvailableRooms ? '로딩 중...' : '모든 운동방 보기'}</span>
                   </Button>
                 )}
-                <Button 
-                  variant="outline" 
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                <Button
+                  variant="outline"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-sm px-3 py-2"
                   onClick={() => navigate('/admin/rooms')}
                 >
-                  내가 들어간 방 보기
+                  <span className="truncate">내 운동방 보기</span>
                 </Button>
               </div>
             )}
@@ -524,7 +553,7 @@ export const DashboardPage = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <List className="h-5 w-5" />
-                모든 운동방 목록
+                모든 운동방
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
@@ -568,6 +597,19 @@ export const DashboardPage = () => {
                           </div>
                         </div>
                       </CardContent>
+                      {member?.role === 'ADMIN' && (
+                        <div className="p-4 pt-0">
+                          {joinedRoomIds.includes(workoutRoom.id) ? (
+                            <Button className="w-full" variant="outline" disabled>
+                              참여중
+                            </Button>
+                          ) : (
+                            <Button className="w-full" onClick={() => { setSelectedRoomId(workoutRoom.id); setShowPasswordDialog(true); }}>
+                              참여하기
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </Card>
                   ))}
                 </div>

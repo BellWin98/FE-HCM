@@ -43,9 +43,9 @@ const AdminJoinedRoomsPage = () => {
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <List className="h-5 w-5" />
-                내가 들어간 운동방
+                내 운동방
               </h1>
-              <p className="text-sm opacity-90 mt-2">ADMIN 전용: 여러 운동방에 동시에 참여 중인 목록</p>
+              <p className="text-sm opacity-90 mt-2">ADMIN 전용</p>
             </div>
             <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={() => navigate('/dashboard')}>
               <Eye className="mr-2 h-4 w-4" /> 대시보드로
@@ -65,6 +65,11 @@ const AdminJoinedRoomsPage = () => {
               <Card key={room.id} className="flex flex-col cursor-pointer" onClick={async () => {
                 try {
                   const detail = await api.getWorkoutRoomDetail(room.id);
+                  try {
+                    localStorage.setItem('lastViewedWorkoutRoomId', String(room.id));
+                  } catch {
+                    // ignore: storage may be unavailable
+                  }
                   navigate('/dashboard', { state: { currentWorkoutRoom: detail } });
                 } catch (e) {
                   // 무시: 상세 불러오기 실패 시 이동하지 않음
