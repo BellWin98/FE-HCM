@@ -154,6 +154,30 @@ class ApiClient {
     });
   }
 
+  // 이메일 중복 확인
+  async checkEmailDuplicate(email: string) {
+    return this.request('/auth/check-email', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  // 이메일 인증 코드 발송
+  async sendVerificationEmail(email: string) {
+    return this.request('/auth/send-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  // 이메일 인증 코드 확인
+  async verifyEmailCode(email: string, code: string) {
+    return this.request('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    });
+  }
+
   async getCurrentUser() {
     return this.request('/auth/me');
   }
