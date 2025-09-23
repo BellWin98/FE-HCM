@@ -201,7 +201,7 @@ export const PenaltyAccountView: React.FC<PenaltyAccountViewProps> = ({ roomId }
       </Card>
 
       {/* 벌금 현황 요약 */}
-      {penaltyRecords.length > 0 && (
+      {/* {penaltyRecords.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>벌금 현황 요약</CardTitle>
@@ -229,10 +229,10 @@ export const PenaltyAccountView: React.FC<PenaltyAccountViewProps> = ({ roomId }
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       {/* 벌금 기록 목록 */}
-      {penaltyRecords.length > 0 && (
+      {/* {penaltyRecords.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>벌금 기록</CardTitle>
@@ -303,7 +303,7 @@ export const PenaltyAccountView: React.FC<PenaltyAccountViewProps> = ({ roomId }
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
     </div>
   );
 };

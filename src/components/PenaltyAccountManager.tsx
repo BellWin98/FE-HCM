@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import { PenaltyAccount, PenaltyAccountFormData } from '@/types';
-import { Plus, Edit, Trash2, CreditCard } from 'lucide-react';
+import { Plus, Edit, Trash2, CreditCard, Check, Copy } from 'lucide-react';
 
 interface PenaltyAccountManagerProps {
   roomId: number;
@@ -25,6 +25,7 @@ export const PenaltyAccountManager: React.FC<PenaltyAccountManagerProps> = ({ ro
     accountNumber: '',
     accountHolder: ''
   });
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const { toast } = useToast();
 
   const loadPenaltyAccount = useCallback(async () => {
@@ -110,11 +111,21 @@ export const PenaltyAccountManager: React.FC<PenaltyAccountManagerProps> = ({ ro
     setIsEditing(false);
   };
 
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch(error){
+      console.error(error);
+    }
+  }
+
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-xl font-bold">
             <CreditCard className="h-5 w-5" />
             벌금 계좌
           </CardTitle>
@@ -129,7 +140,7 @@ export const PenaltyAccountManager: React.FC<PenaltyAccountManagerProps> = ({ ro
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-xl font-bold">
           <CreditCard className="h-5 w-5" />
           벌금 계좌
         </CardTitle>
@@ -140,15 +151,54 @@ export const PenaltyAccountManager: React.FC<PenaltyAccountManagerProps> = ({ ro
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label className="text-sm font-medium text-gray-500">은행명</Label>
-                <p className="text-sm">{penaltyAccount.bankName}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-sm">{penaltyAccount.bankName}</p>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => copyToClipboard(penaltyAccount.bankName, 'bankName')}
+                  >
+                    {copiedField === 'bankName' ? (
+                      <Check className='h-4 w-4 text-green-500'/>
+                    ):(
+                      <Copy className='h-4 w-4'/>
+                    )}
+                  </Button>
+                </div>
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-500">계좌번호</Label>
-                <p className="text-sm font-mono">{penaltyAccount.accountNumber}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-sm font-mono">{penaltyAccount.accountNumber}</p>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => copyToClipboard(penaltyAccount.accountNumber, 'accountNumber')}
+                  >
+                    {copiedField === 'accountNumber' ? (
+                      <Check className='h-4 w-4 text-green-500'/>
+                    ):(
+                      <Copy className='h-4 w-4'/>
+                    )}
+                  </Button>
+                </div>
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-500">예금주</Label>
-                <p className="text-sm">{penaltyAccount.accountHolder}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-sm">{penaltyAccount.accountHolder}</p>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => copyToClipboard(penaltyAccount.accountHolder, 'accountHolder')}
+                  >
+                    {copiedField === 'accountHolder' ? (
+                      <Check className='h-4 w-4 text-green-500'/>
+                    ):(
+                      <Copy className='h-4 w-4'/>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
             

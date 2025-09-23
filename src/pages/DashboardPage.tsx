@@ -102,7 +102,7 @@ export const DashboardPage = () => {
     };
   
     return text.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, (char) => koreanMap[char] || char);
-  };  
+  };
 
   useEffect(() => {
     const loadDashboardStats = async () => {
@@ -374,7 +374,7 @@ export const DashboardPage = () => {
         {currentWorkoutRoom && (
           <Card>
             <CardHeader>
-              <CardTitle>내 활동</CardTitle>
+              <CardTitle className='text-xl font-bold'>내 활동</CardTitle>
             </CardHeader>
             <CardContent>
               {currentWorkoutRoom.currentMemberTodayWorkoutRecord ? (
@@ -431,10 +431,10 @@ export const DashboardPage = () => {
 
         {currentWorkoutRoom ? (
           <Tabs defaultValue="room" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="room">운동방</TabsTrigger>
               <TabsTrigger value="penalty">벌금 관리</TabsTrigger>
-              <TabsTrigger value="account">계좌 정보</TabsTrigger>
+              {/* <TabsTrigger value="account">계좌 정보</TabsTrigger> */}
             </TabsList>
             
             <TabsContent value="room" className="space-y-6">
@@ -442,25 +442,32 @@ export const DashboardPage = () => {
             </TabsContent>
             
             <TabsContent value="penalty" className="space-y-6">
-              <PenaltyOverview 
-                roomId={currentWorkoutRoom.workoutRoomInfo.id}
-                roomMembers={currentWorkoutRoom.workoutRoomMembers}
-                currentUserId={member?.id || 0}
-              />
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <PenaltyAccountManager 
-                  roomId={currentWorkoutRoom.workoutRoomInfo.id} 
-                  isOwner={currentWorkoutRoom.workoutRoomInfo.ownerNickname === member?.nickname} 
+                <PenaltyOverview 
+                  roomId={currentWorkoutRoom.workoutRoomInfo.id}
+                  roomMembers={currentWorkoutRoom.workoutRoomMembers}
+                  currentUserId={member?.id || 0}
                 />
+                <PenaltyAccountManager 
+                    roomId={currentWorkoutRoom.workoutRoomInfo.id} 
+                    isOwner={currentWorkoutRoom.workoutRoomInfo.ownerNickname === member?.nickname} 
+                /> 
+              </div>
+             
+              {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <PenaltyPaymentComponent 
                   roomId={currentWorkoutRoom.workoutRoomInfo.id} 
                   userId={member?.id || 0} 
                 />
-              </div>
+              </div> */}
             </TabsContent>
             
             <TabsContent value="account" className="space-y-6">
-              <PenaltyAccountView roomId={currentWorkoutRoom.workoutRoomInfo.id} />
+              {/* <PenaltyAccountView roomId={currentWorkoutRoom.workoutRoomInfo.id} /> */}
+              <PenaltyAccountManager 
+                  roomId={currentWorkoutRoom.workoutRoomInfo.id} 
+                  isOwner={currentWorkoutRoom.workoutRoomInfo.ownerNickname === member?.nickname} 
+              />
             </TabsContent>
           </Tabs>
         ) : (

@@ -211,7 +211,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
   return (
     <Card className="mt-6">
       <CardHeader>
-        <CardTitle>💬 채팅방</CardTitle>
+        <CardTitle className='text-xl font-bold'>💬 채팅방</CardTitle>
       </CardHeader>
       <CardContent>
         <div 

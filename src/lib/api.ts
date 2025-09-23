@@ -268,92 +268,92 @@ class ApiClient {
 
   async getPenaltyRecords(roomId: number) {
     // TEMP: Mock data until backend implementation is ready
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - 7);
-    const twoWeeksAgoStart = new Date(today);
-    twoWeeksAgoStart.setDate(today.getDate() - 14);
-    const twoWeeksAgoEnd = new Date(today);
-    twoWeeksAgoEnd.setDate(today.getDate() - 8);
+    // const today = new Date();
+    // const startOfWeek = new Date(today);
+    // startOfWeek.setDate(today.getDate() - 7);
+    // const twoWeeksAgoStart = new Date(today);
+    // twoWeeksAgoStart.setDate(today.getDate() - 14);
+    // const twoWeeksAgoEnd = new Date(today);
+    // twoWeeksAgoEnd.setDate(today.getDate() - 8);
 
-    const mockRecords: PenaltyRecord[] = [
-      // User 101 (나)
-      {
-        id: 1,
-        userId: "101",
-        roomId: String(roomId),
-        weekStartDate: twoWeeksAgoStart.toISOString(),
-        weekEndDate: twoWeeksAgoEnd.toISOString(),
-        requiredWorkouts: 4,
-        actualWorkouts: 4,
-        penaltyAmount: 0,
-        isPaid: true,
-        paidAt: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 2,
-        userId: "101",
-        roomId: String(roomId),
-        weekStartDate: startOfWeek.toISOString(),
-        weekEndDate: today.toISOString(),
-        requiredWorkouts: 5,
-        actualWorkouts: 3,
-        penaltyAmount: 20000,
-        isPaid: false,
-      },
-      {
-        id: 3,
-        userId: "101",
-        roomId: String(roomId),
-        weekStartDate: new Date(today.getTime() - 21 * 24 * 60 * 60 * 1000).toISOString(),
-        weekEndDate: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        requiredWorkouts: 4,
-        actualWorkouts: 2,
-        penaltyAmount: 30000,
-        isPaid: false,
-      },
-      // User 102 (다른 멤버 A)
-      {
-        id: 4,
-        userId: "102",
-        roomId: String(roomId),
-        weekStartDate: twoWeeksAgoStart.toISOString(),
-        weekEndDate: twoWeeksAgoEnd.toISOString(),
-        requiredWorkouts: 4,
-        actualWorkouts: 3,
-        penaltyAmount: 10000,
-        isPaid: true,
-        paidAt: new Date(today.getTime() - 9 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 5,
-        userId: "102",
-        roomId: String(roomId),
-        weekStartDate: startOfWeek.toISOString(),
-        weekEndDate: today.toISOString(),
-        requiredWorkouts: 5,
-        actualWorkouts: 5,
-        penaltyAmount: 0,
-        isPaid: true,
-      },
-      // User 103 (다른 멤버 B)
-      {
-        id: 6,
-        userId: "103",
-        roomId: String(roomId),
-        weekStartDate: startOfWeek.toISOString(),
-        weekEndDate: today.toISOString(),
-        requiredWorkouts: 5,
-        actualWorkouts: 2,
-        penaltyAmount: 30000,
-        isPaid: false,
-      },
-    ];
+    // const mockRecords: PenaltyRecord[] = [
+    //   // User 101 (나)
+    //   {
+    //     id: 1,
+    //     workoutRoomMemberId: "101",
+    //     roomId: String(roomId),
+    //     weekStartDate: twoWeeksAgoStart.toISOString(),
+    //     weekEndDate: twoWeeksAgoEnd.toISOString(),
+    //     requiredWorkouts: 4,
+    //     actualWorkouts: 4,
+    //     penaltyAmount: 0,
+    //     isPaid: true,
+    //     paidAt: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    //   },
+    //   {
+    //     id: 2,
+    //     workoutRoomMemberId: "101",
+    //     roomId: String(roomId),
+    //     weekStartDate: startOfWeek.toISOString(),
+    //     weekEndDate: today.toISOString(),
+    //     requiredWorkouts: 5,
+    //     actualWorkouts: 3,
+    //     penaltyAmount: 20000,
+    //     isPaid: false,
+    //   },
+    //   {
+    //     id: 3,
+    //     workoutRoomMemberId: "101",
+    //     roomId: String(roomId),
+    //     weekStartDate: new Date(today.getTime() - 21 * 24 * 60 * 60 * 1000).toISOString(),
+    //     weekEndDate: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+    //     requiredWorkouts: 4,
+    //     actualWorkouts: 2,
+    //     penaltyAmount: 30000,
+    //     isPaid: false,
+    //   },
+    //   // User 102 (다른 멤버 A)
+    //   {
+    //     id: 4,
+    //     workoutRoomMemberId: "102",
+    //     roomId: String(roomId),
+    //     weekStartDate: twoWeeksAgoStart.toISOString(),
+    //     weekEndDate: twoWeeksAgoEnd.toISOString(),
+    //     requiredWorkouts: 4,
+    //     actualWorkouts: 3,
+    //     penaltyAmount: 10000,
+    //     isPaid: true,
+    //     paidAt: new Date(today.getTime() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+    //   },
+    //   {
+    //     id: 5,
+    //     workoutRoomMemberId: "102",
+    //     roomId: String(roomId),
+    //     weekStartDate: startOfWeek.toISOString(),
+    //     weekEndDate: today.toISOString(),
+    //     requiredWorkouts: 5,
+    //     actualWorkouts: 5,
+    //     penaltyAmount: 0,
+    //     isPaid: true,
+    //   },
+    //   // User 103 (다른 멤버 B)
+    //   {
+    //     id: 6,
+    //     workoutRoomMemberId: "103",
+    //     roomId: String(roomId),
+    //     weekStartDate: startOfWeek.toISOString(),
+    //     weekEndDate: today.toISOString(),
+    //     requiredWorkouts: 5,
+    //     actualWorkouts: 2,
+    //     penaltyAmount: 30000,
+    //     isPaid: false,
+    //   },
+    // ];
 
-    return new Promise<PenaltyRecord[]>((resolve) => {
-      setTimeout(() => resolve(mockRecords), 200);
-    });
-    // return this.request(`/penalty/rooms/${roomId}/records`);
+    // return new Promise<PenaltyRecord[]>((resolve) => {
+    //   setTimeout(() => resolve(mockRecords), 200);
+    // });
+    return this.request(`/penalty/rooms/${roomId}/records`);
   }
 
   async payPenalty(

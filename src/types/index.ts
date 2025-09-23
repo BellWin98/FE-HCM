@@ -66,8 +66,8 @@ export type WorkoutType = typeof WORKOUT_TYPES[number];
 
 export interface PenaltyRecord {
   id: number;
-  userId: string;
-  roomId: string;
+  workoutRoomMemberId: string;
+  // roomId: string;
   weekStartDate: string;
   weekEndDate: string;
   requiredWorkouts: number;

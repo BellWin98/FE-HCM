@@ -120,8 +120,8 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
       const byWeek = selectedWeek ? r.weekStartDate.startsWith(s) && r.weekEndDate.startsWith(e) : true;
       if (!(byYear && byMonth && byWeek)) return false;
       if (memberFilter === 'ALL') return true;
-      if (memberFilter === 'ME') return String(r.userId) === String(currentUserId);
-      return String(r.userId) === String(memberFilter);
+      if (memberFilter === 'ME') return String(r.workoutRoomMemberId) === String(currentUserId);
+      return String(r.workoutRoomMemberId) === String(memberFilter);
     });
   }, [records, selectedYear, selectedMonth, selectedWeek, memberFilter, currentUserId]);
 
@@ -147,7 +147,7 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
     <Card>
       <CardHeader>
         <CardTitle className="space-y-3">
-          <div className="text-base sm:text-lg">벌금 현황 (주차/멤버별)</div>
+          <div className="text-base sm:text-xl font-bold">벌금 현황</div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
             <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedMonth(''); setSelectedWeek(''); }}>
               <SelectTrigger className="w-full sm:w-36 h-10 text-sm" aria-label="연도 선택">
@@ -182,7 +182,7 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
               </SelectContent>
             </Select>
 
-            <Select value={memberFilter} onValueChange={setMemberFilter}>
+            {/* <Select value={memberFilter} onValueChange={setMemberFilter}>
               <SelectTrigger className="w-full sm:w-44 h-10 text-sm" aria-label="멤버 필터">
                 <SelectValue />
               </SelectTrigger>
@@ -193,25 +193,25 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
                   <SelectItem key={m.id} value={String(m.id)}>{m.nickname}</SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </Select> */}
           </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
         {/* 요약 영역 */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3 sm:mb-4">
+        <div className="grid grid-cols-1 gap-2 sm:gap-4 mb-3 sm:mb-4">
           <div className="rounded-md bg-gray-50 p-3 text-center">
             <div className="text-[11px] sm:text-xs text-gray-500">벌금합계</div>
             <div className="text-sm sm:text-base font-semibold">{totals.penalty.toLocaleString()}원</div>
           </div>
-          <div className="rounded-md bg-gray-50 p-3 text-center">
+          {/* <div className="rounded-md bg-gray-50 p-3 text-center">
             <div className="text-[11px] sm:text-xs text-gray-500">납부합계</div>
             <div className="text-sm sm:text-base font-semibold">{totals.paid.toLocaleString()}원</div>
           </div>
           <div className="rounded-md bg-gray-50 p-3 text-center">
             <div className="text-[11px] sm:text-xs text-gray-500">잔여합계</div>
             <div className={`text-sm sm:text-base font-semibold ${totals.remain > 0 ? 'text-red-600' : ''}`}>{totals.remain.toLocaleString()}원</div>
-          </div>
+          </div> */}
         </div>
 
         {isLoading ? (
@@ -221,15 +221,15 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
             <div className="h-20 bg-gray-100 rounded animate-pulse" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">해당 조건의 데이터가 없습니다.</div>
+          <div className="text-center py-8 text-gray-500">벌금 내역이 없습니다.</div>
         ) : (
           <div className="space-y-2 sm:space-y-3">
             {filtered
-              .sort((a, b) => Number(a.userId) - Number(b.userId))
+              .sort((a, b) => Number(a.workoutRoomMemberId) - Number(b.workoutRoomMemberId))
               .map(r => {
                 const paid = calcPaid(r.id);
                 const remain = Math.max(0, r.penaltyAmount - paid);
-                const nickname = memberMap.get(String(r.userId)) || `회원 ${r.userId}`;
+                const nickname = memberMap.get(String(r.workoutRoomMemberId)) || `회원 ${r.workoutRoomMemberId}`;
                 const status: { text: string; variant: 'default' | 'secondary' | 'destructive' } =
                   r.penaltyAmount === 0
                     ? { text: '벌금 없음', variant: 'secondary' }
@@ -251,22 +251,22 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
                           목표 {r.requiredWorkouts}회 / 실제 {r.actualWorkouts}회
                         </div>
                       </div>
-                      <Badge variant={status.variant}>{status.text}</Badge>
+                      {/* <Badge variant={status.variant}>{status.text}</Badge> */}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-3">
+                    <div className="grid grid-cols-1 gap-3 sm:gap-4 mt-3">
                       <div>
                         <div className="text-[11px] sm:text-xs text-gray-500">벌금</div>
                         <div className="text-sm sm:text-base font-semibold">{r.penaltyAmount.toLocaleString()}원</div>
                       </div>
-                      <div>
+                      {/* <div>
                         <div className="text-[11px] sm:text-xs text-gray-500">납부합계</div>
                         <div className="text-sm sm:text-base font-semibold">{paid.toLocaleString()}원</div>
                       </div>
                       <div>
                         <div className="text-[11px] sm:text-xs text-gray-500">잔여</div>
                         <div className={`text-sm sm:text-base font-semibold ${remain > 0 ? 'text-red-600' : ''}`}>{remain.toLocaleString()}원</div>
-                      </div>
+                      </div> */}
                     </div>
                   </button>
                 );
