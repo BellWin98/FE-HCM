@@ -1,6 +1,15 @@
 import { ChatHistoryResponse } from "@/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const USE_STOCK_MOCK = import.meta.env.VITE_USE_STOCK_MOCK === 'true';
+// Lazy import to avoid bundling mock in prod when not used
+let mockStock: { getMockStockPortfolio: () => Promise<any>; getMockStockPrice: (stockCode: string) => Promise<number>; } | null = null;
+const ensureMockLoaded = async () => {
+  if (!mockStock) {
+    mockStock = await import('@/lib/mocks/stock');
+  }
+  return mockStock;
+};
 
 // API 유틸리티 함수
 class ApiClient {
@@ -244,6 +253,33 @@ class ApiClient {
   // '읽음' 상태 업데이트 API 호출 메서드 추가
   async updateLastRead(roomId: number): Promise<void> {
     return this.request(`/chat/rooms/${roomId}/read`, {
+      method: 'POST',
+    });
+  }
+
+  // 주식 관련 API
+  async getStockPortfolio() {
+    if (USE_STOCK_MOCK) {
+      const mod = await ensureMockLoaded();
+      return mod.getMockStockPortfolio();
+    }
+    return this.request('/stock/portfolio');
+  }
+
+  async getStockPrice(stockCode: string) {
+    if (USE_STOCK_MOCK) {
+      const mod = await ensureMockLoaded();
+      return mod.getMockStockPrice(stockCode);
+    }
+    return this.request(`/stock/price/${stockCode}`);
+  }
+
+  async getStockInfo(stockCode: string) {
+    return this.request(`/stock/info/${stockCode}`);
+  }
+
+  async refreshStockData() {
+    return this.request('/stock/refresh', {
       method: 'POST',
     });
   }

@@ -11,6 +11,7 @@ import WorkoutUploadPage from './pages/WorkoutUploadPage';
 import CreateRoomPage from './pages/CreateRoomPage';
 import NotFound from './pages/NotFound';
 import JoinedRoomsPage from './pages/JoinedRoomsPage';
+import StockPortfolioPage from './pages/StockPortfolioPage';
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,11 @@ const AppRoutes = () => (
     <Route path="/rooms/create" element={
       <ProtectedRoute>
         <CreateRoomPage />
+      </ProtectedRoute>
+    } />
+    <Route path="/stock/portfolio" element={
+      <ProtectedRoute>
+        <StockPortfolioPage />
       </ProtectedRoute>
     } />
     <Route path="*" element={<NotFound />} />
