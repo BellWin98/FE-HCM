@@ -6,7 +6,7 @@ export interface Member {
   totalWorkoutDays: number;
   totalPenalty: number;
   createdAt: string;
-  role: 'USER' | 'ADMIN';
+  role: 'USER' | 'ADMIN' | 'FAMILY';
 }
 
 export interface WorkoutRoom {
@@ -110,4 +110,31 @@ export interface ChatHistoryResponse {
   messages: ChatMessage[];
   nextCursorId: number | null;
   hasNext: boolean;
+}
+
+// 주식 관련 타입 정의
+export interface StockHolding {
+  stockCode: string;
+  stockName: string;
+  quantity: number;
+  averagePrice: number;
+  currentPrice: number;
+  marketValue: number;
+  profitLoss: number;
+  profitLossRate: number;
+  sector: string;
+}
+
+export interface StockPortfolio {
+  totalMarketValue: number;
+  totalProfitLoss: number;
+  totalProfitLossRate: number;
+  holdings: StockHolding[];
+  lastUpdated: string;
+}
+
+export interface KoreanInvestmentApiConfig {
+  appKey: string;
+  appSecret: string;
+  baseUrl: string;
 }

@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Settings, LogOut } from 'lucide-react';
+import { User, Settings, LogOut, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const Header = () => {
@@ -33,39 +33,53 @@ export const Header = () => {
         </div>
 
         {isAuthenticated ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-9 w-9">
-                <AvatarFallback>
-                  {member?.nickname?.slice(0,2)?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
-              <div className="flex items-center justify-start gap-2 p-2">
-                <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">{member?.nickname}</p>
-                  <p className="w-[200px] truncate text-sm text-muted-foreground">
-                    {member?.email}
-                  </p>
+          <div className="flex items-center space-x-4">
+            {/* 주식 현황 메뉴 - FAMILY, ADMIN 권한만 표시 */}
+            {(member?.role === 'FAMILY' || member?.role === 'ADMIN') && (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/stock/portfolio')}
+                className="flex items-center space-x-2"
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span>주식 현황</span>
+              </Button>
+            )}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback>
+                    {member?.nickname?.slice(0,2)?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium">{member?.nickname}</p>
+                    <p className="w-[200px] truncate text-sm text-muted-foreground">
+                      {member?.email}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              {/* <DropdownMenuItem onClick={() => navigate('/profile')}>
-                <User className="mr-2 h-4 w-4" />
-                <span>프로필</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/settings')}>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>설정</span>
-              </DropdownMenuItem> */}
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>로그아웃</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {/* <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>프로필</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>설정</span>
+                </DropdownMenuItem> */}
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>로그아웃</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ) : (
           <div className="flex space-x-2">
             <Button variant="outline" onClick={() => navigate('/login')}>
