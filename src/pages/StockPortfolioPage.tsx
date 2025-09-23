@@ -250,17 +250,13 @@ const StockPortfolioPage = () => {
                         {/* 수량 및 가격 정보 */}
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-sm text-gray-600">보유수량</p>
-                            <p className="font-semibold">{holding.quantity.toLocaleString()}주</p>
-                          </div>
+                            <p className="text-sm text-gray-600">현재가</p>
+                            <p className="font-semibold text-sm">{formatCurrency(holding.currentPrice)}</p>
+                          </div>  
                           <div>
                             <p className="text-sm text-gray-600">평균단가</p>
                             <p className="font-semibold text-sm">{formatCurrency(holding.averagePrice)}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600">현재가</p>
-                            <p className="font-semibold text-sm">{formatCurrency(holding.currentPrice)}</p>
-                          </div>
+                          </div>                                                  
                           <div>
                             <p className="text-sm text-gray-600">매입금액</p>
                             <p className="font-semibold text-sm">{formatCurrency(holding.purchasePrice)}</p>
@@ -269,6 +265,10 @@ const StockPortfolioPage = () => {
                             <p className="text-sm text-gray-600">평가금액</p>
                             <p className="font-semibold text-sm">{formatCurrency(holding.marketValue)}</p>
                           </div>
+                          <div>
+                            <p className="text-sm text-gray-600">보유수량</p>
+                            <p className="font-semibold">{holding.quantity.toLocaleString()}주</p>
+                          </div>                          
                         </div>
                         
                         {/* 손익 정보 */}
@@ -308,29 +308,25 @@ const StockPortfolioPage = () => {
                         
                         <div className="flex items-center space-x-6">
                           <div className="text-right">
-                            <p className="text-sm text-gray-600">보유수량</p>
-                            <p className="font-semibold">{holding.quantity.toLocaleString()}주</p>
-                          </div>
-                          
+                            <p className="text-sm text-gray-600">현재가</p>
+                            <p className="font-semibold">{formatCurrency(holding.currentPrice)}</p>
+                          </div>                          
                           <div className="text-right">
                             <p className="text-sm text-gray-600">평균단가</p>
                             <p className="font-semibold">{formatCurrency(holding.averagePrice)}</p>
                           </div>
-                          
-                          <div className="text-right">
-                            <p className="text-sm text-gray-600">현재가</p>
-                            <p className="font-semibold">{formatCurrency(holding.currentPrice)}</p>
-                          </div>
-
                           <div className="text-right">
                             <p className="text-sm text-gray-600">매입금액</p>
                             <p className="font-semibold">{formatCurrency(holding.purchasePrice)}</p>
                           </div>                          
-                          
                           <div className="text-right">
                             <p className="text-sm text-gray-600">평가금액</p>
                             <p className="font-semibold">{formatCurrency(holding.marketValue)}</p>
                           </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-600">보유수량</p>
+                            <p className="font-semibold">{holding.quantity.toLocaleString()}주</p>
+                          </div>                          
                           
                           <div className="text-right">
                             <p className="text-sm text-gray-600">손익</p>
