@@ -143,13 +143,33 @@ const StockPortfolioPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">총 평가금액</CardTitle>
+              <CardTitle className="text-sm font-medium">금일 예수금</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(portfolio.totalMarketValue)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(portfolio.depositToday)}</div>
             </CardContent>
-          </Card>
+          </Card>       
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">D+2 예수금</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(portfolio.depositD2)}</div>
+            </CardContent>
+          </Card>           
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">총 매입금액</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(portfolio.totalBuyValue)}</div>
+            </CardContent>
+          </Card>   
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -180,7 +200,20 @@ const StockPortfolioPage = () => {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">총 평가금액</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(portfolio.totalMarketValue)}</div>
+            </CardContent>
+          </Card>          
         </div>
+
+        {/* 차트 및 분석 */}
+        <StockChart holdings={portfolio.holdings} totalMarketValue={portfolio.totalMarketValue} />
 
         {/* 보유 종목 목록 */}
         <Card>
@@ -228,6 +261,10 @@ const StockPortfolioPage = () => {
                             <p className="text-sm text-gray-600">현재가</p>
                             <p className="font-semibold text-sm">{formatCurrency(holding.currentPrice)}</p>
                           </div>
+                          <div>
+                            <p className="text-sm text-gray-600">매입금액</p>
+                            <p className="font-semibold text-sm">{formatCurrency(holding.purchasePrice)}</p>
+                          </div>                          
                           <div>
                             <p className="text-sm text-gray-600">평가금액</p>
                             <p className="font-semibold text-sm">{formatCurrency(holding.marketValue)}</p>
@@ -284,6 +321,11 @@ const StockPortfolioPage = () => {
                             <p className="text-sm text-gray-600">현재가</p>
                             <p className="font-semibold">{formatCurrency(holding.currentPrice)}</p>
                           </div>
+
+                          <div className="text-right">
+                            <p className="text-sm text-gray-600">매입금액</p>
+                            <p className="font-semibold">{formatCurrency(holding.purchasePrice)}</p>
+                          </div>                          
                           
                           <div className="text-right">
                             <p className="text-sm text-gray-600">평가금액</p>
@@ -319,9 +361,6 @@ const StockPortfolioPage = () => {
             )}
           </CardContent>
         </Card>             
-
-        {/* 차트 및 분석 */}
-        <StockChart holdings={portfolio.holdings} totalMarketValue={portfolio.totalMarketValue} />
       </div>
     </div>
   );

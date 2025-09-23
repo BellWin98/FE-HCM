@@ -62,7 +62,7 @@ const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) =
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* 섹터별 분포 차트 */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <BarChart3 className="h-5 w-5" />
@@ -98,10 +98,10 @@ const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) =
             ))}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* 상위 보유 종목 */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>상위 보유 종목</CardTitle>
           <CardDescription>
@@ -135,14 +135,14 @@ const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) =
               ))}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* 수익률 분포 */}
       <Card>
         <CardHeader>
-          <CardTitle>수익률 분포</CardTitle>
+          <CardTitle>수익 분포</CardTitle>
           <CardDescription>
-            보유 종목들의 수익률 현황입니다.
+            보유 종목들의 수익 현황입니다.
           </CardDescription>
         </CardHeader>
         <CardContent>

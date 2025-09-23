@@ -119,6 +119,7 @@ export interface StockHolding {
   quantity: number;
   averagePrice: number;
   currentPrice: number;
+  purchasePrice: number;
   marketValue: number;
   profitLoss: number;
   profitLossRate: number;
@@ -127,8 +128,11 @@ export interface StockHolding {
 
 export interface StockPortfolio {
   totalMarketValue: number;
+  totalBuyValue: number;
   totalProfitLoss: number;
   totalProfitLossRate: number;
+  depositToday: number;
+  depositD2: number;
   holdings: StockHolding[];
   lastUpdated: string;
 }
