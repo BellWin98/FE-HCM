@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { StockHolding } from '@/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface StockChartProps {
   holdings: StockHolding[];
@@ -11,6 +12,7 @@ interface StockChartProps {
 }
 
 const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) => {
+  const isMobile = useIsMobile();
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ko-KR', {
       style: 'currency',
@@ -58,7 +60,7 @@ const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) =
   })).sort((a, b) => b.totalValue - a.totalValue);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* 섹터별 분포 차트 */}
       <Card>
         <CardHeader>
@@ -74,14 +76,14 @@ const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) =
           <div className="space-y-4">
             {sectorArray.map((sector) => (
               <div key={sector.sector} className="space-y-2">
-                <div className="flex justify-between items-center">
+                <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'justify-between items-center'}`}>
                   <div className="flex items-center space-x-2">
                     <Badge variant="secondary">{sector.sector}</Badge>
                     <span className="text-sm text-gray-600">
                       {sector.count}개 종목
                     </span>
                   </div>
-                  <div className="text-right">
+                  <div className={`text-right ${isMobile ? 'w-full' : ''}`}>
                     <div className="font-semibold">{formatCurrency(sector.totalValue)}</div>
                     <div className={`text-sm ${getProfitLossColor(sector.totalProfitLoss)}`}>
                       {formatCurrency(sector.totalProfitLoss)}
@@ -112,7 +114,7 @@ const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) =
               .sort((a, b) => b.marketValue - a.marketValue)
               .slice(0, 5)
               .map((holding, index) => (
-                <div key={holding.stockCode} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={holding.stockCode} className={`flex items-center ${isMobile ? 'flex-col space-y-3 p-3' : 'justify-between p-3'} bg-gray-50 rounded-lg`}>
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-semibold text-blue-600">
                       {index + 1}
@@ -122,9 +124,9 @@ const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) =
                       <div className="text-sm text-gray-600">{holding.stockCode}</div>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className={`text-right ${isMobile ? 'w-full' : ''}`}>
                     <div className="font-semibold">{formatCurrency(holding.marketValue)}</div>
-                    <div className={`text-sm flex items-center space-x-1 ${getProfitLossColor(holding.profitLoss)}`}>
+                    <div className={`text-sm flex items-center space-x-1 ${getProfitLossColor(holding.profitLoss)} ${isMobile ? 'justify-end' : ''}`}>
                       {getProfitLossIcon(holding.profitLoss)}
                       <span>{formatCurrency(holding.profitLoss)}</span>
                     </div>
@@ -144,7 +146,7 @@ const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) =
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-3 gap-4'}`}>
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">
                 {holdings.filter(h => h.profitLossRate > 0).length}
