@@ -25,8 +25,8 @@ const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) =
   };
 
   const getProfitLossColor = (amount: number) => {
-    if (amount > 0) return 'text-green-600';
-    if (amount < 0) return 'text-red-600';
+    if (amount > 0) return 'text-red-600';
+    if (amount < 0) return 'text-blue-600';
     return 'text-gray-600';
   };
 
@@ -147,17 +147,17 @@ const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) =
         </CardHeader>
         <CardContent>
           <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-3 gap-4'}`}>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">
-                {holdings.filter(h => h.profitLossRate > 0).length}
-              </div>
-              <div className="text-sm text-green-600">수익 종목</div>
-            </div>
             <div className="text-center p-4 bg-red-50 rounded-lg">
               <div className="text-2xl font-bold text-red-600">
+                {holdings.filter(h => h.profitLossRate > 0).length}
+              </div>
+              <div className="text-sm text-red-600">수익 종목</div>
+            </div>
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">
                 {holdings.filter(h => h.profitLossRate < 0).length}
               </div>
-              <div className="text-sm text-red-600">손실 종목</div>
+              <div className="text-sm text-blue-600">손실 종목</div>
             </div>
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <div className="text-2xl font-bold text-gray-600">
