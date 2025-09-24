@@ -22,10 +22,30 @@ const TradingProfitLoss: React.FC<TradingProfitLossProps> = ({ className }) => {
   const [summary, setSummary] = useState<TradingProfitLossSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  // Local date helpers to avoid timezone shifting
+  const formatDateLocal = (date: Date) => {
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+  const parseLocalDate = (value: string) => {
+    const [y, m, d] = value.split('-').map((v) => parseInt(v, 10));
+    return new Date(y, (m || 1) - 1, d || 1);
+  };
   const [period, setPeriod] = useState<TradingProfitLossPeriod>({
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30일 전
-    endDate: new Date().toISOString().split('T')[0], // 오늘
-    periodType: 'CUSTOM'
+    // startDate: formatDateLocal(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)), // 30일 전
+    // endDate: formatDateLocal(new Date()), // 오늘
+    // periodType: 'CUSTOM'
+    startDate: formatDateLocal(new Date()), 
+    endDate: formatDateLocal(new Date()),
+    periodType: 'DAILY'     
+  });
+  const [appliedPeriod, setAppliedPeriod] = useState<TradingProfitLossPeriod>({
+    startDate: period.startDate,
+    endDate: period.endDate,
+    periodType: period.periodType
   });
   const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null);
 
@@ -33,7 +53,7 @@ const TradingProfitLoss: React.FC<TradingProfitLossProps> = ({ className }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getTradingProfitLoss(period) as TradingProfitLossSummary;
+      const data = await api.getTradingProfitLoss(appliedPeriod) as TradingProfitLossSummary;
       setSummary(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : '매매손익 현황을 불러오는데 실패했습니다.');
@@ -44,7 +64,7 @@ const TradingProfitLoss: React.FC<TradingProfitLossProps> = ({ className }) => {
 
   useEffect(() => {
     fetchTradingProfitLoss();
-  }, [period]);
+  }, [appliedPeriod]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ko-KR', {
@@ -84,25 +104,68 @@ const TradingProfitLoss: React.FC<TradingProfitLossProps> = ({ className }) => {
     switch (value) {
       case 'DAILY':
         startDate = new Date(today);
-        break;
+        setPeriod({
+          startDate: formatDateLocal(startDate),
+          endDate: formatDateLocal(today),
+          periodType: 'DAILY'
+        });
+        setAppliedPeriod({
+          startDate: formatDateLocal(startDate),
+          endDate: formatDateLocal(today),
+          periodType: 'DAILY'
+        });
+        setValidationError(null);
+        return;
       case 'WEEKLY':
         startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
+        setPeriod({
+          startDate: formatDateLocal(startDate),
+          endDate: formatDateLocal(today),
+          periodType: 'WEEKLY'
+        });
+        setAppliedPeriod({
+          startDate: formatDateLocal(startDate),
+          endDate: formatDateLocal(today),
+          periodType: 'WEEKLY'
+        });
+        setValidationError(null);
+        return;
       case 'MONTHLY':
         startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
+        setPeriod({
+          startDate: formatDateLocal(startDate),
+          endDate: formatDateLocal(today),
+          periodType: 'MONTHLY'
+        });
+        setAppliedPeriod({
+          startDate: formatDateLocal(startDate),
+          endDate: formatDateLocal(today),
+          periodType: 'MONTHLY'
+        });
+        setValidationError(null);
+        return;
       case 'YEARLY':
         startDate = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
-        break;
+        setPeriod({
+          startDate: formatDateLocal(startDate),
+          endDate: formatDateLocal(today),
+          periodType: 'YEARLY'
+        });
+        setAppliedPeriod({
+          startDate: formatDateLocal(startDate),
+          endDate: formatDateLocal(today),
+          periodType: 'YEARLY'
+        });
+        setValidationError(null);
+        return;
+      case 'CUSTOM':
+        // 날짜는 유지하고 타입만 CUSTOM으로 변경하여 달력 노출
+        setPeriod(prev => ({ ...prev, periodType: 'CUSTOM' }));
+        setValidationError(null);
+        return;
       default:
         return;
     }
-
-    setPeriod({
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: today.toISOString().split('T')[0],
-      periodType: value as any
-    });
   };
 
   if (loading) {
@@ -174,21 +237,21 @@ const TradingProfitLoss: React.FC<TradingProfitLossProps> = ({ className }) => {
             </Select>
             
             {period.periodType === 'CUSTOM' && (
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <Popover open={showDatePicker === 'start'} onOpenChange={(open) => setShowDatePicker(open ? 'start' : null)}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full sm:w-auto">
                       <CalendarIcon className="h-4 w-4 mr-2" />
-                      {format(new Date(period.startDate), 'yyyy-MM-dd', { locale: ko })}
+                      {format(parseLocalDate(period.startDate), 'yyyy-MM-dd', { locale: ko })}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={new Date(period.startDate)}
+                      selected={parseLocalDate(period.startDate)}
                       onSelect={(date) => {
                         if (date) {
-                          setPeriod(prev => ({ ...prev, startDate: date.toISOString().split('T')[0] }));
+                          setPeriod(prev => ({ ...prev, startDate: formatDateLocal(date) }));
                           setShowDatePicker(null);
                         }
                       }}
@@ -201,16 +264,16 @@ const TradingProfitLoss: React.FC<TradingProfitLossProps> = ({ className }) => {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full sm:w-auto">
                       <CalendarIcon className="h-4 w-4 mr-2" />
-                      {format(new Date(period.endDate), 'yyyy-MM-dd', { locale: ko })}
+                      {format(parseLocalDate(period.endDate), 'yyyy-MM-dd', { locale: ko })}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={new Date(period.endDate)}
+                      selected={parseLocalDate(period.endDate)}
                       onSelect={(date) => {
                         if (date) {
-                          setPeriod(prev => ({ ...prev, endDate: date.toISOString().split('T')[0] }));
+                          setPeriod(prev => ({ ...prev, endDate: formatDateLocal(date) }));
                           setShowDatePicker(null);
                         }
                       }}
@@ -218,6 +281,30 @@ const TradingProfitLoss: React.FC<TradingProfitLossProps> = ({ className }) => {
                     />
                   </PopoverContent>
                 </Popover>
+
+                {/* 검증 메시지 */}
+                {validationError && (
+                  <div className="text-sm text-red-600">{validationError}</div>
+                )}
+
+                {/* CUSTOM 조회 버튼 */}
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    const start = parseLocalDate(period.startDate);
+                    const end = parseLocalDate(period.endDate);
+                    if (start > end) {
+                      setValidationError('조회 시작일자는 조회 종료일자보다 이후일 수 없습니다.');
+                      return;
+                    }
+                    setValidationError(null);
+                    setAppliedPeriod({ ...period });
+                  }}
+                  disabled={loading}
+                  className="w-full sm:w-auto"
+                >
+                  조회
+                </Button>
               </div>
             )}
             
