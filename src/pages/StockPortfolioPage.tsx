@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { RefreshCw, TrendingUp, TrendingDown, DollarSign, BarChart3 } from 'lucide-react';
 import { api } from '@/lib/api';
 import StockChart from '@/components/StockChart';
+import TradingProfitLoss from '@/components/TradingProfitLoss';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const StockPortfolioPage = () => {
@@ -356,7 +357,10 @@ const StockPortfolioPage = () => {
               </div>
             )}
           </CardContent>
-        </Card>             
+        </Card>  
+
+        {/* 매매손익 현황 */}
+        <TradingProfitLoss />           
       </div>
     </div>
   );

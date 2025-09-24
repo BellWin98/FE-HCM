@@ -142,3 +142,36 @@ export interface KoreanInvestmentApiConfig {
   appSecret: string;
   baseUrl: string;
 }
+
+// 매매손익 관련 타입 정의
+export interface TradingProfitLoss {
+  stockCode: string;
+  stockName: string;
+  tradeDate: string;
+  tradeType: 'BUY' | 'SELL';
+  quantity: number;
+  price: number;
+  amount: number;
+  profitLoss: number;
+  profitLossRate: number;
+  fee: number;
+  tax: number;
+}
+
+export interface TradingProfitLossSummary {
+  period: string;
+  totalBuyAmount: number;
+  totalSellAmount: number;
+  totalProfitLoss: number;
+  totalProfitLossRate: number;
+  totalFee: number;
+  totalTax: number;
+  tradeCount: number;
+  trades: TradingProfitLoss[];
+}
+
+export interface TradingProfitLossPeriod {
+  startDate: string;
+  endDate: string;
+  periodType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | 'CUSTOM';
+}

@@ -307,6 +307,14 @@ class ApiClient {
       method: 'POST',
     });
   }
+
+  // 매매손익 관련 API
+  async getTradingProfitLoss(period: { startDate: string; endDate: string; periodType: string }) {
+    return this.request('/stock/trading-profit-loss', {
+      method: 'POST',
+      body: JSON.stringify(period),
+    });
+  }
 }
 
 export const api = new ApiClient();
