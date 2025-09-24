@@ -218,7 +218,7 @@ const TradingProfitLoss: React.FC<TradingProfitLossProps> = ({ className }) => {
               <span>매매손익 현황</span>
             </CardTitle>
             <CardDescription>
-              {summary?.period || `${period.startDate} ~ ${period.endDate}`} 기간의 매매손익 현황입니다.
+              {summary?.period || `${period.startDate} ~ ${period.endDate}`}
             </CardDescription>
           </div>
           
