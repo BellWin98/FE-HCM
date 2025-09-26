@@ -1,270 +1,218 @@
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
 import { ChatHistoryResponse } from "@/types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
-const USE_STOCK_MOCK = import.meta.env.VITE_USE_STOCK_MOCK === 'true';
-// Lazy import to avoid bundling mock in prod when not used
-let mockStock: { getMockStockPortfolio: () => Promise<any>; getMockStockPrice: (stockCode: string) => Promise<number>; } | null = null;
-const ensureMockLoaded = async () => {
-  if (!mockStock) {
-    mockStock = await import('@/lib/mocks/stock');
-  }
-  return mockStock;
-};
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
-// API 유틸리티 함수
 class ApiClient {
-  private getAuthHeaders() {
-    const token = localStorage.getItem('accessToken');
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` })
-    };
-  }
+  private axiosInstance: AxiosInstance;
 
-  private getFormDataHeaders() {
-    const token = localStorage.getItem('accessToken');
-    return {
-      ...(token && { Authorization: `Bearer ${token}` })
-    };
+  constructor() {
+    this.axiosInstance = axios.create({
+      baseURL: API_BASE_URL,
+      headers: { "Content-Type": "application/json" },
+    });
+
+    // 요청 인터셉터 → 토큰 자동 주입
+    this.axiosInstance.interceptors.request.use((config) => {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        if (config.headers && (config.headers as any).set) {
+          (config.headers as any).set("Authorization", `Bearer ${token}`);
+        } else {
+          config.headers = {
+            ...(config.headers as any),
+            Authorization: `Bearer ${token}`,
+          } as any;
+        }
+      }
+      return config;
+    });
+
+    // 응답 인터셉터 → 401 발생 시 토큰 재발급 후 재시도
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      async (error: AxiosError) => {
+        if (error.response?.status === 401) {
+          try {
+            await this.refreshAccessToken();
+            // 새 토큰으로 헤더 갱신 후 요청 재시도
+            const config = error.config as AxiosRequestConfig;
+            const newToken = localStorage.getItem("accessToken");
+            if (newToken) {
+              if (config.headers && (config.headers as any).set) {
+                (config.headers as any).set("Authorization", `Bearer ${newToken}`);
+              } else {
+                config.headers = {
+                  ...(config.headers as any),
+                  Authorization: `Bearer ${newToken}`,
+                } as any;
+              }
+            }
+            return this.axiosInstance(config);
+          } catch (refreshError) {
+            localStorage.clear();
+            alert("로그인 유효시간이 만료되었습니다.");
+            window.location.reload();
+            return Promise.reject(refreshError);
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
   }
 
   private async refreshAccessToken(): Promise<string> {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (!refreshToken) throw new Error("No refresh token available");
 
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken }),
-    });
+    const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
+    const newAccessToken = res.data?.data?.accessToken || res.data?.accessToken;
 
-    if (!response.ok) {
-      localStorage.clear();
-      alert('로그인 유효시간이 만료되었습니다.');
-      window.location.reload();
-      throw new Error('Failed to refresh token');
-    }
-
-    const data = await response.json();
-    const newAccessToken = data.data?.accessToken || data.accessToken;
-    
     if (newAccessToken) {
-      localStorage.setItem('accessToken', newAccessToken);
+      localStorage.setItem("accessToken", newAccessToken);
       return newAccessToken;
     }
-    
-    throw new Error('Invalid refresh token response');
+    throw new Error("Invalid refresh token response");
   }
 
-  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const config: RequestInit = {
-      headers: this.getAuthHeaders(),
-      ...options,
-    };
-
+  // request wrapper (fetch 버전의 request와 동일한 역할)
+  async request<T>(endpoint: string, options: AxiosRequestConfig = {}): Promise<T> {
     try {
-      const response = await fetch(url, config);
-
-      if (response.status === 401) {
-        try {
-          await this.refreshAccessToken();
-          const retryConfig: RequestInit = {
-            ...config,
-            headers: this.getAuthHeaders(),
-          };
-          const retryResponse = await fetch(url, retryConfig);
-
-          if (!retryResponse.ok) {
-            const errorData = await retryResponse.json().catch(() => ({}));
-            throw new Error(errorData.message || `HTTP error! status: ${retryResponse.status}`);
-          }
-          const retryData = await retryResponse.json();
-          return retryData.data || retryData;
-        } catch (refreshError) {
-          throw new Error('Authentication failed. Please login again.');
-        }
-      }
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.data || data;
+      const response = await this.axiosInstance.request({
+        url: endpoint,
+        ...options,
+      });
+      return response.data.data || response.data;
     } catch (error) {
-      console.error(error.message);
-      throw error;
+      // const message =
+      //   error.response?.data?.message || `HTTP error! status: ${error.response?.status}`;
+      // console.error(message);
+      throw new Error(error);
     }
   }
 
   async uploadFile<T>(endpoint: string, formData: FormData): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const config: RequestInit = {
-      method: 'POST',
-      headers: this.getFormDataHeaders(),
-      body: formData,
-    };
-
     try {
-      const response = await fetch(url, config);
-      
-      if (response.status === 401) {
-        try {
-          await this.refreshAccessToken();
-          const retryConfig: RequestInit = {
-            ...config,
-            headers: this.getFormDataHeaders(),
-          };
-          const retryResponse = await fetch(url, retryConfig);
-          
-          if (!retryResponse.ok) {
-            const errorData = await retryResponse.json().catch(() => ({}));
-            throw new Error(errorData.message || `HTTP error! status: ${retryResponse.status}`);
-          }
-
-          const retryData = await retryResponse.json();
-          return retryData.data || retryData;
-        } catch (refreshError) {
-          throw new Error('Authentication failed. Please login again.');
-        }
-      }
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.data || data;
+      const response = await this.axiosInstance.post(endpoint, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data.data || response.data;
     } catch (error) {
-      console.error('File upload failed:', error);
-      throw error;
+      const message =
+        error.response?.data?.message || `HTTP error! status: ${error.response?.status}`;
+      console.error("File upload failed:", message);
+      throw new Error(message);
     }
   }
 
   // Auth APIs
   async login(email: string, password: string) {
-    return this.request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
+    return this.request("/auth/login", {
+      method: "POST",
+      data: { email, password },
     });
   }
 
   async register(email: string, password: string, nickname: string) {
-    return this.request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, nickname }),
+    return this.request("/auth/register", {
+      method: "POST",
+      data: { email, password, nickname },
     });
   }
 
-  // 이메일 중복 확인
   async checkEmailDuplicate(email: string) {
-    return this.request('/auth/check-email', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
+    return this.request("/auth/check-email", {
+      method: "POST",
+      data: { email },
     });
   }
 
-  // 이메일 인증 코드 발송
   async sendVerificationEmail(email: string) {
-    return this.request('/auth/send-verification', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
+    return this.request("/auth/send-verification", {
+      method: "POST",
+      data: { email },
     });
   }
 
-  // 이메일 인증 코드 확인
   async verifyEmailCode(email: string, code: string) {
-    return this.request('/auth/verify-email', {
-      method: 'POST',
-      body: JSON.stringify({ email, code }),
+    return this.request("/auth/verify-email", {
+      method: "POST",
+      data: { email, code },
     });
   }
 
   async getCurrentUser() {
-    return this.request('/auth/me');
+    return this.request("/auth/me");
   }
 
-  // Room APIs
+  // Room APIs (예시)
   async createWorkoutRoom(workoutRoomData: unknown) {
-    return this.request('/workout/rooms', {
-      method: 'POST',
-      body: JSON.stringify(workoutRoomData),
+    return this.request("/workout/rooms", {
+      method: "POST",
+      data: workoutRoomData,
     });
   }
 
   async joinWorkoutRoomByEntryCode(workoutRoomId: number, entryCode: string) {
-    return this.request(`/workout/rooms/join/${workoutRoomId}?entryCode=${encodeURIComponent(entryCode)}`, {
-      method: 'POST',
+    return this.request(`/workout/rooms/join/${workoutRoomId}`, {
+      method: "POST",
+      params: { entryCode },
     });
   }
 
   async getCurrentWorkoutRoom() {
-    return this.request('/workout/rooms/current');
+    return this.request("/workout/rooms/current");
   }
 
   async getAvailableWorkoutRooms() {
-    return this.request('/workout/rooms');
+    return this.request("/workout/rooms");
   }
 
   async isMemberInWorkoutRoom() {
-    return this.request('/workout/rooms/validate');
+    return this.request("/workout/rooms/validate");
   }
 
-  // ADMIN: 자신이 참여 중인 모든 운동방 목록 조회 (멀티-조인 전용)
   async getMyJoinedWorkoutRooms() {
-    return this.request('/workout/rooms/joined');
+    return this.request("/workout/rooms/joined");
   }
 
-  // 특정 운동방 상세 조회
   async getWorkoutRoomDetail(roomId: number) {
     return this.request(`/workout/rooms/joined/${roomId}`);
   }
 
-
   async searchUsers(nickname: string) {
-    return this.request(`/rooms/search-users?nickname=${encodeURIComponent(nickname)}`);
+    return this.request(`/rooms/search-users`, { params: { nickname } });
   }
 
   async leaveRoom() {
-    return this.request('/rooms/leave', {
-      method: 'DELETE',
-    });
+    return this.request("/rooms/leave", { method: "DELETE" });
   }
 
   // Workout APIs
-  async uploadWorkout(workoutData: { workoutDate: string; workoutType: string; duration: number; }, imageFile: File) {
+  async uploadWorkout(
+    workoutData: { workoutDate: string; workoutType: string; duration: number },
+    imageFile: File
+  ) {
     const formData = new FormData();
-    formData.append('workoutDate', workoutData.workoutDate);
-    formData.append('workoutType', workoutData.workoutType);
-    formData.append('duration', workoutData.duration.toString());
-    formData.append('image', imageFile);
+    formData.append("workoutDate", workoutData.workoutDate);
+    formData.append("workoutType", workoutData.workoutType);
+    formData.append("duration", workoutData.duration.toString());
+    formData.append("image", imageFile);
 
-    return this.uploadFile('/workouts', formData);
+    return this.uploadFile("/workouts", formData);
   }
 
   async getMyWorkouts() {
-    return this.request('/workouts/my');
+    return this.request("/workouts/my");
   }
 
   async deleteWorkout(workoutId: number) {
-    return this.request(`/workouts/${workoutId}`, {
-      method: 'DELETE',
-    });
+    return this.request(`/workouts/${workoutId}`, { method: "DELETE" });
   }
 
-  // Rest Day APIs
+  // Rest APIs
   async registerRestDay(restData: { reason: string; startDate: string; endDate: string }) {
-    return this.request('/rest', {
-      method: 'POST',
-      body: JSON.stringify(restData),
-    });
+    return this.request("/rest", { method: "POST", data: restData });
   }
 
   async getChatHistory(roomId: number, cursorId?: number | null): Promise<ChatHistoryResponse> {
@@ -274,27 +222,16 @@ class ApiClient {
     return this.request<ChatHistoryResponse>(endpoint);
   }
 
-  // '읽음' 상태 업데이트 API 호출 메서드 추가
   async updateLastRead(roomId: number): Promise<void> {
-    return this.request(`/chat/rooms/${roomId}/read`, {
-      method: 'POST',
-    });
+    return this.request(`/chat/rooms/${roomId}/read`, { method: "POST" });
   }
 
-  // 주식 관련 API
+  // Stock APIs
   async getStockPortfolio() {
-    if (USE_STOCK_MOCK) {
-      const mod = await ensureMockLoaded();
-      return mod.getMockStockPortfolio();
-    }
-    return this.request('/stock/portfolio');
+    return this.request("/stock/portfolio");
   }
 
   async getStockPrice(stockCode: string) {
-    if (USE_STOCK_MOCK) {
-      const mod = await ensureMockLoaded();
-      return mod.getMockStockPrice(stockCode);
-    }
     return this.request(`/stock/price/${stockCode}`);
   }
 
@@ -303,17 +240,62 @@ class ApiClient {
   }
 
   async refreshStockData() {
-    return this.request('/stock/refresh', {
-      method: 'POST',
+    return this.request("/stock/refresh", { method: "POST" });
+  }
+
+  async getTradingProfitLoss(period: { startDate: string; endDate: string; periodType: string }) {
+    return this.request("/stock/trading-profit-loss", {
+      method: "POST",
+      data: period,
     });
   }
 
-  // 매매손익 관련 API
-  async getTradingProfitLoss(period: { startDate: string; endDate: string; periodType: string }) {
-    return this.request('/stock/trading-profit-loss', {
-      method: 'POST',
-      body: JSON.stringify(period),
+  // Penalty APIs
+  async getPenaltyAccount(roomId: number) {
+    return this.request(`/penalty/rooms/${roomId}/account`);
+  }
+
+  async upsertPenaltyAccount(roomId: number, accountData: { bankName: string; accountNumber: string; accountHolder: string }) {
+    return this.request(`/penalty/rooms/${roomId}/account`, {
+      method: "POST",
+      data: accountData,
     });
+  }
+
+  async deletePenaltyAccount(roomId: number) {
+    return this.request(`/penalty/rooms/${roomId}/account`, { method: "DELETE" });
+  }
+
+  async getPenaltyRecords(roomId: number) {
+    return this.request(`/penalty/rooms/${roomId}/records`);
+  }
+
+  async payPenalty(
+    penaltyRecordId: number,
+    paymentData: { amount: number; paymentMethod: string; paymentDate: string; notes?: string },
+    proofImage?: File
+  ) {
+    if (proofImage) {
+      const formData = new FormData();
+      formData.append("amount", paymentData.amount.toString());
+      formData.append("paymentMethod", paymentData.paymentMethod);
+      formData.append("paymentDate", paymentData.paymentDate);
+      if (paymentData.notes) {
+        formData.append("notes", paymentData.notes);
+      }
+      formData.append("proofImage", proofImage);
+
+      return this.uploadFile(`/penalty/records/${penaltyRecordId}/payment`, formData);
+    } else {
+      return this.request(`/penalty/records/${penaltyRecordId}/payment`, {
+        method: "POST",
+        data: paymentData,
+      });
+    }
+  }
+
+  async getPenaltyPayments(penaltyRecordId: number) {
+    return this.request(`/penalty/records/${penaltyRecordId}/payments`);
   }
 }
 
