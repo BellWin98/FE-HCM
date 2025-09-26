@@ -175,3 +175,40 @@ export interface TradingProfitLossPeriod {
   endDate: string;
   periodType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | 'CUSTOM';
 }
+
+// 벌금 계좌 관련 타입 정의
+export interface PenaltyAccount {
+  id: number;
+  roomId: number;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PenaltyPayment {
+  id: number;
+  penaltyRecordId: number;
+  amount: number;
+  paymentMethod: 'BANK_TRANSFER' | 'CASH' | 'OTHER';
+  paymentDate: string;
+  proofImageUrl?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface PenaltyAccountFormData {
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+}
+
+export interface PenaltyPaymentFormData {
+  penaltyRecordId: number;
+  amount: number;
+  paymentMethod: 'BANK_TRANSFER' | 'CASH' | 'OTHER';
+  paymentDate: string;
+  proofImage?: File;
+  notes?: string;
+}

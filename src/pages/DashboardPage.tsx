@@ -1,6 +1,9 @@
 import AvailableWorkoutRooms from '@/components/AvailableWorkoutRooms';
 import { Layout } from '@/components/layout/Layout';
 import MyWorkoutRoom from '@/components/MyWorkoutRoom';
+import { PenaltyAccountManager } from '@/components/PenaltyAccountManager';
+import { PenaltyAccountView } from '@/components/PenaltyAccountView';
+import { PenaltyPaymentComponent } from '@/components/PenaltyPayment';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,12 +15,13 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp, List, Trophy, Users } from 'lucide-react';
+import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp, List, Trophy, Users, CreditCard, Receipt } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -425,7 +429,34 @@ export const DashboardPage = () => {
         )}
 
         {currentWorkoutRoom ? (
-          <MyWorkoutRoom currentWorkoutRoom={currentWorkoutRoom} today={today} currentMember={member} />
+          <Tabs defaultValue="room" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="room">운동방</TabsTrigger>
+              <TabsTrigger value="penalty">벌금 관리</TabsTrigger>
+              <TabsTrigger value="account">계좌 정보</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="room" className="space-y-6">
+              <MyWorkoutRoom currentWorkoutRoom={currentWorkoutRoom} today={today} currentMember={member} />
+            </TabsContent>
+            
+            <TabsContent value="penalty" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <PenaltyAccountManager 
+                  roomId={currentWorkoutRoom.workoutRoomInfo.id} 
+                  isOwner={currentWorkoutRoom.workoutRoomInfo.ownerNickname === member?.nickname} 
+                />
+                <PenaltyPaymentComponent 
+                  roomId={currentWorkoutRoom.workoutRoomInfo.id} 
+                  userId={member?.id || 0} 
+                />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="account" className="space-y-6">
+              <PenaltyAccountView roomId={currentWorkoutRoom.workoutRoomInfo.id} />
+            </TabsContent>
+          </Tabs>
         ) : (
           <AvailableWorkoutRooms workoutRooms={availableWorkoutRooms} onCreateWorkoutRoom={handleCreateWorkoutRoom} onJoinWorkoutRoom={handleJoinWorkoutRoom} />
         )}
