@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
-import { ChatHistoryResponse } from "@/types";
+import { ChatHistoryResponse, PenaltyPayment, PenaltyRecord } from "@/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
@@ -267,7 +267,93 @@ class ApiClient {
   }
 
   async getPenaltyRecords(roomId: number) {
-    return this.request(`/penalty/rooms/${roomId}/records`);
+    // TEMP: Mock data until backend implementation is ready
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - 7);
+    const twoWeeksAgoStart = new Date(today);
+    twoWeeksAgoStart.setDate(today.getDate() - 14);
+    const twoWeeksAgoEnd = new Date(today);
+    twoWeeksAgoEnd.setDate(today.getDate() - 8);
+
+    const mockRecords: PenaltyRecord[] = [
+      // User 101 (나)
+      {
+        id: 1,
+        userId: "101",
+        roomId: String(roomId),
+        weekStartDate: twoWeeksAgoStart.toISOString(),
+        weekEndDate: twoWeeksAgoEnd.toISOString(),
+        requiredWorkouts: 4,
+        actualWorkouts: 4,
+        penaltyAmount: 0,
+        isPaid: true,
+        paidAt: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 2,
+        userId: "101",
+        roomId: String(roomId),
+        weekStartDate: startOfWeek.toISOString(),
+        weekEndDate: today.toISOString(),
+        requiredWorkouts: 5,
+        actualWorkouts: 3,
+        penaltyAmount: 20000,
+        isPaid: false,
+      },
+      {
+        id: 3,
+        userId: "101",
+        roomId: String(roomId),
+        weekStartDate: new Date(today.getTime() - 21 * 24 * 60 * 60 * 1000).toISOString(),
+        weekEndDate: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+        requiredWorkouts: 4,
+        actualWorkouts: 2,
+        penaltyAmount: 30000,
+        isPaid: false,
+      },
+      // User 102 (다른 멤버 A)
+      {
+        id: 4,
+        userId: "102",
+        roomId: String(roomId),
+        weekStartDate: twoWeeksAgoStart.toISOString(),
+        weekEndDate: twoWeeksAgoEnd.toISOString(),
+        requiredWorkouts: 4,
+        actualWorkouts: 3,
+        penaltyAmount: 10000,
+        isPaid: true,
+        paidAt: new Date(today.getTime() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 5,
+        userId: "102",
+        roomId: String(roomId),
+        weekStartDate: startOfWeek.toISOString(),
+        weekEndDate: today.toISOString(),
+        requiredWorkouts: 5,
+        actualWorkouts: 5,
+        penaltyAmount: 0,
+        isPaid: true,
+      },
+      // User 103 (다른 멤버 B)
+      {
+        id: 6,
+        userId: "103",
+        roomId: String(roomId),
+        weekStartDate: startOfWeek.toISOString(),
+        weekEndDate: today.toISOString(),
+        requiredWorkouts: 5,
+        actualWorkouts: 2,
+        penaltyAmount: 30000,
+        isPaid: false,
+      },
+    ];
+
+    return new Promise<PenaltyRecord[]>((resolve) => {
+      setTimeout(() => resolve(mockRecords), 200);
+    });
+    // return this.request(`/penalty/rooms/${roomId}/records`);
   }
 
   async payPenalty(
@@ -295,7 +381,39 @@ class ApiClient {
   }
 
   async getPenaltyPayments(penaltyRecordId: number) {
-    return this.request(`/penalty/records/${penaltyRecordId}/payments`);
+    // TEMP: Mock data per record id
+    const mockPaymentsMap: Record<number, PenaltyPayment[]> = {
+      1: [
+        {
+          id: 1001,
+          penaltyRecordId: 1,
+          amount: 0,
+          paymentMethod: "BANK_TRANSFER",
+          paymentDate: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+          notes: "주차 내 목표 달성으로 벌금 없음",
+        },
+      ],
+      2: [
+        {
+          id: 2001,
+          penaltyRecordId: 2,
+          amount: 10000,
+          paymentMethod: "BANK_TRANSFER",
+          paymentDate: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          notes: "1차 부분 납부",
+        },
+      ],
+      3: [],
+    };
+
+    const result = mockPaymentsMap[penaltyRecordId] ?? [];
+    return new Promise<PenaltyPayment[]>((resolve) => {
+      setTimeout(() => resolve(result), 150);
+    });
+
+    // return this.request(`/penalty/records/${penaltyRecordId}/payments`);
   }
 }
 

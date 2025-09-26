@@ -4,6 +4,7 @@ import MyWorkoutRoom from '@/components/MyWorkoutRoom';
 import { PenaltyAccountManager } from '@/components/PenaltyAccountManager';
 import { PenaltyAccountView } from '@/components/PenaltyAccountView';
 import { PenaltyPaymentComponent } from '@/components/PenaltyPayment';
+import PenaltyOverview from '@/components/PenaltyOverview';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -441,6 +442,11 @@ export const DashboardPage = () => {
             </TabsContent>
             
             <TabsContent value="penalty" className="space-y-6">
+              <PenaltyOverview 
+                roomId={currentWorkoutRoom.workoutRoomInfo.id}
+                roomMembers={currentWorkoutRoom.workoutRoomMembers}
+                currentUserId={member?.id || 0}
+              />
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <PenaltyAccountManager 
                   roomId={currentWorkoutRoom.workoutRoomInfo.id} 
