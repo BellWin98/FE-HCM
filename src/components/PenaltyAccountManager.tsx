@@ -153,7 +153,7 @@ export const PenaltyAccountManager: React.FC<PenaltyAccountManagerProps> = ({ ro
                 <Label className="text-sm font-medium text-gray-500">은행명</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <p className="text-sm">{penaltyAccount.bankName}</p>
-                  <Button
+                  {/* <Button
                     variant='ghost'
                     size='sm'
                     onClick={() => copyToClipboard(penaltyAccount.bankName, 'bankName')}
@@ -163,7 +163,7 @@ export const PenaltyAccountManager: React.FC<PenaltyAccountManagerProps> = ({ ro
                     ):(
                       <Copy className='h-4 w-4'/>
                     )}
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
               <div>
@@ -187,7 +187,7 @@ export const PenaltyAccountManager: React.FC<PenaltyAccountManagerProps> = ({ ro
                 <Label className="text-sm font-medium text-gray-500">예금주</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <p className="text-sm">{penaltyAccount.accountHolder}</p>
-                  <Button
+                  {/* <Button
                     variant='ghost'
                     size='sm'
                     onClick={() => copyToClipboard(penaltyAccount.accountHolder, 'accountHolder')}
@@ -197,7 +197,7 @@ export const PenaltyAccountManager: React.FC<PenaltyAccountManagerProps> = ({ ro
                     ):(
                       <Copy className='h-4 w-4'/>
                     )}
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             </div>
