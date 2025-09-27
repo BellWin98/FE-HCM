@@ -1,6 +1,10 @@
 import AvailableWorkoutRooms from '@/components/AvailableWorkoutRooms';
 import { Layout } from '@/components/layout/Layout';
 import MyWorkoutRoom from '@/components/MyWorkoutRoom';
+import { PenaltyAccountManager } from '@/components/PenaltyAccountManager';
+import { PenaltyAccountView } from '@/components/PenaltyAccountView';
+import { PenaltyPaymentComponent } from '@/components/PenaltyPayment';
+import PenaltyOverview from '@/components/PenaltyOverview';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,12 +16,13 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp, List, Trophy, Users } from 'lucide-react';
+import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp, List, Trophy, Users, CreditCard, Receipt } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -97,7 +102,7 @@ export const DashboardPage = () => {
     };
   
     return text.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, (char) => koreanMap[char] || char);
-  };  
+  };
 
   useEffect(() => {
     const loadDashboardStats = async () => {
@@ -369,7 +374,7 @@ export const DashboardPage = () => {
         {currentWorkoutRoom && (
           <Card>
             <CardHeader>
-              <CardTitle>내 활동</CardTitle>
+              <CardTitle className='text-xl font-bold'>내 활동</CardTitle>
             </CardHeader>
             <CardContent>
               {currentWorkoutRoom.currentMemberTodayWorkoutRecord ? (
@@ -425,7 +430,46 @@ export const DashboardPage = () => {
         )}
 
         {currentWorkoutRoom ? (
-          <MyWorkoutRoom currentWorkoutRoom={currentWorkoutRoom} today={today} currentMember={member} />
+          <Tabs defaultValue="room" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="room">운동방</TabsTrigger>
+              <TabsTrigger value="penalty">벌금 관리</TabsTrigger>
+              {/* <TabsTrigger value="account">계좌 정보</TabsTrigger> */}
+            </TabsList>
+            
+            <TabsContent value="room" className="space-y-6">
+              <MyWorkoutRoom currentWorkoutRoom={currentWorkoutRoom} today={today} currentMember={member} />
+            </TabsContent>
+            
+            <TabsContent value="penalty" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <PenaltyOverview 
+                  roomId={currentWorkoutRoom.workoutRoomInfo.id}
+                  roomMembers={currentWorkoutRoom.workoutRoomMembers}
+                  currentUserId={member?.id || 0}
+                />
+                <PenaltyAccountManager 
+                    roomId={currentWorkoutRoom.workoutRoomInfo.id} 
+                    isOwner={currentWorkoutRoom.workoutRoomInfo.ownerNickname === member?.nickname} 
+                /> 
+              </div>
+             
+              {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <PenaltyPaymentComponent 
+                  roomId={currentWorkoutRoom.workoutRoomInfo.id} 
+                  userId={member?.id || 0} 
+                />
+              </div> */}
+            </TabsContent>
+            
+            <TabsContent value="account" className="space-y-6">
+              {/* <PenaltyAccountView roomId={currentWorkoutRoom.workoutRoomInfo.id} /> */}
+              <PenaltyAccountManager 
+                  roomId={currentWorkoutRoom.workoutRoomInfo.id} 
+                  isOwner={currentWorkoutRoom.workoutRoomInfo.ownerNickname === member?.nickname} 
+              />
+            </TabsContent>
+          </Tabs>
         ) : (
           <AvailableWorkoutRooms workoutRooms={availableWorkoutRooms} onCreateWorkoutRoom={handleCreateWorkoutRoom} onJoinWorkoutRoom={handleJoinWorkoutRoom} />
         )}

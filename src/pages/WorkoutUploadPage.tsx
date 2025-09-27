@@ -27,7 +27,7 @@ export const WorkoutUploadPage = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [workoutDate, setWorkoutDate] = useState<Date>(new Date());
-  const [workoutType, setWorkoutType] = useState<WorkoutType>('헬스');
+  const [workoutType, setWorkoutType] = useState<WorkoutType>('헬스(가슴)');
   const [customWorkoutType, setCustomWorkoutType] = useState<string>('');
   const [duration, setDuration] = useState<string>('');
   const [loading, setLoading] = useState(false);
