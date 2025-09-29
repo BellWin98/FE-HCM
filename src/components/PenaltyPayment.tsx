@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
+import { paymentService } from '@/lib/payment';
 import { PenaltyRecord, PenaltyPayment, PenaltyPaymentFormData } from '@/types';
-import { CreditCard, Calendar, DollarSign, Upload, Receipt } from 'lucide-react';
+import { CreditCard, Calendar, DollarSign, Upload, Receipt, Smartphone, Building2, Wallet } from 'lucide-react';
 
 interface PenaltyPaymentProps {
   roomId: number;
@@ -31,6 +32,7 @@ export const PenaltyPaymentComponent: React.FC<PenaltyPaymentProps> = ({ roomId,
     proofImage: undefined,
     notes: ''
   });
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -69,6 +71,13 @@ export const PenaltyPaymentComponent: React.FC<PenaltyPaymentProps> = ({ roomId,
     
     if (!selectedRecord) return;
 
+    // 토스페이먼츠 결제 처리
+    if (formData.paymentMethod.startsWith('TOSS_')) {
+      await handleTossPayment();
+      return;
+    }
+
+    // 기존 결제 처리 (수동 납부)
     try {
       await api.payPenalty(
         selectedRecord.id,
@@ -105,6 +114,69 @@ export const PenaltyPaymentComponent: React.FC<PenaltyPaymentProps> = ({ roomId,
         description: error.message || '벌금 납부에 실패했습니다.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleTossPayment = async () => {
+    if (!selectedRecord) return;
+
+    setIsProcessingPayment(true);
+    
+    try {
+      // 주문 ID 생성
+      const orderId = paymentService.generateOrderId();
+      
+      // 백엔드에 주문 생성
+      await api.createPaymentOrder(selectedRecord.id, formData.amount, orderId);
+      
+      // URL 생성
+      const urls = paymentService.generateUrls(orderId);
+      
+      // 토스페이먼츠 결제 요청
+      const paymentMethod = formData.paymentMethod.replace('TOSS_', '').toLowerCase();
+      
+      const paymentRequest = {
+        amount: formData.amount,
+        orderName: `벌금 납부 - ${new Date(selectedRecord.weekStartDate).toLocaleDateString()} ~ ${new Date(selectedRecord.weekEndDate).toLocaleDateString()}`,
+        customerName: '회원',
+        customerEmail: 'member@example.com',
+        orderId,
+        successUrl: urls.successUrl,
+        failUrl: urls.failUrl,
+      };
+
+      switch (paymentMethod) {
+        case 'card':
+          await paymentService.requestPayment(paymentRequest);
+          break;
+        case 'bank':
+          await paymentService.requestBankTransfer(paymentRequest);
+          break;
+        case 'virtual':
+          await paymentService.requestVirtualAccount(paymentRequest);
+          break;
+        case 'mobile':
+          await paymentService.requestMobilePayment(paymentRequest);
+          break;
+        default:
+          await paymentService.requestPayment(paymentRequest);
+      }
+
+      // 결제 창이 열리므로 여기서는 성공 메시지만 표시
+      toast({
+        title: '결제 진행',
+        description: '결제 창이 열렸습니다. 결제를 완료해주세요.',
+      });
+
+    } catch (error) {
+      console.error('토스페이먼츠 결제 실패:', error);
+      toast({
+        title: '결제 실패',
+        description: error.message || '결제 요청에 실패했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -279,52 +351,115 @@ export const PenaltyPaymentComponent: React.FC<PenaltyPaymentProps> = ({ roomId,
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="BANK_TRANSFER">계좌이체</SelectItem>
+                                <SelectItem value="BANK_TRANSFER">
+                                  <div className="flex items-center gap-2">
+                                    <Building2 className="h-4 w-4" />
+                                    계좌이체 (수동)
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="TOSS_CARD">
+                                  <div className="flex items-center gap-2">
+                                    <CreditCard className="h-4 w-4 text-blue-500" />
+                                    토스페이먼츠 - 카드
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="TOSS_BANK">
+                                  <div className="flex items-center gap-2">
+                                    <Building2 className="h-4 w-4 text-blue-500" />
+                                    토스페이먼츠 - 계좌이체
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="TOSS_VIRTUAL">
+                                  <div className="flex items-center gap-2">
+                                    <Wallet className="h-4 w-4 text-blue-500" />
+                                    토스페이먼츠 - 가상계좌
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="TOSS_MOBILE">
+                                  <div className="flex items-center gap-2">
+                                    <Smartphone className="h-4 w-4 text-blue-500" />
+                                    토스페이먼츠 - 휴대폰
+                                  </div>
+                                </SelectItem>
                                 <SelectItem value="CASH">현금</SelectItem>
                                 <SelectItem value="OTHER">기타</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
-                          <div>
-                            <Label htmlFor="paymentDate">납부 일자</Label>
-                            <Input
-                              id="paymentDate"
-                              type="date"
-                              value={formData.paymentDate}
-                              onChange={(e) => setFormData(prev => ({ ...prev, paymentDate: e.target.value }))}
-                              required
-                            />
-                          </div>
+                          {!formData.paymentMethod.startsWith('TOSS_') && (
+                            <>
+                              <div>
+                                <Label htmlFor="paymentDate">납부 일자</Label>
+                                <Input
+                                  id="paymentDate"
+                                  type="date"
+                                  value={formData.paymentDate}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, paymentDate: e.target.value }))}
+                                  required
+                                />
+                              </div>
 
-                          <div>
-                            <Label htmlFor="proofImage">납부 증빙 (선택)</Label>
-                            <Input
-                              id="proofImage"
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => setFormData(prev => ({ ...prev, proofImage: e.target.files?.[0] }))}
-                            />
-                          </div>
+                              <div>
+                                <Label htmlFor="proofImage">납부 증빙 (선택)</Label>
+                                <Input
+                                  id="proofImage"
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => setFormData(prev => ({ ...prev, proofImage: e.target.files?.[0] }))}
+                                />
+                              </div>
 
-                          <div>
-                            <Label htmlFor="notes">메모 (선택)</Label>
-                            <Textarea
-                              id="notes"
-                              value={formData.notes}
-                              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                              placeholder="납부 관련 메모를 입력하세요"
-                              rows={3}
-                            />
-                          </div>
+                              <div>
+                                <Label htmlFor="notes">메모 (선택)</Label>
+                                <Textarea
+                                  id="notes"
+                                  value={formData.notes}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                                  placeholder="납부 관련 메모를 입력하세요"
+                                  rows={3}
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {formData.paymentMethod.startsWith('TOSS_') && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                              <div className="flex items-center gap-2 text-blue-700 mb-2">
+                                <CreditCard className="h-4 w-4" />
+                                <span className="font-medium">토스페이먼츠 결제</span>
+                              </div>
+                              <p className="text-sm text-blue-600">
+                                토스페이먼츠를 통해 안전하게 결제하실 수 있습니다. 
+                                결제 버튼을 클릭하면 토스페이먼츠 결제 창이 열립니다.
+                              </p>
+                            </div>
+                          )}
 
                           <div className="flex justify-end gap-2">
                             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                               취소
                             </Button>
-                            <Button type="submit">
-                              <DollarSign className="h-4 w-4 mr-1" />
-                              납부하기
+                            <Button 
+                              type="submit" 
+                              disabled={isProcessingPayment}
+                              className={formData.paymentMethod.startsWith('TOSS_') ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                            >
+                              {isProcessingPayment ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                                  처리 중...
+                                </>
+                              ) : (
+                                <>
+                                  {formData.paymentMethod.startsWith('TOSS_') ? (
+                                    <CreditCard className="h-4 w-4 mr-1" />
+                                  ) : (
+                                    <DollarSign className="h-4 w-4 mr-1" />
+                                  )}
+                                  {formData.paymentMethod.startsWith('TOSS_') ? '토스페이먼츠로 결제' : '납부하기'}
+                                </>
+                              )}
                             </Button>
                           </div>
                         </form>

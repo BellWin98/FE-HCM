@@ -12,6 +12,8 @@ import CreateRoomPage from './pages/CreateRoomPage';
 import NotFound from './pages/NotFound';
 import JoinedRoomsPage from './pages/JoinedRoomsPage';
 import StockPortfolioPage from './pages/StockPortfolioPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentFailPage from './pages/PaymentFailPage';
 
 const queryClient = new QueryClient();
 
@@ -60,6 +62,8 @@ const AppRoutes = () => (
         <StockPortfolioPage />
       </ProtectedRoute>
     } />
+    <Route path="/payment/success" element={<PaymentSuccessPage />} />
+    <Route path="/payment/fail" element={<PaymentFailPage />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

@@ -415,6 +415,39 @@ class ApiClient {
 
     // return this.request(`/penalty/records/${penaltyRecordId}/payments`);
   }
+
+  // Payment APIs
+  async createPaymentOrder(penaltyRecordId: number, amount: number, orderId: string) {
+    return this.request("/payment/orders", {
+      method: "POST",
+      data: {
+        penaltyRecordId,
+        amount,
+        orderId,
+      },
+    });
+  }
+
+  async confirmPayment(paymentKey: string, orderId: string, amount: number) {
+    return this.request("/payment/confirm", {
+      method: "POST",
+      data: {
+        paymentKey,
+        orderId,
+        amount,
+      },
+    });
+  }
+
+  async cancelPayment(paymentKey: string, cancelReason: string) {
+    return this.request("/payment/cancel", {
+      method: "POST",
+      data: {
+        paymentKey,
+        cancelReason,
+      },
+    });
+  }
 }
 
 export const api = new ApiClient();

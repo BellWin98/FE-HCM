@@ -454,12 +454,12 @@ export const DashboardPage = () => {
                 /> 
               </div>
              
-              {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <PenaltyPaymentComponent 
                   roomId={currentWorkoutRoom.workoutRoomInfo.id} 
                   userId={member?.id || 0} 
                 />
-              </div> */}
+              </div>
             </TabsContent>
             
             <TabsContent value="account" className="space-y-6">
