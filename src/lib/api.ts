@@ -1,5 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
-import { ChatHistoryResponse, PenaltyPayment, PenaltyRecord } from "@/types";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosHeaders } from "axios";
+import { ChatHistoryResponse, PenaltyPayment, PenaltyRecord, UserSettings } from "@/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
@@ -16,14 +16,10 @@ class ApiClient {
     this.axiosInstance.interceptors.request.use((config) => {
       const token = localStorage.getItem("accessToken");
       if (token) {
-        if (config.headers && (config.headers as any).set) {
-          (config.headers as any).set("Authorization", `Bearer ${token}`);
-        } else {
-          config.headers = {
-            ...(config.headers as any),
-            Authorization: `Bearer ${token}`,
-          } as any;
+        if (!(config.headers instanceof AxiosHeaders)) {
+          config.headers = new AxiosHeaders(config.headers);
         }
+        (config.headers as AxiosHeaders).set("Authorization", `Bearer ${token}`);
       }
       return config;
     });
@@ -39,14 +35,10 @@ class ApiClient {
             const config = error.config as AxiosRequestConfig;
             const newToken = localStorage.getItem("accessToken");
             if (newToken) {
-              if (config.headers && (config.headers as any).set) {
-                (config.headers as any).set("Authorization", `Bearer ${newToken}`);
-              } else {
-                config.headers = {
-                  ...(config.headers as any),
-                  Authorization: `Bearer ${newToken}`,
-                } as any;
+              if (!(config.headers instanceof AxiosHeaders)) {
+                config.headers = new AxiosHeaders(config.headers);
               }
+              (config.headers as AxiosHeaders).set("Authorization", `Bearer ${newToken}`);
             }
             return this.axiosInstance(config);
           } catch (refreshError) {
@@ -87,7 +79,10 @@ class ApiClient {
       // const message =
       //   error.response?.data?.message || `HTTP error! status: ${error.response?.status}`;
       // console.error(message);
-      throw new Error(error);
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.message);
+      }
+      throw new Error(String(error));
     }
   }
 
@@ -98,10 +93,13 @@ class ApiClient {
       });
       return response.data.data || response.data;
     } catch (error) {
-      const message =
-        error.response?.data?.message || `HTTP error! status: ${error.response?.status}`;
-      console.error("File upload failed:", message);
-      throw new Error(message);
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message || error.message;
+        console.error("File upload failed:", message);
+        throw new Error(message);
+      }
+      console.error("File upload failed:", String(error));
+      throw new Error(String(error));
     }
   }
 
@@ -267,92 +265,6 @@ class ApiClient {
   }
 
   async getPenaltyRecords(roomId: number) {
-    // TEMP: Mock data until backend implementation is ready
-    // const today = new Date();
-    // const startOfWeek = new Date(today);
-    // startOfWeek.setDate(today.getDate() - 7);
-    // const twoWeeksAgoStart = new Date(today);
-    // twoWeeksAgoStart.setDate(today.getDate() - 14);
-    // const twoWeeksAgoEnd = new Date(today);
-    // twoWeeksAgoEnd.setDate(today.getDate() - 8);
-
-    // const mockRecords: PenaltyRecord[] = [
-    //   // User 101 (나)
-    //   {
-    //     id: 1,
-    //     workoutRoomMemberId: "101",
-    //     roomId: String(roomId),
-    //     weekStartDate: twoWeeksAgoStart.toISOString(),
-    //     weekEndDate: twoWeeksAgoEnd.toISOString(),
-    //     requiredWorkouts: 4,
-    //     actualWorkouts: 4,
-    //     penaltyAmount: 0,
-    //     isPaid: true,
-    //     paidAt: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    //   },
-    //   {
-    //     id: 2,
-    //     workoutRoomMemberId: "101",
-    //     roomId: String(roomId),
-    //     weekStartDate: startOfWeek.toISOString(),
-    //     weekEndDate: today.toISOString(),
-    //     requiredWorkouts: 5,
-    //     actualWorkouts: 3,
-    //     penaltyAmount: 20000,
-    //     isPaid: false,
-    //   },
-    //   {
-    //     id: 3,
-    //     workoutRoomMemberId: "101",
-    //     roomId: String(roomId),
-    //     weekStartDate: new Date(today.getTime() - 21 * 24 * 60 * 60 * 1000).toISOString(),
-    //     weekEndDate: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-    //     requiredWorkouts: 4,
-    //     actualWorkouts: 2,
-    //     penaltyAmount: 30000,
-    //     isPaid: false,
-    //   },
-    //   // User 102 (다른 멤버 A)
-    //   {
-    //     id: 4,
-    //     workoutRoomMemberId: "102",
-    //     roomId: String(roomId),
-    //     weekStartDate: twoWeeksAgoStart.toISOString(),
-    //     weekEndDate: twoWeeksAgoEnd.toISOString(),
-    //     requiredWorkouts: 4,
-    //     actualWorkouts: 3,
-    //     penaltyAmount: 10000,
-    //     isPaid: true,
-    //     paidAt: new Date(today.getTime() - 9 * 24 * 60 * 60 * 1000).toISOString(),
-    //   },
-    //   {
-    //     id: 5,
-    //     workoutRoomMemberId: "102",
-    //     roomId: String(roomId),
-    //     weekStartDate: startOfWeek.toISOString(),
-    //     weekEndDate: today.toISOString(),
-    //     requiredWorkouts: 5,
-    //     actualWorkouts: 5,
-    //     penaltyAmount: 0,
-    //     isPaid: true,
-    //   },
-    //   // User 103 (다른 멤버 B)
-    //   {
-    //     id: 6,
-    //     workoutRoomMemberId: "103",
-    //     roomId: String(roomId),
-    //     weekStartDate: startOfWeek.toISOString(),
-    //     weekEndDate: today.toISOString(),
-    //     requiredWorkouts: 5,
-    //     actualWorkouts: 2,
-    //     penaltyAmount: 30000,
-    //     isPaid: false,
-    //   },
-    // ];
-
-    // return new Promise<PenaltyRecord[]>((resolve) => {
-    //   setTimeout(() => resolve(mockRecords), 200);
-    // });
     return this.request(`/penalty/rooms/${roomId}/records`);
   }
 
@@ -414,6 +326,39 @@ class ApiClient {
     });
 
     // return this.request(`/penalty/records/${penaltyRecordId}/payments`);
+  }
+
+  // 마이페이지 관련 API
+  async getUserProfile() {
+    return await this.request("/members/profile");
+  }
+
+  async updateUserProfile(profileData: { nickname?: string; bio?: string; profileUrl?: string }) {
+    return await this.request("/members/profile", { method: "PUT", data: profileData });
+  }
+
+  async getUserWorkoutFeed(page: number = 0, size: number = 10) {
+      return await this.request(`/members/workout-feed?page=${page}&size=${size}`);
+  }
+
+  async getUserWorkoutStats() {
+    return await this.request("/members/workout-stats");
+  }
+
+  async getUserSettings() {
+    return await this.request("/members/settings");
+  }
+
+  async updateUserSettings(settings: UserSettings) {
+    return await this.request("/members/settings", { method: "PUT", data: settings });
+  }
+
+  async likeWorkout(workoutId: number) {
+    return await this.request(`/workouts/${workoutId}/like`, { method: "POST" });
+  }
+
+  async unlikeWorkout(workoutId: number) {
+    return await this.request(`/workouts/${workoutId}/like`, { method: "DELETE" });
   }
 }
 

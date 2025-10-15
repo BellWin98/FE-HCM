@@ -12,6 +12,7 @@ import CreateRoomPage from './pages/CreateRoomPage';
 import NotFound from './pages/NotFound';
 import JoinedRoomsPage from './pages/JoinedRoomsPage';
 import StockPortfolioPage from './pages/StockPortfolioPage';
+import MyPage from './pages/MyPage';
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,11 @@ const AppRoutes = () => (
     <Route path="/stock/portfolio" element={
       <ProtectedRoute>
         <StockPortfolioPage />
+      </ProtectedRoute>
+    } />
+    <Route path="/mypage" element={
+      <ProtectedRoute>
+        <MyPage />
       </ProtectedRoute>
     } />
     <Route path="*" element={<NotFound />} />
