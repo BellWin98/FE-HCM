@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Settings, LogOut, BarChart3, Menu, X, UserCircle } from 'lucide-react';
+import { User, Settings, LogOut, BarChart3, Menu, X, UserCircle, Clock, Warehouse, Dumbbell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -78,6 +78,10 @@ export const Header = () => {
                         </p>
                       </div>
                     </div>
+                    <DropdownMenuItem onClick={() => handleNavigation('/dashboard')}>
+                      <Dumbbell className="mr-2 h-4 w-4" />
+                      <span>내 운동방</span>
+                    </DropdownMenuItem>                    
                     <DropdownMenuItem onClick={() => handleNavigation('/mypage')}>
                       <UserCircle className="mr-2 h-4 w-4" />
                       <span>마이페이지</span>
