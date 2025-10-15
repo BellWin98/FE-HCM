@@ -150,6 +150,16 @@ export const Header = () => {
               </Button>
             )}
 
+            {/* 내 운동방 */}
+            <Button 
+              variant="outline" 
+              onClick={() => handleNavigation('/dashboard')}
+              className="w-full justify-start"
+            >
+              <Dumbbell className="h-4 w-4 mr-2" />
+              <span>내 운동방</span>
+            </Button>            
+
             {/* 마이페이지 */}
             <Button 
               variant="outline" 
