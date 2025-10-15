@@ -94,6 +94,7 @@ export interface AuthContextType {
   checkEmailDuplicate: (email: string) => Promise<{ success: boolean }>;
   sendVerificationEmail: (email: string) => Promise<{ success: boolean }>;
   verifyEmailCode: (email: string, code: string) => Promise<{ success: boolean }>;
+  updateMember: (updates: Partial<Member>) => void;
 }
 
 export interface ChatMessage {
@@ -211,4 +212,58 @@ export interface PenaltyPaymentFormData {
   paymentDate: string;
   proofImage?: File;
   notes?: string;
+}
+
+// 마이페이지 관련 타입 정의
+export interface UserProfile {
+  id: number;
+  nickname: string;
+  email: string;
+  profileUrl?: string;
+  bio?: string;
+  totalWorkoutDays: number;
+  currentStreak: number;
+  longestStreak: number;
+  totalPenalty: number;
+  joinedAt: string;
+  role: 'USER' | 'ADMIN' | 'FAMILY';
+}
+
+export interface WorkoutFeedItem {
+  id: number;
+  workoutDate: string;
+  workoutType: WorkoutType;
+  duration: number;
+  imageUrl: string;
+  description?: string;
+  likes: number;
+  comments: number;
+  isLiked: boolean;
+  createdAt: string;
+  roomName?: string;
+}
+
+export interface WorkoutStats {
+  totalWorkouts: number;
+  currentStreak: number;
+  longestStreak: number;
+  weeklyGoal: number;
+  weeklyProgress: number;
+  monthlyWorkouts: number;
+  favoriteWorkoutType: WorkoutType;
+  totalDuration: number; // 총 운동 시간 (분)
+}
+
+export interface UserSettings {
+  notifications: {
+    workoutReminder: boolean;
+    penaltyAlert: boolean;
+    roomUpdates: boolean;
+    weeklyReport: boolean;
+  };
+  privacy: {
+    showProfile: boolean;
+    showWorkouts: boolean;
+    showStats: boolean;
+  };
 }

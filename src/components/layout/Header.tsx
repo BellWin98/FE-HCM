@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Settings, LogOut, BarChart3, Menu, X } from 'lucide-react';
+import { User, Settings, LogOut, BarChart3, Menu, X, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -78,6 +78,10 @@ export const Header = () => {
                         </p>
                       </div>
                     </div>
+                    <DropdownMenuItem onClick={() => handleNavigation('/mypage')}>
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      <span>마이페이지</span>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>로그아웃</span>
@@ -141,6 +145,16 @@ export const Header = () => {
                 <span>주식 현황</span>
               </Button>
             )}
+
+            {/* 마이페이지 */}
+            <Button 
+              variant="outline" 
+              onClick={() => handleNavigation('/mypage')}
+              className="w-full justify-start"
+            >
+              <UserCircle className="h-4 w-4 mr-2" />
+              <span>마이페이지</span>
+            </Button>
 
             {/* 로그아웃 */}
             <Button 

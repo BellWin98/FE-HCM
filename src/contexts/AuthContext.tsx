@@ -106,6 +106,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setMember(null);
   };
 
+  const updateMember = (updates: Partial<Member>) => {
+    if (member) {
+      const updatedMember = { ...member, ...updates };
+      setMember(updatedMember);
+      localStorage.setItem('member', JSON.stringify(updatedMember));
+    }
+  };
+
   const value: AuthContextType = {
     member: member,
     isAuthenticated: !!member,
@@ -116,6 +124,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkEmailDuplicate,
     sendVerificationEmail,
     verifyEmailCode,
+    updateMember,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
