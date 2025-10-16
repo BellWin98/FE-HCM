@@ -104,7 +104,7 @@ export interface ChatMessage {
   timestamp: string;
   type: 'TEXT' | 'IMAGE';
   imageUrl?: string;
-  readBy: string[];
+  // readBy: string[];
 }
 
 export interface ChatHistoryResponse {
