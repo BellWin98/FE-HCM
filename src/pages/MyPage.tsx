@@ -36,21 +36,19 @@ export const MyPage = () => {
       
       try {
         // 병렬로 데이터 로딩
-        // const [profile, stats, feed, settings] = await Promise.all([
-        //   api.getUserProfile(),
-        //   api.getUserWorkoutStats(),
-        //   api.getUserWorkoutFeed(0, 20),
-        //   api.getUserSettings()
-        // ]);
-
-        const profile = await api.getUserProfile();
+        const [profile, stats, feed, settings] = await Promise.all([
+          api.getUserProfile(),
+          api.getUserWorkoutStats(),
+          api.getUserWorkoutFeed(0, 20),
+          api.getUserSettings()
+        ]);
         
         setUserProfile(profile as UserProfile);
-        // setWorkoutStats(stats as WorkoutStats);
+        setWorkoutStats(stats as WorkoutStats);
         // API 응답이 페이징된 경우 content 필드에서 배열 추출
-        // const feedArray = Array.isArray(feed) ? feed : (feed as any)?.content || [];
-        // setWorkoutFeed(feedArray);
-        // setUserSettings(settings as UserSettings);
+        const feedArray = Array.isArray(feed) ? feed : (feed as any)?.content || [];
+        setWorkoutFeed(feedArray);
+        setUserSettings(settings as UserSettings);
       } catch (err) {
         console.error('Failed to load user data:', err);
         setError('데이터를 불러오는데 실패했습니다.');
@@ -140,7 +138,7 @@ export const MyPage = () => {
               />
             </TabsContent>
 
-            {/* <TabsContent value="feed" className="space-y-6">
+            <TabsContent value="feed" className="space-y-6">
               <WorkoutFeedSection 
                 feed={workoutFeed}
                 onFeedUpdate={setWorkoutFeed}
@@ -156,7 +154,7 @@ export const MyPage = () => {
                 settings={userSettings}
                 onSettingsUpdate={setUserSettings}
               />
-            </TabsContent> */}
+            </TabsContent>
           </Tabs>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -183,7 +181,7 @@ export const MyPage = () => {
                       <span>프로필</span>
                     </div>
                   </button>
-                  {/* <button
+                  <button
                     onClick={() => setActiveTab('feed')}
                     className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
                       activeTab === 'feed' 
@@ -221,7 +219,7 @@ export const MyPage = () => {
                       <Settings className="h-4 w-4" />
                       <span>설정</span>
                     </div>
-                  </button> */}
+                  </button>
                 </CardContent>
               </Card>
             </div>

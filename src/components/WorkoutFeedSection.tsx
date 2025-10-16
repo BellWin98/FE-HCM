@@ -116,17 +116,6 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate }: WorkoutFeedSectionPro
                         alt={`${item.workoutType} 운동`}
                         className="w-full h-64 sm:h-80 object-cover"
                       />
-                      <div className="absolute top-4 left-4">
-                        <Badge className={getWorkoutTypeColor(item.workoutType)}>
-                          {item.workoutType}
-                        </Badge>
-                      </div>
-                      <div className="absolute top-4 right-4">
-                        <Badge variant="secondary" className="bg-white/90 text-black">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {item.duration}분
-                        </Badge>
-                      </div>
                     </div>
 
                     {/* 운동 정보 */}
@@ -137,12 +126,12 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate }: WorkoutFeedSectionPro
                       )}
 
                       {/* 운동방 정보 */}
-                      {item.roomName && (
+                      {/* {item.roomName && (
                         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4" />
                           <span>{item.roomName}</span>
                         </div>
-                      )}
+                      )} */}
 
                       {/* 날짜 */}
                       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -152,8 +141,19 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate }: WorkoutFeedSectionPro
                         </span>
                       </div>
 
+                      {/* 기록 */}
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <Badge className={getWorkoutTypeColor(item.workoutType)}>
+                          {item.workoutType}
+                        </Badge>
+                        <Badge variant="secondary" className="bg-white/90 text-black">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {item.duration}분
+                        </Badge>
+                      </div>                      
+
                       {/* 액션 버튼 */}
-                      <div className="flex items-center justify-between pt-2 border-t">
+                      {/* <div className="flex items-center justify-between pt-2 border-t">
                         <div className="flex items-center space-x-4">
                           <Button
                             variant="ghost"
@@ -174,7 +174,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate }: WorkoutFeedSectionPro
                         <div className="text-xs text-muted-foreground">
                           {format(new Date(item.createdAt), 'MM/dd HH:mm', { locale: ko })}
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   </CardContent>
                 </Card>
