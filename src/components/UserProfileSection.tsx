@@ -228,7 +228,7 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
             <div className="flex items-center space-x-2">
               <Zap className="h-4 w-4 text-orange-500" />
               <div>
-                <p className="text-sm font-medium">현재 연속</p>
+                <p className="text-sm font-medium">현재 스트릭</p>
                 <p className="text-2xl font-bold">{profile.currentStreak}일</p>
               </div>
             </div>
@@ -240,7 +240,7 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
             <div className="flex items-center space-x-2">
               <Award className="h-4 w-4 text-yellow-500" />
               <div>
-                <p className="text-sm font-medium">최장 연속</p>
+                <p className="text-sm font-medium">최장 스트릭</p>
                 <p className="text-2xl font-bold">{profile.longestStreak}일</p>
               </div>
             </div>
