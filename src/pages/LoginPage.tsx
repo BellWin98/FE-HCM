@@ -84,7 +84,7 @@ const koreanToEnglish = (text: string): string => {
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => {
-                  const convertedValue = koreanToEnglish(e.target.value);
+                  const convertedValue = koreanToEnglish(e.target.value.replace(/\s/g, ''));
                   setEmail(convertedValue);
                 }}
                 onKeyDown={(e) => {
@@ -103,7 +103,7 @@ const koreanToEnglish = (text: string): string => {
                 placeholder="비밀번호를 입력하세요"
                 value={password}
                 onChange={(e) => {
-                  const convertedValue = koreanToEnglish(e.target.value);
+                  const convertedValue = koreanToEnglish(e.target.value.replace(/\s/g, ''));
                   setPassword(convertedValue);
                 }}
                 onKeyDown={(e) => {

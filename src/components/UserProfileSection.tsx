@@ -129,7 +129,7 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
                       minLength={2}
                       maxLength={10}
                       value={editForm.nickname}
-                      onChange={(e) => setEditForm({ ...editForm, nickname: e.target.value })}
+                      onChange={(e) => setEditForm({ ...editForm, nickname: e.target.value.replace(/\s/g, '') })}
                       onKeyDown={(e) => {
                         if (e.key === ' ') {
                           e.preventDefault();

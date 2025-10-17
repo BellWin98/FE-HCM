@@ -229,7 +229,7 @@ export const RegisterPage = () => {
                   placeholder="your@email.com"
                   value={email}
                   onChange={(e) => {
-                    const convertedValue = koreanToEnglish(e.target.value);
+                    const convertedValue = koreanToEnglish(e.target.value.replace(/\s/g, ''));
                     setEmail(convertedValue);
                     setEmailStatus('idle');
                     setIsEmailVerified(false);
@@ -360,7 +360,7 @@ export const RegisterPage = () => {
                 minLength={2}
                 maxLength={10}
                 value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
+                onChange={(e) => setNickname(e.target.value.replace(/\s/g, ''))}
                 onKeyDown={(e) => {
                   if (e.key === ' ') {
                     e.preventDefault();
@@ -379,7 +379,7 @@ export const RegisterPage = () => {
                 minLength={8}
                 maxLength={20}
                 onChange={(e) => {
-                  const convertedValue = koreanToEnglish(e.target.value);
+                  const convertedValue = koreanToEnglish(e.target.value.replace(/\s/g, ''));
                   setPassword(convertedValue);
                 }}
                 onKeyDown={(e) => {
