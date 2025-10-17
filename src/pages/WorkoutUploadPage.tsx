@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { WorkoutSuccessDialog } from '@/components/WorkoutSuccessDialog';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { WorkoutType, WORKOUT_TYPES } from '@/types';
+import { WorkoutType, WORKOUT_TYPES, UserProfile } from '@/types';
 import { format } from 'date-fns';
 import { da, ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload } from 'lucide-react';
@@ -32,6 +33,8 @@ export const WorkoutUploadPage = () => {
   const [duration, setDuration] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [currentStreak, setCurrentStreak] = useState(0);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,8 +105,13 @@ export const WorkoutUploadPage = () => {
       };
 
       await api.uploadWorkout(workoutData, selectedImage!);
-      
-      navigate('/dashboard');
+
+      // 유저 프로필에서 스트릭 정보 가져오기
+      const profile = await api.getUserProfile() as UserProfile;
+      setCurrentStreak(profile.currentStreak);
+
+      // 성공 다이얼로그 표시
+      setShowSuccessDialog(true);
     } catch (err) {
       console.error('운동 인증 업로드 실패:', err);
       setError(err instanceof Error ? err.message : '운동 인증 업로드에 실패했습니다.');
@@ -112,9 +120,20 @@ export const WorkoutUploadPage = () => {
     }
   };
 
+  const handleNavigateToDashboard = () => {
+    setShowSuccessDialog(false);
+    navigate('/dashboard');
+  };
+
   return (
     <Layout>
       <div className="max-w-2xl mx-auto">
+        <WorkoutSuccessDialog
+          open={showSuccessDialog}
+          onOpenChange={setShowSuccessDialog}
+          currentStreak={currentStreak}
+          onNavigate={handleNavigateToDashboard}
+        />
         <Card>
           <CardHeader>
             <CardTitle>운동 인증 사진 업로드</CardTitle>
