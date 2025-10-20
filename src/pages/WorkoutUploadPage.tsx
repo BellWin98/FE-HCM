@@ -14,7 +14,7 @@ import { WorkoutType, WORKOUT_TYPES, UserProfile } from '@/types';
 import { format } from 'date-fns';
 import { da, ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const toDateOnly = (date) => {
@@ -120,10 +120,21 @@ export const WorkoutUploadPage = () => {
     }
   };
 
-  const handleNavigateToDashboard = () => {
-    setShowSuccessDialog(false);
-    navigate('/dashboard');
-  };
+  // 성공 다이얼로그 표시 2초 후 자동으로 대시보드로 이동
+  useEffect(() => {
+    if (showSuccessDialog) {
+      const timer = setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessDialog, navigate]);
+
+  // const handleNavigateToDashboard = () => {
+  //   setShowSuccessDialog(false);
+  //   navigate('/dashboard');
+  // };
 
   return (
     <Layout>
@@ -132,7 +143,7 @@ export const WorkoutUploadPage = () => {
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
           currentStreak={currentStreak}
-          onNavigate={handleNavigateToDashboard}
+          // onNavigate={handleNavigateToDashboard}
         />
         <Card>
           <CardHeader>

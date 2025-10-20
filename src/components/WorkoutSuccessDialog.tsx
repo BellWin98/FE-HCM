@@ -5,21 +5,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { CheckCircle2, Flame } from 'lucide-react';
 
 interface WorkoutSuccessDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentStreak: number;
-  onNavigate: () => void;
+  // onNavigate: () => void;
 }
 
 export const WorkoutSuccessDialog = ({
   open,
   onOpenChange,
   currentStreak,
-  onNavigate,
+  // onNavigate,
 }: WorkoutSuccessDialogProps) => {
   const getStreakMessage = (streak: number) => {
     if (streak == 100) return { emoji: '💯', message: '100일간의 꾸준함, 그 어떤 목표보다 값집니다 🙌', color: 'text-red-600' };
@@ -28,7 +27,7 @@ export const WorkoutSuccessDialog = ({
     if (streak == 10) return { emoji: '💪', message: '대단해요! 10일 동안 스스로를 이겼어요!', color: 'text-blue-600' };
     if (streak == 7) return { emoji: '🎉', message: '훌륭해요! 일주일 연속 달성!', color: 'text-green-600' };
     if (streak == 3) return { emoji: '🌟', message: '운동 습관이 자리 잡는 중이에요!', color: 'text-orange-600' };
-    return { emoji: '✨', message: '어제보다 더 건강해졌어요! 계속 가볼까요?', color: 'text-gray-600' };
+    return { emoji: '✨', message: '어제보다 더 건강해졌어요!', color: 'text-red-600' };
   };
 
   const streakInfo = getStreakMessage(currentStreak);
@@ -47,30 +46,14 @@ export const WorkoutSuccessDialog = ({
             <div className="flex items-center justify-center space-x-2 text-3xl font-bold">
               <Flame className={`h-8 w-8 ${streakInfo.color}`} />
               <span className={streakInfo.color}>
-                {currentStreak}일 연속
+                {currentStreak}일 연속 인증했어요!
               </span>
-            </div>
-            <div className="text-lg font-medium text-gray-700">
-              운동을 인증했어요!
             </div>
             <div className="text-base text-gray-600">
               {streakInfo.emoji} {streakInfo.message}
             </div>
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col space-y-2 pt-4">
-          <Button onClick={onNavigate} size="lg" className="w-full">
-            대시보드로 이동
-          </Button>
-          <Button
-            onClick={() => onOpenChange(false)}
-            variant="outline"
-            size="lg"
-            className="w-full"
-          >
-            닫기
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
