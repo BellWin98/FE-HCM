@@ -100,9 +100,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    // localStorage.removeItem('user');
-    // localStorage.removeItem('token');
-    localStorage.clear();
+    localStorage.removeItem('member');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    // localStorage.clear();
     setMember(null);
   };
 

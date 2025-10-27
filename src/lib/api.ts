@@ -42,7 +42,10 @@ class ApiClient {
             }
             return this.axiosInstance(config);
           } catch (refreshError) {
-            localStorage.clear();
+            // localStorage.clear();
+            localStorage.removeItem('member');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
             alert("로그인 유효시간이 만료되었습니다.");
             window.location.reload();
             return Promise.reject(refreshError);

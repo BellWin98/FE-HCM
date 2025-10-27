@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -6,13 +6,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
+
+const SAVED_EMAIL_KEY = 'saved_email';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [rememberEmail, setRememberEmail] = useState(false);
   const { login, isAuthenticated, loading } = useAuth();
+
+  // 컴포넌트 마운트 시 저장된 이메일 불러오기
+  useEffect(() => {
+    const savedEmail = localStorage.getItem(SAVED_EMAIL_KEY);
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberEmail(true);
+    }
+  }, []);
 
   // 한글을 영어로 변환하는 함수
 const koreanToEnglish = (text: string): string => {
@@ -60,6 +73,13 @@ const koreanToEnglish = (text: string): string => {
 
     try {
       await login(email, password);
+
+      // 로그인 성공 시 이메일 저장 처리
+      if (rememberEmail) {
+        localStorage.setItem(SAVED_EMAIL_KEY, email);
+      } else {
+        localStorage.removeItem(SAVED_EMAIL_KEY);
+      }
     } catch (err) {
       setError('이메일 또는 비밀번호가 올바르지 않습니다.');
     }
@@ -113,6 +133,20 @@ const koreanToEnglish = (text: string): string => {
                 }}
                 disabled={loading}
               />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="rememberEmail"
+                checked={rememberEmail}
+                onCheckedChange={(checked) => setRememberEmail(checked as boolean)}
+                disabled={loading}
+              />
+              <Label
+                htmlFor="rememberEmail"
+                className="text-sm font-normal cursor-pointer"
+              >
+                이메일 저장
+              </Label>
             </div>
             {error && (
               <Alert variant="destructive">
