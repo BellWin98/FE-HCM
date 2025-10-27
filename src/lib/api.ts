@@ -355,7 +355,7 @@ class ApiClient {
     return await this.request("/members/profile", { method: "PUT", data: profileData });
   }
 
-  async getUserWorkoutFeed(page: number = 0, size: number = 10) {
+  async getUserWorkoutFeed(page: number = 0, size: number = 20) {
       return await this.request(`/members/workout-feed?page=${page}&size=${size}`);
   }
 
