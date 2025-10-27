@@ -8,13 +8,16 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WorkoutSuccessDialog } from '@/components/WorkoutSuccessDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { api } from '@/lib/api';
+import { sendStreakNotification } from '@/lib/streakNotification';
 import { cn } from '@/lib/utils';
-import { WorkoutType, WORKOUT_TYPES, UserProfile } from '@/types';
+import { WorkoutType, WORKOUT_TYPES, UserProfile, WorkoutRoomDetail } from '@/types';
 import { format } from 'date-fns';
 import { da, ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const toDateOnly = (date) => {
@@ -25,6 +28,7 @@ const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 10
 
 export const WorkoutUploadPage = () => {
   const navigate = useNavigate();
+  const { member } = useAuth();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [workoutDate, setWorkoutDate] = useState<Date>(new Date());
@@ -35,6 +39,25 @@ export const WorkoutUploadPage = () => {
   const [error, setError] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [currentRoomId, setCurrentRoomId] = useState<number | null>(null);
+
+  const accessToken = localStorage.getItem('accessToken');
+  const { client: wsClient, isConnected } = useWebSocket(currentRoomId, accessToken);
+
+  // 컴포넌트 마운트 시 현재 운동방 정보 가져오기
+  useEffect(() => {
+    const fetchCurrentRoom = async () => {
+      try {
+        const room = await api.getCurrentWorkoutRoom() as WorkoutRoomDetail;
+        if (room?.workoutRoomInfo?.id) {
+          setCurrentRoomId(room.workoutRoomInfo.id);
+        }
+      } catch (err) {
+        console.log('운동방 정보를 가져올 수 없습니다:', err);
+      }
+    };
+    fetchCurrentRoom();
+  }, []);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,7 +131,20 @@ export const WorkoutUploadPage = () => {
 
       // 유저 프로필에서 스트릭 정보 가져오기
       const profile = await api.getUserProfile() as UserProfile;
-      setCurrentStreak(profile.currentStreak);
+      // const streak = profile.currentStreak;
+      const streak = 3;
+      setCurrentStreak(streak);
+
+      // 스트릭 마일스톤 달성 시 채팅방에 알림 전송
+      if (currentRoomId && member?.nickname && accessToken) {
+        sendStreakNotification(
+          wsClient,
+          currentRoomId,
+          member.nickname,
+          streak,
+          accessToken
+        );
+      }
 
       // 성공 다이얼로그 표시
       setShowSuccessDialog(true);
