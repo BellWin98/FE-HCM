@@ -98,7 +98,7 @@ class ApiClient {
       //   error.response?.data?.message || `HTTP error! status: ${error.response?.status}`;
       // console.error(message);
       if (axios.isAxiosError(error)) {
-        throw new Error(error.message);
+        throw new Error(error.response.data.message);
       }
       throw new Error(String(error));
     }
