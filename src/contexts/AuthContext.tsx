@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await api.login(email, password);
       const { member: loginMember, accessToken, refreshToken } = response as { member: Member; accessToken: string, refreshToken: string };
-      
+
       localStorage.setItem('member', JSON.stringify(loginMember));
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
