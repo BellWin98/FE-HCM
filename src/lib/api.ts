@@ -28,11 +28,26 @@ class ApiClient {
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
+        const config = error.config as AxiosRequestConfig & { _retry?: boolean };
+
+        // 401 에러 처리
         if (error.response?.status === 401) {
+          // 로그인/회원가입 요청인 경우 토큰 리프레시 시도하지 않음
+          const isAuthEndpoint = config.url?.includes('/auth/login') ||
+                                 config.url?.includes('/auth/register') ||
+                                 config.url?.includes('/auth/refresh');
+
+          // 이미 재시도한 요청이거나 인증 엔드포인트인 경우 바로 에러 반환
+          if (config._retry || isAuthEndpoint) {
+            return Promise.reject(error);
+          }
+
+          // 토큰 리프레시 시도
+          config._retry = true;
+
           try {
             await this.refreshAccessToken();
             // 새 토큰으로 헤더 갱신 후 요청 재시도
-            const config = error.config as AxiosRequestConfig;
             const newToken = localStorage.getItem("accessToken");
             if (newToken) {
               if (!(config.headers instanceof AxiosHeaders)) {
@@ -42,7 +57,7 @@ class ApiClient {
             }
             return this.axiosInstance(config);
           } catch (refreshError) {
-            // localStorage.clear();
+            // 토큰 리프레시 실패 시 로그아웃 처리
             localStorage.removeItem('member');
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
