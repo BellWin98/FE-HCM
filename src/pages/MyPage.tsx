@@ -25,6 +25,7 @@ export const MyPage = () => {
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLastPage, setIsLastPage] = useState(false);
 
   // 데이터 로딩
   useEffect(() => {
@@ -48,6 +49,10 @@ export const MyPage = () => {
         // API 응답이 페이징된 경우 content 필드에서 배열 추출
         const feedArray = Array.isArray(feed) ? feed : (feed as any)?.content || [];
         setWorkoutFeed(feedArray);
+        if (!Array.isArray(feed) && (feed as any)?.last !== undefined) {
+          setIsLastPage((feed as any).last);  
+        }
+        
         // setUserSettings(settings as UserSettings);
       } catch (err) {
         console.error('Failed to load user data:', err);
@@ -142,6 +147,7 @@ export const MyPage = () => {
               <WorkoutFeedSection 
                 feed={workoutFeed}
                 onFeedUpdate={setWorkoutFeed}
+                initialIsLastPage={isLastPage}
               />
             </TabsContent>
 
@@ -237,6 +243,7 @@ export const MyPage = () => {
                 <WorkoutFeedSection 
                   feed={workoutFeed}
                   onFeedUpdate={setWorkoutFeed}
+                  initialIsLastPage={isLastPage}
                 />
               )}
               {activeTab === 'stats' && (

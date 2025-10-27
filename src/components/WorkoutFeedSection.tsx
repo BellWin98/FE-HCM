@@ -13,12 +13,13 @@ import { toast } from 'sonner';
 interface WorkoutFeedSectionProps {
   feed: WorkoutFeedItem[];
   onFeedUpdate: (feed: WorkoutFeedItem[]) => void;
+  initialIsLastPage?: boolean;
 }
 
-export const WorkoutFeedSection = ({ feed, onFeedUpdate }: WorkoutFeedSectionProps) => {
+export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = false }: WorkoutFeedSectionProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(!initialIsLastPage);
 
   // feed가 배열이 아닐 경우 빈 배열로 처리
   const safeFeed = Array.isArray(feed) ? feed : [];
@@ -53,7 +54,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate }: WorkoutFeedSectionPro
     
     setIsLoading(true);
     try {
-      const response = await api.getUserWorkoutFeed(page + 1, 10);
+      const response = await api.getUserWorkoutFeed(page + 1, 20);
       // API 응답이 페이징된 경우 content 필드에서 배열 추출
       const newFeed = Array.isArray(response) ? response : (response as any)?.content || [];
       if (newFeed.length === 0) {
@@ -61,6 +62,9 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate }: WorkoutFeedSectionPro
       } else {
         onFeedUpdate([...safeFeed, ...newFeed]);
         setPage(page + 1);
+        if (response.last) {
+          setHasMore(false);
+        }
       }
     } catch (error) {
       toast.error('피드를 불러오는데 실패했습니다.');
