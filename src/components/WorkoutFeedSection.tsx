@@ -45,7 +45,6 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
       onFeedUpdate(updatedFeed);
     } catch (error) {
       toast.error('좋아요 처리에 실패했습니다.');
-      console.error('Like error:', error);
     }
   };
 
@@ -56,7 +55,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
     try {
       const response = await api.getUserWorkoutFeed(page + 1, 20);
       // API 응답이 페이징된 경우 content 필드에서 배열 추출
-      const newFeed = Array.isArray(response) ? response : (response as any)?.content || [];
+      const newFeed = Array.isArray(response) ? response : response.content || [];
       if (newFeed.length === 0) {
         setHasMore(false);
       } else {
@@ -68,7 +67,6 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
       }
     } catch (error) {
       toast.error('피드를 불러오는데 실패했습니다.');
-      console.error('Load more error:', error);
     } finally {
       setIsLoading(false);
     }

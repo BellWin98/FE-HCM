@@ -61,8 +61,7 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
       setIsEditing(false);
       toast.success('프로필이 업데이트되었습니다.');
     } catch (error) {
-      toast.error('프로필 업데이트에 실패했습니다.');
-      console.error('Profile update error:', error);
+      toast.error(error.message);
     } finally {
       setIsLoading(false);
     }
