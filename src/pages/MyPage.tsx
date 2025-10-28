@@ -47,10 +47,10 @@ export const MyPage = () => {
         setUserProfile(profile as UserProfile);
         // setWorkoutStats(stats as WorkoutStats);
         // API 응답이 페이징된 경우 content 필드에서 배열 추출
-        const feedArray = Array.isArray(feed) ? feed : (feed as any)?.content || [];
+        const feedArray = Array.isArray(feed) ? feed : feed.content || [];
         setWorkoutFeed(feedArray);
-        if (!Array.isArray(feed) && (feed as any)?.last !== undefined) {
-          setIsLastPage((feed as any).last);  
+        if (!Array.isArray(feed) && feed.last !== undefined) {
+          setIsLastPage(feed.last);  
         }
         
         // setUserSettings(settings as UserSettings);
