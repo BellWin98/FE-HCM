@@ -36,7 +36,6 @@ class ApiClient {
 
           try {
             await this.refreshToken();
-            
             return this.axiosInstance(config);
         } catch (refreshError) {
             // 토큰 리프레시 실패 시 로그아웃 처리
