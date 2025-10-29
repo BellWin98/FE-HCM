@@ -57,11 +57,9 @@ class ApiClient {
             }
             return this.axiosInstance(config);
           } catch (refreshError) {
-            // 토큰 리프레시 실패 시 로그아웃 처리
             localStorage.removeItem('member');
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
-            alert("로그인 유효시간이 만료되었습니다.");
             window.location.reload();
             return Promise.reject(refreshError);
           }
