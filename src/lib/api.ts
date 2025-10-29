@@ -41,8 +41,6 @@ class ApiClient {
           if (config._retry || isAuthEndpoint) {
             return Promise.reject(error);
           }
-
-          // 토큰 리프레시 시도
           config._retry = true;
 
           try {
