@@ -9,19 +9,8 @@ class ApiClient {
   constructor() {
     this.axiosInstance = axios.create({
       baseURL: API_BASE_URL,
+      withCredentials: true,
       headers: { "Content-Type": "application/json" },
-    });
-
-    // 요청 인터셉터 → 토큰 자동 주입
-    this.axiosInstance.interceptors.request.use((config) => {
-      const token = localStorage.getItem("accessToken");
-      if (token) {
-        if (!(config.headers instanceof AxiosHeaders)) {
-          config.headers = new AxiosHeaders(config.headers);
-        }
-        (config.headers as AxiosHeaders).set("Authorization", `Bearer ${token}`);
-      }
-      return config;
     });
 
     // 응답 인터셉터 → 401 발생 시 토큰 재발급 후 재시도
@@ -46,43 +35,18 @@ class ApiClient {
           config._retry = true;
 
           try {
-            await this.refreshAccessToken();
-            // 새 토큰으로 헤더 갱신 후 요청 재시도
-            const newToken = localStorage.getItem("accessToken");
-            if (newToken) {
-              if (!(config.headers instanceof AxiosHeaders)) {
-                config.headers = new AxiosHeaders(config.headers);
-              }
-              (config.headers as AxiosHeaders).set("Authorization", `Bearer ${newToken}`);
-            }
+            await this.refreshToken();
+            
             return this.axiosInstance(config);
-          } catch (refreshError) {
+        } catch (refreshError) {
             // 토큰 리프레시 실패 시 로그아웃 처리
-            localStorage.removeItem('member');
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            alert("로그인 유효시간이 만료되었습니다.");
-            window.location.reload();
-            return Promise.reject(refreshError);
-          }
+          localStorage.removeItem('member');
+          // Refresh Token도 만료된 경우 로그인 페이지로 리다이렉트
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
         }
-        return Promise.reject(error);
       }
-    );
-  }
-
-  private async refreshAccessToken(): Promise<string> {
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (!refreshToken) throw new Error("No refresh token available");
-
-    const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
-    const newAccessToken = res.data?.data?.accessToken || res.data?.accessToken;
-
-    if (newAccessToken) {
-      localStorage.setItem("accessToken", newAccessToken);
-      return newAccessToken;
-    }
-    throw new Error("Invalid refresh token response");
+    });
   }
 
   // request wrapper (fetch 버전의 request와 동일한 역할)
@@ -134,6 +98,18 @@ class ApiClient {
       method: "POST",
       data: { email, password, nickname },
     });
+  }
+
+  async logout() {
+    return this.request("/auth/logout", {
+      method: "POST",
+    })
+  }
+
+  async refreshToken() {
+    return this.request("/auth/refresh", {
+      method: "POST",
+    })
   }
 
   async checkEmailDuplicate(email: string) {

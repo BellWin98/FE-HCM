@@ -28,7 +28,6 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null) // 스크롤 이벤트 감지용
 
   const roomId = currentWorkoutRoom.workoutRoomInfo?.id;
-  const accessToken = localStorage.getItem('accessToken');
 
   // 맨 처음 로드 시 또는 새 메시지 수신 시 채팅방 내부 스크롤만 하단으로 이동
   useEffect(() => {
@@ -80,7 +79,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
   useEffect(() => {
 
     // 운동방에 없거나, 로그아웃 시 연결 해제
-    if (!roomId || !accessToken) {
+    if (!roomId) {
         if (clientRef.current && clientRef.current.active) {
             clientRef.current.deactivate();
             clientRef.current = null;
@@ -124,9 +123,6 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
         webSocketFactory: () => {
             return new SockJS(`${WS_URL}/wss`);
         },
-        connectHeaders: {
-            Authorization: `Bearer ${accessToken}`,
-        },
         // debug: (str) => {
         //     console.log(new Date(), str);
         // },
@@ -157,7 +153,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
             client.deactivate();
         }
     };
-  }, [roomId, accessToken]);
+  }, [roomId]);
 
   // 메시지 전송
   const sendMessage = () => {
@@ -169,7 +165,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
     clientRef.current.publish({
       destination: `/app/chat/room/${roomId}/send`,
       body: JSON.stringify(msg),
-      headers: { Authorization: `Bearer ${accessToken}`,
+      headers: {
         'content-type': 'application/json'
       },
     });
@@ -203,7 +199,6 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
     clientRef.current.publish({
       destination: `/app/chat/room/${roomId}/send`,
       body: JSON.stringify(msg),
-      headers: { Authorization: `Bearer ${accessToken}` },
     });
     setFile(null);
   };

@@ -6,7 +6,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
@@ -23,9 +23,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // 로컬 스토리지에서 사용자 정보 확인
     const storedMember = localStorage.getItem('member');
-    const accessToken = localStorage.getItem('accessToken');
-    
-    if (storedMember && accessToken) {
+    if (storedMember) {
       setMember(JSON.parse(storedMember));
     }
     setLoading(false);
@@ -34,13 +32,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const response = await api.login(email, password);
-      const { member: loginMember, accessToken, refreshToken } = response as { member: Member; accessToken: string, refreshToken: string };
-
-      localStorage.setItem('member', JSON.stringify(loginMember));
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      setMember(loginMember);
+      const response = await api.login(email, password) as Member;
+      localStorage.setItem('member', JSON.stringify(response));
+      setMember(response);
     } catch (error) {
       throw new Error(error.message);
     } finally {
@@ -51,17 +45,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (email: string, password: string, nickname: string) => {
     setLoading(true);
     try {
-      // 실제 API 호출
-      const response = await api.register(email, password, nickname);
-
-      // response의 타입이 unknown일 수 있으므로 타입 단언 또는 체크 필요
-      // 예시: { member: Member, accessToken: string } 형태라고 가정
-      const { member: registeredMember, accessToken, refreshToken } = response as { member: Member; accessToken: string, refreshToken: string };
-
-      localStorage.setItem('member', JSON.stringify(registeredMember));
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      setMember(registeredMember);
+      const response = await api.register(email, password, nickname) as Member;
+      localStorage.setItem('member', JSON.stringify(response));
+      setMember(response);
     } catch (error) {
       throw new Error(error.message);
     } finally {
@@ -99,11 +85,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('member');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    // localStorage.clear();
+  const logout = async () => {
+    await api.logout();
     setMember(null);
   };
 
