@@ -35,11 +35,9 @@ export const WorkoutUploadPage = () => {
   const [error, setError] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = (file: File) => {
     // 파일 크기 체크 (10MB)
     if (file.size > 10 * 1024 * 1024) {
       setError('이미지 크기는 10MB 이하여야 합니다.');
@@ -61,6 +59,37 @@ export const WorkoutUploadPage = () => {
       setImagePreview(e.target?.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processFile(file);
+  };
+
+  // 파일 드래그 중일 때 호출
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  // 드래그가 영역을 벗어날 때 호출
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  // 파일을 드롭할 때 호출
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    processFile(file);
   };
 
   const validateForm = () => {
@@ -157,7 +186,17 @@ export const WorkoutUploadPage = () => {
               {/* 이미지 업로드 */}
               <div className="space-y-2">
                 <Label htmlFor="workout-image">운동 인증 사진 *</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <div
+                  className={cn(
+                    "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                    isDragging
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-300 hover:border-gray-400"
+                  )}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                   {imagePreview ? (
                     <div className="space-y-4">
                       <img
