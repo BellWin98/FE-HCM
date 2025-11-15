@@ -1,5 +1,5 @@
 import { RestInfo, RoomMember } from "@/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Circle, Pause } from "lucide-react";
@@ -7,10 +7,13 @@ import { Dialog, DialogContent } from "./ui/dialog";
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { startOfDay, endOfDay } from 'date-fns';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "./ui/carousel";
 
 export const MemberStatus = ({ currentWorkoutRoom, today }) => {
     const weeklyGoal = currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts;
-    const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
+    const [zoomImageUrls, setZoomImageUrls] = useState<string[] | null>(null);
+    const [zoomImageIndex, setZoomImageIndex] = useState<number>(0);
+    const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   
     // 특정 멤버가 오늘 휴식일인지 확인하는 함수
     const isMemberRestToday = (member: RoomMember) => {
@@ -22,6 +25,22 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
         return todayDate >= startDate && todayDate <= endDate;
       });
     };
+
+    // 캐러셀 인덱스 추적
+    useEffect(() => {
+      if (!carouselApi) return;
+
+      const updateIndex = () => {
+        setZoomImageIndex(carouselApi.selectedScrollSnap());
+      };
+
+      updateIndex();
+      carouselApi.on('select', updateIndex);
+
+      return () => {
+        carouselApi.off('select', updateIndex);
+      };
+    }, [carouselApi]);
 
     return (
         <Card>
@@ -61,17 +80,76 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
                               오늘 인증
                             </Badge>
                           </PopoverTrigger>
-                          <PopoverContent>
+                          <PopoverContent className="max-w-md">
                             <div className="space-y-2">
-                              <p className="font-medium text-sm">
-                                {member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.workoutType}
-                              </p>
-                              <img 
-                                src={member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.imageUrl}
-                                alt="운동 인증 사진"
-                                className='max-w-xs max-h-60 rounded cursor-zoom-in'
-                                onClick={() => setZoomImageUrl(member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.imageUrl || null)}
-                              />
+                              <div className="flex flex-wrap gap-1">
+                                {(() => {
+                                  const todayRecord = member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'));
+                                  const workoutTypes = todayRecord?.workoutTypes;
+                                  if (!workoutTypes || workoutTypes.length === 0) return null;
+                                  
+                                  return workoutTypes.map((type, idx) => (
+                                    <Badge key={idx} variant="secondary" className="text-xs">
+                                      {type}
+                                    </Badge>
+                                  ));
+                                })()}
+                              </div>
+                              {(() => {
+                                const todayRecord = member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'));
+                                const imageUrls = todayRecord?.imageUrls;
+                                if (!imageUrls || imageUrls.length === 0) return null;
+                                
+                                if (imageUrls.length === 1) {
+                                  return (
+                                    <>
+                                    <img 
+                                      src={imageUrls[0]}
+                                      alt="운동 인증 사진"
+                                      className='max-w-xs max-h-60 rounded cursor-zoom-in'
+                                      onClick={() => {
+                                        setZoomImageUrls(imageUrls);
+                                        setZoomImageIndex(0);
+                                      }}
+                                    />
+                                    <div className="text-center text-xs text-muted-foreground mt-1">
+                                      클릭하여 확대
+                                    </div>
+                                    </>
+                                  );
+                                } else if (imageUrls.length > 1) {
+                                  return (
+                                    <div className="w-full max-w-xs">
+                                      <Carousel className="w-full">
+                                        <CarouselContent>
+                                          {imageUrls.map((url, idx) => (
+                                            <CarouselItem key={idx}>
+                                              <img 
+                                                src={url}
+                                                alt={`운동 인증 사진 ${idx + 1}`}
+                                                className='w-full h-32 sm:h-40 object-cover rounded cursor-zoom-in'
+                                                onClick={() => {
+                                                  setZoomImageUrls(imageUrls);
+                                                  setZoomImageIndex(idx);
+                                                }}
+                                              />
+                                            </CarouselItem>
+                                          ))}
+                                        </CarouselContent>
+                                        {imageUrls.length > 1 && (
+                                          <>
+                                            <CarouselPrevious className="left-2 h-6 w-6" />
+                                            <CarouselNext className="right-2 h-6 w-6" />
+                                          </>
+                                        )}
+                                      </Carousel>
+                                      <div className="text-center text-xs text-muted-foreground mt-1">
+                                        클릭하여 확대
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                              })()}
                             </div>
                           </PopoverContent>
                         </Popover>
@@ -110,10 +188,46 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
               );
             })}
           </CardContent>
-          <Dialog open={!!zoomImageUrl} onOpenChange={() => setZoomImageUrl(null)}>
-            <DialogContent>
-              {zoomImageUrl && (
-                <img src={zoomImageUrl} alt="확대된 운동 인증 사진" className="w-full h-auto rounded" />
+          <Dialog open={!!zoomImageUrls} onOpenChange={() => setZoomImageUrls(null)}>
+            <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+              {zoomImageUrls && zoomImageUrls.length > 0 && (
+                <div className="relative">
+                  {zoomImageUrls.length === 1 ? (
+                    <img 
+                      src={zoomImageUrls[0]} 
+                      alt="확대된 운동 인증 사진" 
+                      className="w-full h-auto max-h-[90vh] object-contain rounded" 
+                    />
+                  ) : (
+                    <Carousel 
+                      className="w-full" 
+                      setApi={setCarouselApi}
+                      opts={{ 
+                        startIndex: zoomImageIndex,
+                        loop: true 
+                      }}
+                    >
+                      <CarouselContent>
+                        {zoomImageUrls.map((url, idx) => (
+                          <CarouselItem key={idx}>
+                            <img 
+                              src={url} 
+                              alt={`확대된 운동 인증 사진 ${idx + 1}`} 
+                              className="w-full h-auto max-h-[90vh] object-contain rounded" 
+                            />
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious className="left-4 h-8 w-8" />
+                      <CarouselNext className="right-4 h-8 w-8" />
+                    </Carousel>
+                  )}
+                  {zoomImageUrls.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                      {zoomImageIndex + 1} / {zoomImageUrls.length}
+                    </div>
+                  )}
+                </div>
               )}
             </DialogContent>
           </Dialog>

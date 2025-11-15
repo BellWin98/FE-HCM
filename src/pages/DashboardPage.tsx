@@ -386,7 +386,7 @@ export const DashboardPage = () => {
                     <div>
                       <p className="font-medium">운동 인증 완료!</p>
                       <p className="text-sm text-muted-foreground">
-                        {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.workoutType} - {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.duration}분
+                        {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.workoutTypes?.join(', ') || ''} - {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.duration}분
                       </p>
                     </div>
                   </div>

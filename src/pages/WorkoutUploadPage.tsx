@@ -13,9 +13,11 @@ import { cn } from '@/lib/utils';
 import { WorkoutType, WORKOUT_TYPES, UserProfile } from '@/types';
 import { format } from 'date-fns';
 import { da, ko } from 'date-fns/locale';
-import { CalendarIcon, Loader2, Upload } from 'lucide-react';
+import { CalendarIcon, Loader2, Upload, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 
 const toDateOnly = (date) => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -25,10 +27,10 @@ const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 10
 
 export const WorkoutUploadPage = () => {
   const navigate = useNavigate();
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [workoutDate, setWorkoutDate] = useState<Date>(new Date());
-  const [workoutType, setWorkoutType] = useState<WorkoutType>('헬스(가슴)');
+  const [workoutTypes, setWorkoutTypes] = useState<WorkoutType[]>([]);
   const [customWorkoutType, setCustomWorkoutType] = useState<string>('');
   const [duration, setDuration] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -37,34 +39,60 @@ export const WorkoutUploadPage = () => {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
-  const processFile = (file: File) => {
-    // 파일 크기 체크 (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('이미지 크기는 10MB 이하여야 합니다.');
-      return;
+  const processFiles = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+
+    // 파일 검증
+    fileArray.forEach((file) => {
+      // 파일 크기 체크 (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        errors.push(`${file.name}의 크기는 10MB 이하여야 합니다.`);
+        return;
+      }
+
+      // 파일 형식 체크
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        errors.push(`${file.name}은(는) JPEG, PNG, WebP 형식만 업로드 가능합니다.`);
+        return;
+      }
+
+      validFiles.push(file);
+    });
+
+    if (errors.length > 0) {
+      setError(errors.join(', '));
     }
 
-    // 파일 형식 체크
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      setError('JPEG, PNG, WebP 형식의 이미지만 업로드 가능합니다.');
-      return;
+    if (validFiles.length > 0) {
+      // 모든 파일의 미리보기 생성
+      const previewPromises = validFiles.map((file) => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            resolve(e.target?.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      const newPreviews = await Promise.all(previewPromises);
+      
+      setSelectedImages([...selectedImages, ...validFiles]);
+      setImagePreviews([...imagePreviews, ...newPreviews]);
+      if (errors.length === 0) {
+        setError('');
+      }
     }
-
-    setSelectedImage(file);
-    setError('');
-
-    // 미리보기 생성
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    processFile(file);
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await processFiles(files);
+    // 같은 파일을 다시 선택할 수 있도록 input 초기화
+    e.target.value = '';
   };
 
   // 파일 드래그 중일 때 호출
@@ -82,19 +110,19 @@ export const WorkoutUploadPage = () => {
   };
 
   // 파일을 드롭할 때 호출
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
 
-    const file = e.dataTransfer.files?.[0];
-    if (!file) return;
-    processFile(file);
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+    await processFiles(files);
   };
 
   const validateForm = () => {
-    if (!selectedImage) {
-      setError('운동 인증 사진을 선택해주세요.');
+    if (selectedImages.length === 0) {
+      setError('운동 인증 사진을 최소 1장 이상 선택해주세요.');
       return false;
     }
 
@@ -103,7 +131,12 @@ export const WorkoutUploadPage = () => {
       return false;
     }
 
-    if (workoutType === '기타' && !customWorkoutType.trim()) {
+    if (workoutTypes.length === 0) {
+      setError('운동 종류를 최소 1개 이상 선택해주세요.');
+      return false;
+    }
+
+    if (workoutTypes.includes('기타' as WorkoutType) && !customWorkoutType.trim()) {
       setError('기타 운동 종류를 입력해주세요.');
       return false;
     }
@@ -129,11 +162,11 @@ export const WorkoutUploadPage = () => {
     try {
       const workoutData = {
         workoutDate: format(workoutDate, 'yyyy-MM-dd'),
-        workoutType: workoutType === '기타' ? customWorkoutType : workoutType,
+        workoutTypes: workoutTypes.map(type => type === '기타' ? customWorkoutType : type),
         duration: parseInt(duration)
       };
 
-      await api.uploadWorkout(workoutData, selectedImage!);
+      await api.uploadWorkout(workoutData, selectedImages);
 
       // 유저 프로필에서 스트릭 정보 가져오기
       const profile = await api.getUserProfile() as UserProfile;
@@ -185,7 +218,7 @@ export const WorkoutUploadPage = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* 이미지 업로드 */}
               <div className="space-y-2">
-                <Label htmlFor="workout-image">운동 인증 사진 *</Label>
+                <Label htmlFor="workout-image">운동 인증 사진 * (여러 장 선택 가능)</Label>
                 <div
                   className={cn(
                     "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
@@ -197,23 +230,53 @@ export const WorkoutUploadPage = () => {
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
-                  {imagePreview ? (
+                  {imagePreviews.length > 0 ? (
                     <div className="space-y-4">
-                      <img
-                        src={imagePreview}
-                        alt="운동 인증 미리보기"
-                        className="max-w-full max-h-64 mx-auto rounded-lg"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedImage(null);
-                          setImagePreview('');
-                        }}
-                      >
-                        다른 사진 선택
-                      </Button>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {imagePreviews.map((preview, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={preview}
+                              alt={`운동 인증 미리보기 ${index + 1}`}
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newImages = [...selectedImages];
+                                const newPreviews = [...imagePreviews];
+                                newImages.splice(index, 1);
+                                newPreviews.splice(index, 1);
+                                setSelectedImages(newImages);
+                                setImagePreviews(newPreviews);
+                              }}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 justify-center">
+                        <label
+                          htmlFor="image-upload"
+                          className="cursor-pointer"
+                        >
+                          <Button type="button" variant="outline" asChild>
+                            <span>사진 추가</span>
+                          </Button>
+                        </label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedImages([]);
+                            setImagePreviews([]);
+                          }}
+                        >
+                          모두 삭제
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -229,7 +292,7 @@ export const WorkoutUploadPage = () => {
                           또는 파일을 드래그해서 업로드하세요
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
-                          JPEG, PNG, WebP (최대 10MB)
+                          JPEG, PNG, WebP (최대 10MB, 여러 장 선택 가능)
                         </p>
                       </div>
                     </div>
@@ -238,6 +301,7 @@ export const WorkoutUploadPage = () => {
                     id="image-upload"
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
+                    multiple
                     onChange={handleImageSelect}
                     className="hidden"
                   />
@@ -285,26 +349,58 @@ export const WorkoutUploadPage = () => {
 
               {/* 운동 종류 */}
               <div className="space-y-2">
-                <Label htmlFor="workout-type">운동 종류 *</Label>
-                <Select value={workoutType} onValueChange={(value) => setWorkoutType(value as WorkoutType)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="운동 종류를 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WORKOUT_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
+                <Label htmlFor="workout-type">운동 종류 * (여러 개 선택 가능)</Label>
+                <div className="border rounded-lg p-4 space-y-3 max-h-60 overflow-y-auto">
+                  {WORKOUT_TYPES.map((type) => (
+                    <div key={type} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`workout-type-${type}`}
+                        checked={workoutTypes.includes(type)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setWorkoutTypes([...workoutTypes, type]);
+                          } else {
+                            setWorkoutTypes(workoutTypes.filter(t => t !== type));
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor={`workout-type-${type}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                      >
                         {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {workoutType === '기타' && (
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {workoutTypes.includes('기타' as WorkoutType) && (
                   <div className="mt-2">
                     <Input
-                      placeholder="운동 종류를 직접 입력하세요"
+                      placeholder="기타 운동 종류를 직접 입력하세요"
                       value={customWorkoutType}
                       onChange={(e) => setCustomWorkoutType(e.target.value)}
                     />
+                  </div>
+                )}
+                {workoutTypes.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {workoutTypes.map((type) => (
+                      <Badge key={type} variant="secondary" className="flex items-center gap-1">
+                        {type === '기타' && customWorkoutType ? customWorkoutType : type}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWorkoutTypes(workoutTypes.filter(t => t !== type));
+                            if (type === '기타') {
+                              setCustomWorkoutType('');
+                            }
+                          }}
+                          className="ml-1 hover:text-red-500"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
                   </div>
                 )}
               </div>

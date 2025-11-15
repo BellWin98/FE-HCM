@@ -52,9 +52,9 @@ export interface RoomMember {
 export interface WorkoutRecord {
   id: number;
   workoutDate: string;
-  workoutType: WorkoutType;
+  workoutTypes: string[]; // 여러 운동 종류 (서버에서 항상 배열로 반환)
   duration: number; // minutes
-  imageUrl: string;
+  imageUrls: string[]; // 여러 이미지 URL (서버에서 항상 배열로 반환)
   createdAt: string;
 }
 
@@ -240,9 +240,9 @@ export interface UserProfile {
 export interface WorkoutFeedItem {
   id: number;
   workoutDate: string;
-  workoutType: WorkoutType;
+  workoutTypes: string[]; // 여러 운동 종류 (서버에서 항상 배열로 반환)
   duration: number;
-  imageUrl: string;
+  imageUrls: string[]; // 여러 이미지 URL (서버에서 항상 배열로 반환)
   description?: string;
   likes: number;
   comments: number;
