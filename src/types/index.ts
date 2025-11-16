@@ -62,12 +62,14 @@ export const WORKOUT_TYPES = [
   '헬스(가슴)', 
   '헬스(등)', 
   '헬스(어깨)', 
-  '헬스(하체)',  
+  '헬스(하체)',
+  '유산소',  
+  '러닝',
+  '걷기',
+  '수영',
   '테니스', 
-  '러닝', 
   '자전거', 
   '구기종목', 
-  '수영', 
   '기타'
 ] as const;
 export type WorkoutType = typeof WORKOUT_TYPES[number];
