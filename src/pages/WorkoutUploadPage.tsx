@@ -44,8 +44,21 @@ export const WorkoutUploadPage = () => {
     const validFiles: File[] = [];
     const errors: string[] = [];
 
+    // 이미지 개수 제한 체크 (최대 3장)
+    const remainingSlots = 3 - selectedImages.length;
+    if (remainingSlots <= 0) {
+      setError('운동 인증 사진은 최대 3장까지 업로드할 수 있습니다.');
+      return;
+    }
+
     // 파일 검증
     fileArray.forEach((file) => {
+      // 이미지 개수 제한 체크
+      if (validFiles.length >= remainingSlots) {
+        errors.push(`최대 3장까지만 업로드 가능합니다. (현재 ${selectedImages.length}장 선택됨)`);
+        return;
+      }
+
       // 파일 크기 체크 (10MB)
       if (file.size > 10 * 1024 * 1024) {
         errors.push(`${file.name}의 크기는 10MB 이하여야 합니다.`);
@@ -126,6 +139,11 @@ export const WorkoutUploadPage = () => {
       return false;
     }
 
+    if (selectedImages.length > 3) {
+      setError('운동 인증 사진은 최대 3장까지 업로드할 수 있습니다.');
+      return false;
+    }
+
     if (!duration || parseInt(duration) < 10 || parseInt(duration) > 720) {
       setError('운동 시간은 10분 이상 720분 이하로 입력해주세요.');
       return false;
@@ -133,6 +151,11 @@ export const WorkoutUploadPage = () => {
 
     if (workoutTypes.length === 0) {
       setError('운동 종류를 최소 1개 이상 선택해주세요.');
+      return false;
+    }
+
+    if (workoutTypes.length > 3) {
+      setError('운동 종류는 최대 3개까지만 선택할 수 있습니다.');
       return false;
     }
 
@@ -218,7 +241,7 @@ export const WorkoutUploadPage = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* 이미지 업로드 */}
               <div className="space-y-2">
-                <Label htmlFor="workout-image">운동 인증 사진 * (여러 장 선택 가능)</Label>
+                <Label htmlFor="workout-image">운동 인증 사진</Label>
                 <div
                   className={cn(
                     "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
@@ -258,14 +281,16 @@ export const WorkoutUploadPage = () => {
                         ))}
                       </div>
                       <div className="flex gap-2 justify-center">
-                        <label
-                          htmlFor="image-upload"
-                          className="cursor-pointer"
-                        >
-                          <Button type="button" variant="outline" asChild>
-                            <span>사진 추가</span>
-                          </Button>
-                        </label>
+                        {imagePreviews.length < 3 && (
+                          <label
+                            htmlFor="image-upload"
+                            className="cursor-pointer"
+                          >
+                            <Button type="button" variant="outline" asChild>
+                              <span>사진 추가</span>
+                            </Button>
+                          </label>
+                        )}
                         <Button
                           type="button"
                           variant="outline"
@@ -277,6 +302,11 @@ export const WorkoutUploadPage = () => {
                           모두 삭제
                         </Button>
                       </div>
+                      {imagePreviews.length >= 3 && (
+                        <p className="text-xs text-center text-gray-500">
+                          최대 3장까지 업로드 가능합니다.
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -292,7 +322,7 @@ export const WorkoutUploadPage = () => {
                           또는 파일을 드래그해서 업로드하세요
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
-                          JPEG, PNG, WebP (최대 10MB, 여러 장 선택 가능)
+                          JPEG, PNG, WebP (최대 10MB, 최대 3장까지 선택 가능)
                         </p>
                       </div>
                     </div>
@@ -349,24 +379,34 @@ export const WorkoutUploadPage = () => {
 
               {/* 운동 종류 */}
               <div className="space-y-2">
-                <Label htmlFor="workout-type">운동 종류 * (여러 개 선택 가능)</Label>
+                <Label htmlFor="workout-type">운동 종류 (최대 3개)</Label>
                 <div className="border rounded-lg p-4 space-y-3 max-h-60 overflow-y-auto">
                   {WORKOUT_TYPES.map((type) => (
                     <div key={type} className="flex items-center space-x-2">
                       <Checkbox
                         id={`workout-type-${type}`}
                         checked={workoutTypes.includes(type)}
+                        disabled={!workoutTypes.includes(type) && workoutTypes.length >= 3}
                         onCheckedChange={(checked) => {
                           if (checked) {
+                            if (workoutTypes.length >= 3) {
+                              setError('운동 종류는 최대 3개까지만 선택할 수 있습니다.');
+                              return;
+                            }
                             setWorkoutTypes([...workoutTypes, type]);
+                            setError('');
                           } else {
                             setWorkoutTypes(workoutTypes.filter(t => t !== type));
+                            setError('');
                           }
                         }}
                       />
                       <label
                         htmlFor={`workout-type-${type}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                        className={cn(
+                          "text-sm font-medium leading-none cursor-pointer flex-1",
+                          !workoutTypes.includes(type) && workoutTypes.length >= 3 && "opacity-50 cursor-not-allowed"
+                        )}
                       >
                         {type}
                       </label>
