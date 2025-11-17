@@ -52,9 +52,9 @@ export interface RoomMember {
 export interface WorkoutRecord {
   id: number;
   workoutDate: string;
-  workoutType: WorkoutType;
+  workoutTypes: string[]; // 여러 운동 종류 (서버에서 항상 배열로 반환)
   duration: number; // minutes
-  imageUrl: string;
+  imageUrls: string[]; // 여러 이미지 URL (서버에서 항상 배열로 반환)
   createdAt: string;
 }
 
@@ -62,12 +62,14 @@ export const WORKOUT_TYPES = [
   '헬스(가슴)', 
   '헬스(등)', 
   '헬스(어깨)', 
-  '헬스(하체)',  
+  '헬스(하체)',
+  '유산소',  
+  '러닝',
+  '걷기',
+  '수영',
   '테니스', 
-  '러닝', 
   '자전거', 
   '구기종목', 
-  '수영', 
   '기타'
 ] as const;
 export type WorkoutType = typeof WORKOUT_TYPES[number];
@@ -240,9 +242,9 @@ export interface UserProfile {
 export interface WorkoutFeedItem {
   id: number;
   workoutDate: string;
-  workoutType: WorkoutType;
+  workoutTypes: string[]; // 여러 운동 종류 (서버에서 항상 배열로 반환)
   duration: number;
-  imageUrl: string;
+  imageUrls: string[]; // 여러 이미지 URL (서버에서 항상 배열로 반환)
   description?: string;
   likes: number;
   comments: number;

@@ -202,14 +202,22 @@ class ApiClient {
 
   // Workout APIs
   async uploadWorkout(
-    workoutData: { workoutDate: string; workoutType: string; duration: number },
-    imageFile: File
+    workoutData: { workoutDate: string; workoutTypes: string[]; duration: number },
+    imageFiles: File[]
   ) {
     const formData = new FormData();
     formData.append("workoutDate", workoutData.workoutDate);
-    formData.append("workoutType", workoutData.workoutType);
     formData.append("duration", workoutData.duration.toString());
-    formData.append("image", imageFile);
+    
+    // 여러 운동 종류 추가
+    workoutData.workoutTypes.forEach((type) => {
+      formData.append("workoutTypes", type);
+    });
+    
+    // 여러 이미지 추가
+    imageFiles.forEach((file) => {
+      formData.append("images", file);
+    });
 
     return this.uploadFile("/workouts", formData);
   }

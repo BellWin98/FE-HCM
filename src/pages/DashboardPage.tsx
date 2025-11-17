@@ -22,7 +22,7 @@ import { api } from '@/lib/api';
 import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp, List, Trophy, Users, CreditCard, Receipt } from 'lucide-react';
+import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp, List, Trophy, Users, CreditCard, Receipt, Dumbbell } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -378,19 +378,30 @@ export const DashboardPage = () => {
             </CardHeader>
             <CardContent>
               {currentWorkoutRoom.currentMemberTodayWorkoutRecord ? (
-                <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                      <Camera className="h-6 w-6 text-white" />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-green-50 rounded-lg">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Dumbbell className="h-6 w-6 text-white" />
                     </div>
-                    <div>
-                      <p className="font-medium">운동 인증 완료!</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium mb-1.5 sm:mb-1">오늘 운동 완료!</p>
+                      <div className="flex flex-wrap items-center gap-1.5 mb-1.5 sm:mb-1">
+                        {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.workoutTypes?.map((type, index) => (
+                          <Badge 
+                            key={index} 
+                            variant="secondary" 
+                            className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5"
+                          >
+                            {type}
+                          </Badge>
+                        ))}
+                      </div>
                       <p className="text-sm text-muted-foreground">
-                        {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.workoutType} - {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.duration}분
+                        운동시간: {currentWorkoutRoom.currentMemberTodayWorkoutRecord?.duration}분
                       </p>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">완료</Badge>
+                  {/* <Badge variant="secondary" className="bg-green-100 text-green-800 self-start sm:self-auto">완료</Badge> */}
                 </div>
               ) /*: isTodayRestDay() ? (
                 <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
