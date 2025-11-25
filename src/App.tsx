@@ -13,6 +13,7 @@ import NotFound from './pages/NotFound';
 import JoinedRoomsPage from './pages/JoinedRoomsPage';
 import StockPortfolioPage from './pages/StockPortfolioPage';
 import MyPage from './pages/MyPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,11 @@ const AppRoutes = () => (
     <Route path="/admin/rooms" element={
       <ProtectedRoute>
         <JoinedRoomsPage />
+      </ProtectedRoute>
+    } />
+    <Route path="/admin" element={
+      <ProtectedRoute>
+        <AdminDashboardPage />
       </ProtectedRoute>
     } />
     <Route path="/workout/upload" element={

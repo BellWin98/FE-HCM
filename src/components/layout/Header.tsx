@@ -58,6 +58,16 @@ export const Header = () => {
                     <span>주식 현황</span>
                   </Button>
                 )}
+                {member?.role === 'ADMIN' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/admin')}
+                    className="flex items-center space-x-2 border-indigo-300 text-indigo-700"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>관리자 메뉴</span>
+                  </Button>
+                )}
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -159,6 +169,17 @@ export const Header = () => {
               <Dumbbell className="h-4 w-4 mr-2" />
               <span>내 운동방</span>
             </Button>            
+
+            {member?.role === 'ADMIN' && (
+              <Button
+                variant="outline"
+                onClick={() => handleNavigation('/admin')}
+                className="w-full justify-start border-indigo-200 text-indigo-700"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                <span>관리자 메뉴</span>
+              </Button>
+            )}
 
             {/* 마이페이지 */}
             <Button 

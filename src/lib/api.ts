@@ -382,6 +382,44 @@ class ApiClient {
   async unlikeWorkout(workoutId: number) {
     return await this.request(`/workouts/${workoutId}/like`, { method: "DELETE" });
   }
+
+  // Admin APIs
+  async getAllUsers(params?: { page?: number; size?: number; keyword?: string; status?: string; role?: string }) {
+    return await this.request("/admin/users", { params });
+  }
+
+  async updateUserInfo(userId: number, data: { nickname?: string; email?: string }) {
+    return await this.request(`/admin/users/${userId}`, { method: "PUT", data });
+  }
+
+  async updateUserActivation(userId: number, active: boolean) {
+    return await this.request(`/admin/users/${userId}/activation`, {
+      method: "PATCH",
+      data: { active },
+    });
+  }
+
+  async updateUserRole(userId: number, role: 'USER' | 'ADMIN' | 'FAMILY') {
+    return await this.request(`/admin/users/${userId}/role`, {
+      method: "PATCH",
+      data: { role },
+    });
+  }
+
+  async getAllWorkoutRoomsAdmin() {
+    return await this.request("/admin/workout/rooms");
+  }
+
+  async updateWorkoutRoomMaxMembers(roomId: number, maxMembers: number) {
+    return await this.request(`/admin/workout/rooms/${roomId}/max-members`, {
+      method: "PATCH",
+      data: { maxMembers },
+    });
+  }
+
+  async getUserAccessLogs(params?: { page?: number; size?: number; memberId?: number; keyword?: string }) {
+    return await this.request("/admin/access-logs", { params });
+  }
 }
 
 export const api = new ApiClient();

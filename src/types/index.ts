@@ -17,6 +17,27 @@ export interface Member {
   role: 'USER' | 'ADMIN' | 'FAMILY';
 }
 
+export type UserStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface AdminUser extends Member {
+  status: UserStatus;
+  isActive: boolean;
+  lastLoginAt?: string;
+  deactivatedAt?: string;
+}
+
+export interface AccessLog {
+  id: number;
+  memberId: number;
+  nickname: string;
+  email: string;
+  ipAddress: string;
+  userAgent?: string;
+  location?: string;
+  loggedInAt: string;
+  deviceType?: string;
+}
+
 export interface WorkoutRoom {
   id: number;
   name: string;
