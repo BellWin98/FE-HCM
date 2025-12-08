@@ -25,6 +25,7 @@ import { ko } from 'date-fns/locale';
 import { AlertTriangle, Calendar as CalendarIcon, Camera, Pause, TrendingUp, List, Trophy, Users, CreditCard, Receipt, Dumbbell } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import ChatRoom from '@/components/ChatRoom';
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -442,10 +443,10 @@ export const DashboardPage = () => {
 
         {currentWorkoutRoom ? (
           <Tabs defaultValue="room" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="room">운동방</TabsTrigger>
               <TabsTrigger value="penalty">벌금 관리</TabsTrigger>
-              {/* <TabsTrigger value="account">계좌 정보</TabsTrigger> */}
+              <TabsTrigger value="chatroom">채팅방</TabsTrigger>
             </TabsList>
             
             <TabsContent value="room" className="space-y-6">
@@ -464,21 +465,10 @@ export const DashboardPage = () => {
                     isOwner={currentWorkoutRoom.workoutRoomInfo.ownerNickname === member?.nickname} 
                 /> 
               </div>
-             
-              {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <PenaltyPaymentComponent 
-                  roomId={currentWorkoutRoom.workoutRoomInfo.id} 
-                  userId={member?.id || 0} 
-                />
-              </div> */}
             </TabsContent>
             
-            <TabsContent value="account" className="space-y-6">
-              {/* <PenaltyAccountView roomId={currentWorkoutRoom.workoutRoomInfo.id} /> */}
-              <PenaltyAccountManager 
-                  roomId={currentWorkoutRoom.workoutRoomInfo.id} 
-                  isOwner={currentWorkoutRoom.workoutRoomInfo.ownerNickname === member?.nickname} 
-              />
+            <TabsContent value="chatroom" className="space-y-6">
+              <ChatRoom currentWorkoutRoom={currentWorkoutRoom} />
             </TabsContent>
           </Tabs>
         ) : (
