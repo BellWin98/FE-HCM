@@ -309,7 +309,6 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
             </div>
           </CardContent>
         </Card>
-        {currentWorkoutRoom && <ChatRoom currentWorkoutRoom={currentWorkoutRoom} />}
         
         {/* 이미지 확대 다이얼로그 */}
         <Dialog open={!!zoomImageUrls} onOpenChange={() => setZoomImageUrls(null)}>
