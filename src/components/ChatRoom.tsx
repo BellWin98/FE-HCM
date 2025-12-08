@@ -8,6 +8,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Loader2 } from 'lucide-react';
+import { ensureFcmToken } from '@/lib/firebaseMessaging';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080';
 
@@ -29,6 +30,13 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
 
   const roomId = currentWorkoutRoom.workoutRoomInfo?.id;
   const accessToken = localStorage.getItem('accessToken');
+
+  // FCM 토큰 등록 (한 번만)
+  useEffect(() => {
+    ensureFcmToken().catch(() => {
+      // 사용자가 권한을 거부한 경우 무시
+    });
+  }, []);
 
   // 맨 처음 로드 시 또는 새 메시지 수신 시 채팅방 내부 스크롤만 하단으로 이동
   useEffect(() => {
@@ -175,6 +183,13 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
     });
     setInput('');
     setTimeout(() => api.updateLastRead(roomId), 500); // 서버 반영 시간 고려 약간의 딜레이
+
+    // 동일 운동방 사용자에게 푸시 알림 트리거
+    if (roomId) {
+      api.notifyChat(roomId, { message: input }).catch((err) => {
+        console.warn('채팅 알림 전송 실패', err);
+      });
+    }
   };
 
   // 이미지 첨부

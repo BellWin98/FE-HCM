@@ -270,6 +270,28 @@ class ApiClient {
     });
   }
 
+  // Notification APIs
+  async registerFcmToken(token: string) {
+    return this.request("/notifications/fcm/token", {
+      method: "POST",
+      data: { token },
+    });
+  }
+
+  async notifyWorkout(roomId: number, payload: { workoutDate: string; duration: number; types: string[] }) {
+    return this.request(`/notifications/rooms/${roomId}/workout`, {
+      method: "POST",
+      data: payload,
+    });
+  }
+
+  async notifyChat(roomId: number, payload: { message: string }) {
+    return this.request(`/notifications/rooms/${roomId}/chat`, {
+      method: "POST",
+      data: payload,
+    });
+  }
+
   // Penalty APIs
   async getPenaltyAccount(roomId: number) {
     return this.request(`/penalty/rooms/${roomId}/account`);

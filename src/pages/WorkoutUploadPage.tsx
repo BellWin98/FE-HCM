@@ -18,6 +18,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { ensureFcmToken } from '@/lib/firebaseMessaging';
 
 const toDateOnly = (date) => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -38,6 +39,7 @@ export const WorkoutUploadPage = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [workoutRoomId, setWorkoutRoomId] = useState<number | null>(null);
 
   const processFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -191,6 +193,16 @@ export const WorkoutUploadPage = () => {
 
       await api.uploadWorkout(workoutData, selectedImages);
 
+      if (workoutRoomId) {
+        api.notifyWorkout(workoutRoomId, {
+          workoutDate: workoutData.workoutDate,
+          duration: workoutData.duration,
+          types: workoutData.workoutTypes,
+        }).catch((notifyErr) => {
+          console.warn('운동 업로드 알림 전송 실패', notifyErr);
+        });
+      }
+
       // 유저 프로필에서 스트릭 정보 가져오기
       const profile = await api.getUserProfile() as UserProfile;
       setCurrentStreak(profile.currentStreak);
@@ -220,6 +232,24 @@ export const WorkoutUploadPage = () => {
   //   setShowSuccessDialog(false);
   //   navigate('/dashboard');
   // };
+
+  // FCM 토큰 등록 및 현재 운동방 정보 조회 (알림 전송을 위한 roomId 확보)
+  useEffect(() => {
+    ensureFcmToken().catch(() => {
+      // permission 거부 등은 조용히 무시
+    });
+
+    api.getCurrentWorkoutRoom()
+      .then((room) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const typedRoom = room as any;
+        const id = typedRoom?.workoutRoomInfo?.id || typedRoom?.id;
+        if (id) setWorkoutRoomId(id);
+      })
+      .catch(() => {
+        // 현재 운동방이 없으면 알림만 생략
+      });
+  }, []);
 
   return (
     <Layout>
