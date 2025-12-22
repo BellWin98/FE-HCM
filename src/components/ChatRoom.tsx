@@ -6,8 +6,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import SockJS from "sockjs-client";
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
 import { Loader2 } from 'lucide-react';
+import { Textarea } from './ui/textarea';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080';
 
@@ -26,6 +27,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
   const clientRef = useRef<Client | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null); // 맨 아래로 스크롤
   const scrollContainerRef = useRef<HTMLDivElement | null>(null) // 스크롤 이벤트 감지용
+  const isMobile = useIsMobile();
 
   const roomId = currentWorkoutRoom.workoutRoomInfo?.id;
   const accessToken = localStorage.getItem('accessToken');
@@ -177,6 +179,21 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
     setTimeout(() => api.updateLastRead(roomId), 500); // 서버 반영 시간 고려 약간의 딜레이
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // 모바일: Enter 시 기본 줄바꿈만 허용 (전송 안 함)
+    if (isMobile) {
+      return;
+    }
+
+    // 데스크톱: Enter -> 전송, Shift+Enter -> 줄바꿈
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim()) {
+        sendMessage();
+      }
+    }
+  };
+
   // 이미지 첨부
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -253,12 +270,12 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
           <div ref={messagesEndRef} />
         </div>
         <div className="flex gap-2 items-center">
-          <Input
+          <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
+            onKeyDown={handleKeyDown}
             placeholder="메시지를 입력하세요"
-            className="flex-1"
+            className="flex-1 max-h-32 resize-none leading-relaxed"
           />
           <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="chat-image-upload" />
           {/* <label htmlFor="chat-image-upload">
