@@ -252,7 +252,13 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
                 {msg.type === 'IMAGE' ? (
                   <img src={msg.imageUrl} alt="첨부 이미지" className="max-w-xs max-h-40 rounded" />
                 ) : (
-                  <span className={`text-sm px-3 py-1 rounded-lg ${isMine ? 'bg-blue-100 text-blue-900' : 'bg-white text-gray-900 border'}`}>{msg.content}</span>
+                  <span
+                    className={`text-sm px-3 py-1 rounded-lg whitespace-pre-wrap ${
+                      isMine ? 'bg-blue-100 text-blue-900' : 'bg-white text-gray-900 border'
+                    }`}
+                  >
+                    {msg.content}
+                  </span>
                 )}
                 <span className={`text-[10px] text-gray-400 ${isMine ? 'self-end' : 'self-start'}`}>
                   {msg.timestamp && new Date(msg.timestamp).toLocaleString('ko-KR', {
