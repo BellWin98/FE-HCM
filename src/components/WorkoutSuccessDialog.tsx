@@ -34,23 +34,26 @@ export const WorkoutSuccessDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-xs sm:max-w-sm w-[90vw] p-4">
         <DialogHeader>
           <div className="flex justify-center mb-4">
-            <CheckCircle2 className="h-16 w-16 text-green-500" />
+            <CheckCircle2 className="h-12 w-12 text-green-500" />
           </div>
-          <DialogTitle className="text-center text-2xl">
+          <DialogTitle className="text-center text-xl">
             운동 인증 완료!
           </DialogTitle>
-          <DialogDescription className="text-center space-y-4 pt-4">
-            <div className="flex items-center justify-center space-x-2 text-3xl font-bold">
-              <Flame className={`h-8 w-8 ${streakInfo.color}`} />
+          <DialogDescription className="text-center space-y-3 pt-3">
+            <div className="flex items-center justify-center space-x-2 text-2xl font-bold">
+              <Flame className={`h-6 w-6 ${streakInfo.color}`} />
               <span className={streakInfo.color}>
                 {currentStreak}일 연속 인증했어요!
               </span>
             </div>
-            <div className="text-base text-gray-600">
+            <div className="text-sm text-gray-600">
               {streakInfo.emoji} {streakInfo.message}
+            </div>
+            <div className="text-xs text-gray-400">
+              1초 후 자동으로 대시보드로 이동합니다.
             </div>
           </DialogDescription>
         </DialogHeader>
