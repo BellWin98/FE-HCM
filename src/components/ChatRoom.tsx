@@ -281,7 +281,9 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="메시지를 입력하세요"
-            className="flex-2 max-h-24 min-h-[20px] resize-none leading-relaxed py-1 overflow-y-auto"
+            rows={2}
+            className="flex-2 min-h-[20px] resize-none leading-relaxed py-1"
+            style={{ maxHeight: '8rem', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
           />
           <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="chat-image-upload" />
           {/* <label htmlFor="chat-image-upload">
