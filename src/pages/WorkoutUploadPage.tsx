@@ -217,12 +217,12 @@ export const WorkoutUploadPage = () => {
     }
   };
 
-  // 성공 다이얼로그 표시 2초 후 자동으로 대시보드로 이동
+  // 성공 다이얼로그 표시 1초 후 자동으로 대시보드로 이동
   useEffect(() => {
     if (showSuccessDialog) {
       const timer = setTimeout(() => {
         navigate('/dashboard');
-      }, 2000);
+      }, 1000);
 
       return () => clearTimeout(timer);
     }

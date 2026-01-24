@@ -6,9 +6,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import SockJS from "sockjs-client";
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
 import { Loader2 } from 'lucide-react';
 import { ensureFcmToken } from '@/lib/firebaseMessaging';
+import { Textarea } from './ui/textarea';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080';
 
@@ -27,6 +28,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
   const clientRef = useRef<Client | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null); // 맨 아래로 스크롤
   const scrollContainerRef = useRef<HTMLDivElement | null>(null) // 스크롤 이벤트 감지용
+  const isMobile = useIsMobile();
 
   const roomId = currentWorkoutRoom.workoutRoomInfo?.id;
   const accessToken = localStorage.getItem('accessToken');
@@ -89,11 +91,11 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
 
     // 운동방에 없거나, 로그아웃 시 연결 해제
     if (!roomId || !accessToken) {
-        if (clientRef.current && clientRef.current.active) {
-            clientRef.current.deactivate();
-            clientRef.current = null;
-        }
-        return;
+      if (clientRef.current && clientRef.current.active) {
+        clientRef.current.deactivate();
+        clientRef.current = null;
+      }
+      return;
     }
 
     // 메시지 수신 핸들러
@@ -107,7 +109,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
       } catch (e) {
         // ignore
       }
-    };    
+    };
 
     const fetchInitialMessages = async () => {
       try {
@@ -126,44 +128,44 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
 
     // 이미 연결된 경우, 중복 연결 방지
     if (clientRef.current && clientRef.current.active) {
-        return;
+      return;
     }
     const client = new Client({
-        webSocketFactory: () => {
-            return new SockJS(`${WS_URL}/wss`);
-        },
-        connectHeaders: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-        // debug: (str) => {
-        //     console.log(new Date(), str);
-        // },
-        reconnectDelay: 5000,
-        onConnect: () => {
-            setIsConnected(true);
+      webSocketFactory: () => {
+        return new SockJS(`${WS_URL}/wss`);
+      },
+      connectHeaders: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      // debug: (str) => {
+      //     console.log(new Date(), str);
+      // },
+      reconnectDelay: 5000,
+      onConnect: () => {
+        setIsConnected(true);
 
-            // 구독
-            client.subscribe(`/topic/chat/room/${roomId}`, onMessageReceived);
-            
-            // 구독 후 초기 메시지 로드
-            fetchInitialMessages();
+        // 구독
+        client.subscribe(`/topic/chat/room/${roomId}`, onMessageReceived);
 
-            // (선택) 입장 메시지 전송 등
-        },
-        onDisconnect: () => {
-            setIsConnected(false);
-        },
-        onStompError: (frame) => {
-            setIsConnected(false);
-            alert('채팅 서버 연결 오류: ' + frame.headers['message']);
-        },
+        // 구독 후 초기 메시지 로드
+        fetchInitialMessages();
+
+        // (선택) 입장 메시지 전송 등
+      },
+      onDisconnect: () => {
+        setIsConnected(false);
+      },
+      onStompError: (frame) => {
+        setIsConnected(false);
+        alert('채팅 서버 연결 오류: ' + frame.headers['message']);
+      },
     });
     client.activate();
     clientRef.current = client;
     return () => {
-        if (clientRef.current && clientRef.current.active) {
-            client.deactivate();
-        }
+      if (clientRef.current && clientRef.current.active) {
+        client.deactivate();
+      }
     };
   }, [roomId, accessToken]);
 
@@ -177,7 +179,8 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
     clientRef.current.publish({
       destination: `/app/chat/room/${roomId}/send`,
       body: JSON.stringify(msg),
-      headers: { Authorization: `Bearer ${accessToken}`,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
         'content-type': 'application/json'
       },
     });
@@ -189,6 +192,21 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
       api.notifyChat(roomId, { message: input }).catch((err) => {
         console.warn('채팅 알림 전송 실패', err);
       });
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // 모바일: Enter 시 기본 줄바꿈만 허용 (전송 안 함)
+    if (isMobile) {
+      return;
+    }
+
+    // 데스크톱: Enter -> 전송, Shift+Enter -> 줄바꿈
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim()) {
+        sendMessage();
+      }
     }
   };
 
@@ -229,7 +247,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
         <CardTitle className='text-xl font-bold'>💬 채팅방</CardTitle>
       </CardHeader>
       <CardContent>
-        <div 
+        <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
           className="h-64 overflow-y-auto bg-slate-50 rounded p-2 mb-2 flex flex-col"
@@ -238,7 +256,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
             <div className="flex justify-center items-center p-2">
               <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
             </div>
-          )}          
+          )}
           {messages.map((msg) => {
             const isMine = msg.sender === member.nickname;
             return (
@@ -250,7 +268,12 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
                 {msg.type === 'IMAGE' ? (
                   <img src={msg.imageUrl} alt="첨부 이미지" className="max-w-xs max-h-40 rounded" />
                 ) : (
-                  <span className={`text-sm px-3 py-1 rounded-lg ${isMine ? 'bg-blue-100 text-blue-900' : 'bg-white text-gray-900 border'}`}>{msg.content}</span>
+                  <span
+                    className={`text-sm px-3 py-1 rounded-lg whitespace-pre-wrap ${isMine ? 'bg-blue-100 text-blue-900' : 'bg-white text-gray-900 border'
+                      }`}
+                  >
+                    {msg.content}
+                  </span>
                 )}
                 <span className={`text-[10px] text-gray-400 ${isMine ? 'self-end' : 'self-start'}`}>
                   {msg.timestamp && new Date(msg.timestamp).toLocaleString('ko-KR', {
@@ -268,12 +291,14 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
           <div ref={messagesEndRef} />
         </div>
         <div className="flex gap-2 items-center">
-          <Input
+          <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
+            onKeyDown={handleKeyDown}
             placeholder="메시지를 입력하세요"
-            className="flex-1"
+            rows={2}
+            className="flex-2 min-h-[20px] resize-none leading-relaxed py-1"
+            style={{ maxHeight: '8rem', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
           />
           <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="chat-image-upload" />
           {/* <label htmlFor="chat-image-upload">
