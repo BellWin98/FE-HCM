@@ -18,7 +18,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ensureFcmToken } from '@/lib/firebaseMessaging';
+import { ensureFcmToken } from '@/lib/firebase';
 
 const toDateOnly = (date) => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -191,13 +191,12 @@ export const WorkoutUploadPage = () => {
         duration: parseInt(duration)
       };
 
-      await api.uploadWorkout(workoutData, selectedImages);
+      // await api.uploadWorkout(workoutData, selectedImages);
 
       if (workoutRoomId) {
-        api.notifyWorkout(workoutRoomId, {
-          workoutDate: workoutData.workoutDate,
-          duration: workoutData.duration,
-          types: workoutData.workoutTypes,
+        api.notifyRoomMembers(workoutRoomId, {
+          body: duration + "분",
+          type: "WORKOUT",
         }).catch((notifyErr) => {
           console.warn('운동 업로드 알림 전송 실패', notifyErr);
         });

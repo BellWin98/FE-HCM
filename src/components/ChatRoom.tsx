@@ -7,7 +7,7 @@ import SockJS from "sockjs-client";
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Loader2 } from 'lucide-react';
-import { ensureFcmToken } from '@/lib/firebaseMessaging';
+import { ensureFcmToken } from '@/lib/firebase';
 import { Textarea } from './ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
 

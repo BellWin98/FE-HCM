@@ -278,7 +278,7 @@ class ApiClient {
     });
   }
 
-  async notifyWorkout(roomId: number, payload: { workoutDate: string; duration: number; types: string[] }) {
+  async notifyRoomMembers(roomId: number, payload: { body: string, type: string }) {
     return this.request(`/notifications/rooms/${roomId}/workout`, {
       method: "POST",
       data: payload,
