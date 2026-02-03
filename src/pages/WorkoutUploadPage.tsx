@@ -232,24 +232,6 @@ export const WorkoutUploadPage = () => {
   //   navigate('/dashboard');
   // };
 
-  // FCM 토큰 등록 및 현재 운동방 정보 조회 (알림 전송을 위한 roomId 확보)
-  useEffect(() => {
-    ensureFcmToken().catch(() => {
-      // permission 거부 등은 조용히 무시
-    });
-
-    api.getCurrentWorkoutRoom()
-      .then((room) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const typedRoom = room as any;
-        const id = typedRoom?.workoutRoomInfo?.id || typedRoom?.id;
-        if (id) setWorkoutRoomId(id);
-      })
-      .catch(() => {
-        // 현재 운동방이 없으면 알림만 생략
-      });
-  }, []);
-
   return (
     <Layout>
       <div className="max-w-2xl mx-auto">
