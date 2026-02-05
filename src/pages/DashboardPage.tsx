@@ -67,7 +67,6 @@ export const DashboardPage = () => {
         if (permission === 'granted') {
           const token = await getToken(messaging, { vapidKey: vapidKey });
           if (!token) return null;
-          // 여기서 백엔드 API를 호출하여 토큰을 DB에 저장하면 됩니다.
           try {
             await api.registerFcmToken(token);
           } catch (e) {
