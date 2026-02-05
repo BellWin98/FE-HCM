@@ -7,6 +7,8 @@ class ApiClient {
   private axiosInstance: AxiosInstance;
 
   constructor() {
+    // 환경 변수가 실제로 어떤 값을 가지고 있는지 확인하는 디버깅 코드
+    console.log('Current Env:', import.meta.env.VITE_API_BASE_URL);
     this.axiosInstance = axios.create({
       baseURL: API_BASE_URL,
       headers: { "Content-Type": "application/json" },
