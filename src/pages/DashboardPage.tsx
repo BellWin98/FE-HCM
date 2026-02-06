@@ -158,7 +158,7 @@ export const DashboardPage = () => {
           isMemberInWorkoutRoom={isMemberInWorkoutRoom}
           isLoadingAvailableRooms={isLoadingAvailableRooms}
           onShowAvailableRooms={handleShowAvailableRooms}
-          onNavigateToAdminRooms={() => navigate('/admin/rooms')}
+          onNavigateToAdminRooms={() => navigate('/admin/my-rooms')}
         />
 
         {/* 통계 카드 */}

@@ -14,6 +14,7 @@ import { CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { api } from '@/lib/api';
+import { formatDateToYmd, getTodayYmd, validateWorkoutRoomRules } from '@/lib/workoutRoomRules';
 
 export const CreateRoomPage = () => {
   const navigate = useNavigate();
@@ -28,14 +29,7 @@ export const CreateRoomPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const formatDateToLocal = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const today = formatDateToLocal(new Date);
+  const today = getTodayYmd();
 
   const convertKoreanToEnglish = (text: string) => {
     const koreanToEnglishMap: { [key: string]: string } = {
@@ -90,42 +84,17 @@ const koreanToEnglish = (text: string): string => {
       return false;
     }
 
-    if (!startDate) {
-      setError('운동 인증 시작일을 설정해주세요.');
-      return false;
-    }
-
-    if (formatDateToLocal(startDate) < today) {
-      setError('시작일은 오늘 이후여야 합니다.');
-      return false;
-    }
-
-    if (enableEndDate && endDate) {
-      if (startDate >= endDate) {
-        setError('종료일은 시작일보다 늦어야 합니다.');
-        return false;
-      }
-      if (formatDateToLocal(endDate) < today) {
-        setError('종료일은 오늘 이후여야 합니다.');
-        return false;
-      }
-    }
-
-    const minWorkouts = parseInt(minWeeklyWorkouts);
-    if (minWorkouts < 1 || minWorkouts > 7) {
-      setError('주간 최소 운동 횟수는 1-7회 사이여야 합니다.');
-      return false;
-    }
-
-    const penalty = parseInt(penaltyPerMiss);
-    if (penalty < 1000 || penalty > 50000) {
-      setError('벌금은 1,000원 이상 50,000원 이하여야 합니다.');
-      return false;
-    }
-
-    const maxMembersNum = parseInt(maxMembers);
-    if (maxMembersNum < 2 || maxMembersNum > 10) {
-      setError('참여 인원은 2명 이상 10명 이하여야 합니다.');
+    const rulesError = validateWorkoutRoomRules({
+      startDate,
+      endDate,
+      enableEndDate,
+      maxMembers,
+      minWeeklyWorkouts,
+      penaltyPerMiss,
+      todayYmd: today,
+    });
+    if (rulesError) {
+      setError(rulesError);
       return false;
     }
 
@@ -156,8 +125,8 @@ const koreanToEnglish = (text: string): string => {
         name: roomName.trim(),
         minWeeklyWorkouts: parseInt(minWeeklyWorkouts),
         penaltyPerMiss: parseInt(penaltyPerMiss),
-        startDate: formatDateToLocal(startDate),
-        endDate: enableEndDate && endDate ? formatDateToLocal(endDate) : null,
+        startDate: formatDateToYmd(startDate),
+        endDate: enableEndDate && endDate ? formatDateToYmd(endDate) : null,
         maxMembers: parseInt(maxMembers),
         entryCode: entryCode.trim(),
       };
@@ -251,7 +220,7 @@ const koreanToEnglish = (text: string): string => {
                         selected={startDate}
                         onSelect={setStartDate}
                         disabled={(date) => {
-                          const formattedDate = formatDateToLocal(date);
+                          const formattedDate = formatDateToYmd(date);
                           return formattedDate < today || date.getDay() !== 1;
                         }}
                         initialFocus
@@ -294,7 +263,7 @@ const koreanToEnglish = (text: string): string => {
                         selected={endDate}
                         onSelect={setEndDate}
                         disabled={(date) => {
-                          const formattedDate = formatDateToLocal(date);
+                          const formattedDate = formatDateToYmd(date);
                           return formattedDate < today || date.getDay() !== 0;
                         }}
                         initialFocus

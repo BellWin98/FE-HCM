@@ -3,6 +3,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { RequireRole } from '@/components/RequireRole';
 import Index from './pages/Index';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -13,6 +14,10 @@ import NotFound from './pages/NotFound';
 import JoinedRoomsPage from './pages/JoinedRoomsPage';
 import StockPortfolioPage from './pages/StockPortfolioPage';
 import MyPage from './pages/MyPage';
+import AdminHomePage from './pages/admin/AdminHomePage';
+import AdminMembersPage from './pages/admin/AdminMembersPage';
+import AdminRoomsPage from './pages/admin/AdminRoomsPage';
+import AdminRoomDetailPage from './pages/admin/AdminRoomDetailPage';
 
 const queryClient = new QueryClient();
 
@@ -41,10 +46,31 @@ const AppRoutes = () => (
         <DashboardPage />
       </ProtectedRoute>
     } />
+    {/* Admin routes - ADMIN role required */}
+    <Route path="/admin" element={
+      <RequireRole allowedRoles={['ADMIN']}>
+        <AdminHomePage />
+      </RequireRole>
+    } />
+    <Route path="/admin/members" element={
+      <RequireRole allowedRoles={['ADMIN']}>
+        <AdminMembersPage />
+      </RequireRole>
+    } />
     <Route path="/admin/rooms" element={
-      <ProtectedRoute>
+      <RequireRole allowedRoles={['ADMIN']}>
+        <AdminRoomsPage />
+      </RequireRole>
+    } />
+    <Route path="/admin/rooms/:roomId" element={
+      <RequireRole allowedRoles={['ADMIN']}>
+        <AdminRoomDetailPage />
+      </RequireRole>
+    } />
+    <Route path="/admin/my-rooms" element={
+      <RequireRole allowedRoles={['ADMIN']}>
         <JoinedRoomsPage />
-      </ProtectedRoute>
+      </RequireRole>
     } />
     <Route path="/workout/upload" element={
       <ProtectedRoute>
