@@ -23,7 +23,7 @@ export interface WorkoutRoom {
   minWeeklyWorkouts: number;
   penaltyPerMiss: number;
   startDate: string;
-  endDate: string;
+  endDate: string | null;
   maxMembers: number;
   currentMembers: number;
   ownerNickname: string;
@@ -276,4 +276,27 @@ export interface UserSettings {
     showWorkouts: boolean;
     showStats: boolean;
   };
+}
+
+// Admin API types (contract-first; backend endpoints TBD)
+export interface AdminMemberListParams {
+  query?: string;
+  role?: 'USER' | 'ADMIN' | 'FAMILY';
+  page?: number;
+  size?: number;
+}
+
+export interface AdminWorkoutRoomListParams {
+  query?: string;
+  active?: boolean;
+  page?: number;
+  size?: number;
+}
+
+export interface AdminUpdateRoomRequest {
+  startDate: string;
+  endDate?: string | null;
+  maxMembers: number;
+  minWeeklyWorkouts: number;
+  penaltyPerMiss: number;
 }

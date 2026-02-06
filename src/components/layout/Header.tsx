@@ -17,6 +17,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isAdmin = member?.role === 'ADMIN';
 
   const handleLogout = () => {
     logout();
@@ -78,6 +79,12 @@ export const Header = () => {
                         </p>
                       </div>
                     </div>
+                    {isAdmin && (
+                      <DropdownMenuItem onClick={() => handleNavigation('/admin')}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>관리자</span>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => handleNavigation('/dashboard')}>
                       <Dumbbell className="mr-2 h-4 w-4" />
                       <span>내 운동방</span>
@@ -147,6 +154,18 @@ export const Header = () => {
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 <span>주식 현황</span>
+              </Button>
+            )}
+
+            {/* 관리자 메뉴 - ADMIN 권한만 표시 */}
+            {isAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => handleNavigation('/admin')}
+                className="w-full justify-start"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                <span>관리자</span>
               </Button>
             )}
 
