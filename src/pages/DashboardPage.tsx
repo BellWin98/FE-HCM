@@ -16,7 +16,6 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import { useRestDay } from '@/hooks/useRestDay';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
 import { api } from '@/lib/api';
-import { ensureFcmToken } from '@/lib/firebase';
 import { WorkoutRoom } from '@/types';
 import { initializeApp } from 'firebase/app';
 import { onMessage } from 'firebase/messaging';
@@ -65,7 +64,6 @@ export const DashboardPage = () => {
       const requestPermission = async () => {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          console.log('현재 VAPID Key 값:', vapidKey);
           const token = await getToken(messaging, { vapidKey: vapidKey });
           if (!token) return null;
           try {
