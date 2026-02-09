@@ -189,10 +189,13 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
 
     // 동일 운동방 사용자에게 푸시 알림 트리거
     if (roomId) {
-      api.notifyChat(roomId, { message: input }).catch((err) => {
-        console.warn('채팅 알림 전송 실패', err);
+      api.notifyRoomMembers(roomId, {
+        body: input,
+        type: "CHAT",
+      }).catch((notifyErr) => {
+        console.warn('채팅 알림 전송 실패', notifyErr);
       });
-    }
+    }    
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

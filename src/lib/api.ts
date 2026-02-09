@@ -293,19 +293,12 @@ class ApiClient {
   }
 
   async notifyRoomMembers(roomId: number, payload: { body: string, type: string }) {
-    return this.request(`/notifications/rooms/${roomId}/workout`, {
+    return this.request(`/notifications/rooms/${roomId}`, {
       method: "POST",
       data: payload,
     });
   }
-
-  async notifyChat(roomId: number, payload: { message: string }) {
-    return this.request(`/notifications/rooms/${roomId}/chat`, {
-      method: "POST",
-      data: payload,
-    });
-  }
-
+  
   // Penalty APIs
   async getPenaltyAccount(roomId: number) {
     return this.request(`/penalty/rooms/${roomId}/account`);
