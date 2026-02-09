@@ -65,6 +65,7 @@ export const DashboardPage = () => {
       const requestPermission = async () => {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
+          console.log('현재 VAPID Key 값:', vapidKey);
           const token = await getToken(messaging, { vapidKey: vapidKey });
           if (!token) return null;
           try {
