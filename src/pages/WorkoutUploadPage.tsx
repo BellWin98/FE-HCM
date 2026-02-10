@@ -196,8 +196,6 @@ export const WorkoutUploadPage = () => {
       };
 
       // await api.uploadWorkout(workoutData, selectedImages);
-      console.log("workoutRoomId: " + workoutRoomId);
-      console.log("today == toDateOnly(workoutDate): " + today == toDateOnly(workoutDate) + "");
 
       if (workoutRoomId) {
         // 날짜가 오늘인지 확인 (타임스탬프 비교)
