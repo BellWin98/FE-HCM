@@ -89,7 +89,7 @@ export const DashboardPage = () => {
         const body = payload.notification?.body;
         toast(title, {
           description: body ?? undefined,
-          duration: 4000,
+          duration: 2000,
         });
       });
 
@@ -121,7 +121,12 @@ export const DashboardPage = () => {
     });
   };
 
-  const handleWorkoutUpload = () => navigate('/workout/upload');
+  const handleWorkoutUpload = () => {
+    navigate('/workout/upload', {
+      state: { currentWorkoutRoom: currentWorkoutRoom }
+    });
+  };
+
   const handleCreateWorkoutRoom = () => navigate('/rooms/create');
 
   const handleShowAvailableRooms = async () => {

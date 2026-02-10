@@ -17,7 +17,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const toDateOnly = (date) => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -28,6 +28,10 @@ const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 10
 export const WorkoutUploadPage = () => {
   const { member } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const currentWorkoutRoom = location.state?.currentWorkoutRoom;
+
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [workoutDate, setWorkoutDate] = useState<Date>(new Date());
@@ -214,6 +218,13 @@ export const WorkoutUploadPage = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (currentWorkoutRoom) {
+      console.log("전달받은 방 정보:", currentWorkoutRoom);
+      setWorkoutRoomId(currentWorkoutRoom.id)
+    }
+  }, [currentWorkoutRoom]);  
 
   // 성공 다이얼로그 표시 1초 후 자동으로 대시보드로 이동
   useEffect(() => {
