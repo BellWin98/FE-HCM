@@ -222,7 +222,7 @@ export const WorkoutUploadPage = () => {
   useEffect(() => {
     if (currentWorkoutRoom) {
       console.log("전달받은 방 정보:", currentWorkoutRoom);
-      setWorkoutRoomId(currentWorkoutRoom.id)
+      setWorkoutRoomId(currentWorkoutRoom.workoutRoomInfo.id);
     }
   }, [currentWorkoutRoom]);  
 
