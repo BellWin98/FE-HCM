@@ -199,10 +199,16 @@ export const WorkoutUploadPage = () => {
       console.log("workoutRoomId: " + workoutRoomId);
       console.log("today == toDateOnly(workoutDate): " + today == toDateOnly(workoutDate) + "");
 
-      if (workoutRoomId && today.getTime() === toDateOnly(workoutDate).getTime()) {
+      if (workoutRoomId) {
+        // 날짜가 오늘인지 확인 (타임스탬프 비교)
+        const isTodayParams = today.getTime() === toDateOnly(workoutDate).getTime();
+        
+        // 날짜에 따라 메시지 분기 처리
+        const dateText = isTodayParams ? "오늘" : format(workoutDate, 'yyyy-MM-dd'); 
+        // 포맷 함수가 없다면 `${workoutDate.getMonth() + 1}월 ${workoutDate.getDate()}일` 사용
         api.notifyRoomMembers(workoutRoomId, {
-          title: member.nickname + "님이 오늘 운동을 인증했어요!",
-          body: "운동시간: " + duration + "분"
+          title: `${member.nickname}님이 ${dateText} 운동을 인증했어요!`,
+          body: `운동시간: ${duration}분`
         }).catch((notifyErr) => {
           console.warn('운동 업로드 알림 전송 실패', notifyErr);
         });
