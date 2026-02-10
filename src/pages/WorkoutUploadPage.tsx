@@ -199,7 +199,7 @@ export const WorkoutUploadPage = () => {
       console.log("workoutRoomId: " + workoutRoomId);
       console.log("today == toDateOnly(workoutDate): " + today == toDateOnly(workoutDate) + "");
 
-      if (workoutRoomId && today == toDateOnly(workoutDate)) {
+      if (workoutRoomId && today.getTime() === toDateOnly(workoutDate).getTime()) {
         api.notifyRoomMembers(workoutRoomId, {
           title: member.nickname + "님이 오늘 운동을 인증했어요!",
           body: "운동시간: " + duration + "분"
