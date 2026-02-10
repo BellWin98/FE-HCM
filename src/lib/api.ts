@@ -292,7 +292,7 @@ class ApiClient {
     });
   }
 
-  async notifyRoomMembers(roomId: number, payload: { body: string, type: string }) {
+  async notifyRoomMembers(roomId: number, payload: { title: string, body: string }) {
     return this.request(`/notifications/rooms/${roomId}`, {
       method: "POST",
       data: payload,

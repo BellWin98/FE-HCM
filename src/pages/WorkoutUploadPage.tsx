@@ -1,24 +1,23 @@
 import { Layout } from '@/components/layout/Layout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WorkoutSuccessDialog } from '@/components/WorkoutSuccessDialog';
+import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { WorkoutType, WORKOUT_TYPES, UserProfile } from '@/types';
+import { WORKOUT_TYPES, WorkoutType } from '@/types';
 import { format } from 'date-fns';
-import { da, ko } from 'date-fns/locale';
+import { ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { ensureFcmToken } from '@/lib/firebase';
 
 const toDateOnly = (date) => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -27,6 +26,7 @@ const today = toDateOnly(new Date());
 const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000));
 
 export const WorkoutUploadPage = () => {
+  const { member } = useAuth();
   const navigate = useNavigate();
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -37,7 +37,7 @@ export const WorkoutUploadPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [currentStreak, setCurrentStreak] = useState(0);
+  const [totalWorkoutDays, settotalWorkoutDays] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [workoutRoomId, setWorkoutRoomId] = useState<number | null>(null);
 
@@ -193,19 +193,16 @@ export const WorkoutUploadPage = () => {
 
       await api.uploadWorkout(workoutData, selectedImages);
 
-      if (workoutRoomId) {
+      if (workoutRoomId && today == toDateOnly(workoutDate)) {
         api.notifyRoomMembers(workoutRoomId, {
-          body: duration + "분",
-          type: "WORKOUT",
+          title: member.nickname + "님이 오늘 운동을 인증했어요!",
+          body: "운동시간: " + duration + "분"
         }).catch((notifyErr) => {
           console.warn('운동 업로드 알림 전송 실패', notifyErr);
         });
       }
 
-      // 유저 프로필에서 스트릭 정보 가져오기
-      const profile = await api.getUserProfile() as UserProfile;
-      setCurrentStreak(profile.currentStreak);
-
+      settotalWorkoutDays(member.totalWorkoutDays + 1);
       // 성공 다이얼로그 표시
       setShowSuccessDialog(true);
     } catch (err) {
@@ -238,7 +235,7 @@ export const WorkoutUploadPage = () => {
         <WorkoutSuccessDialog
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
-          currentStreak={currentStreak}
+          totalWorkoutDays={totalWorkoutDays}
           // onNavigate={handleNavigateToDashboard}
         />
         <Card>

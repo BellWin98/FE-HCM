@@ -190,8 +190,8 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
     // 동일 운동방 사용자에게 푸시 알림 트리거
     if (roomId) {
       api.notifyRoomMembers(roomId, {
-        body: input,
-        type: "CHAT",
+        title: member.nickname + "님이 메시지를 보냈어요!",
+        body: input.trim(),
       }).catch((notifyErr) => {
         console.warn('채팅 알림 전송 실패', notifyErr);
       });

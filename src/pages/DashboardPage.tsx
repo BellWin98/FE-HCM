@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useRestDay } from '@/hooks/useRestDay';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { WorkoutRoom } from '@/types';
 import { initializeApp } from 'firebase/app';
@@ -76,11 +77,23 @@ export const DashboardPage = () => {
 
       requestPermission();
 
-      // 2. 포그라운드 메시지 수신 리스너
-    onMessage(messaging, (payload) => {
-      console.log('메시지 도착: ', payload);
-      alert(`알림: ${payload.notification?.title}`);
-    });
+      // 2. 포그라운드 메시지 수신 리스너 (같은 운동방 타 유저 알림만 Toast로 표시, 발신자 본인은 제외)
+      const unsubscribe = onMessage(messaging, (payload) => {
+        const data = payload.data as Record<string, string> | undefined;
+        const senderId = data?.senderId;
+        const isFromMe = senderId != null && String(member?.id) === senderId;
+        
+        if (isFromMe) return;
+
+        const title = payload.notification?.title ?? '알림';
+        const body = payload.notification?.body;
+        toast(title, {
+          description: body ?? undefined,
+          duration: 4000,
+        });
+      });
+
+      return () => unsubscribe();
     }
   }, [member, isMemberInWorkoutRoom]);
 
