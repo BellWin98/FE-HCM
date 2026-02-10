@@ -191,7 +191,9 @@ export const WorkoutUploadPage = () => {
         duration: parseInt(duration)
       };
 
-      await api.uploadWorkout(workoutData, selectedImages);
+      // await api.uploadWorkout(workoutData, selectedImages);
+      console.log("workoutRoomId: " + workoutRoomId);
+      console.log("today == toDateOnly(workoutDate): " + today == toDateOnly(workoutDate) + "");
 
       if (workoutRoomId && today == toDateOnly(workoutDate)) {
         api.notifyRoomMembers(workoutRoomId, {
