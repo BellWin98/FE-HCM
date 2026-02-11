@@ -192,6 +192,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
       api.notifyRoomMembers(roomId, {
         title: member.nickname + "님이 메시지를 보냈어요!",
         body: input.trim(),
+        type: "CHAT",
       }).catch((notifyErr) => {
         console.warn('채팅 알림 전송 실패', notifyErr);
       });

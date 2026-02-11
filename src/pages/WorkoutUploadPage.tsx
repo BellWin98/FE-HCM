@@ -206,7 +206,8 @@ export const WorkoutUploadPage = () => {
         // 포맷 함수가 없다면 `${workoutDate.getMonth() + 1}월 ${workoutDate.getDate()}일` 사용
         api.notifyRoomMembers(workoutRoomId, {
           title: `${member.nickname}님이 ${dateText} 운동을 인증했어요!`,
-          body: `운동시간: ${duration}분`
+          body: `운동시간: ${duration}분`,
+          type: "WORKOUT",
         }).catch((notifyErr) => {
           console.warn('운동 업로드 알림 전송 실패', notifyErr);
         });
