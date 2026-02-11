@@ -80,7 +80,7 @@ export const DashboardPage = () => {
       // 2. 포그라운드 메시지 수신 리스너 (같은 운동방 타 유저 알림만 Toast로 표시, 발신자 본인은 제외)
       const unsubscribe = onMessage(messaging, (payload) => {
         const data = payload.data as Record<string, string> | undefined;
-        console.log("data: " + payload.data);
+        console.log("data: " + data);
         const senderId = data?.senderId;
         const isFromMe = senderId != null && String(member?.id) === senderId;
         
