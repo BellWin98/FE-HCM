@@ -2,10 +2,10 @@
 // 이 파일은 /public 루트에 존재해야 하며, PWA 빌드 시 함께 배포된다.
 
 importScripts(
-  "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"
+  "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js",
 );
 importScripts(
-  "https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"
+  "https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js",
 );
 
 const firebaseConfig = {
@@ -25,15 +25,20 @@ const messaging = firebase.messaging();
 
 // 백그라운드 메시지 수신 시 표시
 messaging.onBackgroundMessage((payload) => {
-  const { title, body, icon, data } = payload.notification || {};
+  const { title, body, icon, data } = payload.data || {};
   const notificationTitle = title || "새 알림";
   const notificationOptions = {
     body: body || "",
     icon: icon || "/icons/pwa-192x192.png",
+    renotify: true,
+    priority: "high",
     data,
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  return self.registration.showNotification(
+    notificationTitle,
+    notificationOptions,
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {
