@@ -30,7 +30,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationOptions = {
     body: body || "",
     icon: icon || "/icons/pwa-192x192.png",
-    tag: tag,
+    // tag: tag,
     priority: "high",
   };
   self.registration.showNotification(notificationTitle, notificationOptions);
