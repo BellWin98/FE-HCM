@@ -34,11 +34,7 @@ messaging.onBackgroundMessage((payload) => {
     priority: "high",
     data,
   };
-
-  return self.registration.showNotification(
-    notificationTitle,
-    notificationOptions,
-  );
+  self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 self.addEventListener("notificationclick", (event) => {
