@@ -298,6 +298,13 @@ class ApiClient {
       data: payload,
     });
   }
+
+  async notifyRoomMembersForAdmin(payload: { title: string, body: string, type: string }) {
+    return this.request(`/notifications/admin`, {
+      method: "POST",
+      data: payload,
+    });
+  }  
   
   // Penalty APIs
   async getPenaltyAccount(roomId: number) {
