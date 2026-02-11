@@ -1,5 +1,17 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosHeaders } from "axios";
-import { ChatHistoryResponse, PenaltyPayment, PenaltyRecord, UserSettings } from "@/types";
+import {
+  AdminMemberListParams,
+  AdminUpdateRoomRequest,
+  AdminWorkoutRoomListParams,
+  ChatHistoryResponse,
+  Member,
+  PageResponse,
+  PenaltyPayment,
+  PenaltyRecord,
+  UserSettings,
+  WorkoutRoom,
+  WorkoutRoomDetail,
+} from "@/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
@@ -7,6 +19,8 @@ class ApiClient {
   private axiosInstance: AxiosInstance;
 
   constructor() {
+    // 환경 변수가 실제로 어떤 값을 가지고 있는지 확인하는 디버깅 코드
+    // console.log('Current Env:', import.meta.env.VITE_API_BASE_URL);
     this.axiosInstance = axios.create({
       baseURL: API_BASE_URL,
       headers: { "Content-Type": "application/json" },
@@ -270,6 +284,21 @@ class ApiClient {
     });
   }
 
+  // Notification APIs
+  async registerFcmToken(token: string) {
+    return this.request("/notifications/fcm/token", {
+      method: "POST",
+      data: { token },
+    });
+  }
+
+  async notifyRoomMembers(roomId: number, payload: { title: string, body: string, type: string }) {
+    return this.request(`/notifications/rooms/${roomId}`, {
+      method: "POST",
+      data: payload,
+    });
+  }
+  
   // Penalty APIs
   async getPenaltyAccount(roomId: number) {
     return this.request(`/penalty/rooms/${roomId}/account`);
@@ -381,6 +410,88 @@ class ApiClient {
 
   async unlikeWorkout(workoutId: number) {
     return await this.request(`/workouts/${workoutId}/like`, { method: "DELETE" });
+  }
+
+  // ─── Admin APIs (contract-first; backend endpoints TBD) ─────────────────────
+  // Requires ADMIN role. Backend should implement /api/admin/* and enforce role.
+
+  /**
+   * GET /admin/members
+   * 회원 목록/검색 (닉네임/이메일).
+   * @param params - query(검색어), role(역할 필터), page, size
+   * @returns PageResponse<Member>
+   */
+  async getAdminMembers(params?: AdminMemberListParams): Promise<PageResponse<Member>> {
+    const searchParams = new URLSearchParams();
+    if (params?.query) searchParams.set("query", params.query);
+    if (params?.role) searchParams.set("role", params.role);
+    if (params?.page != null) searchParams.set("page", String(params.page));
+    if (params?.size != null) searchParams.set("size", String(params.size));
+    const qs = searchParams.toString();
+    return this.request<PageResponse<Member>>(`/admin/members${qs ? `?${qs}` : ""}`);
+  }
+
+  /**
+   * PATCH /admin/members/{memberId}/role
+   * 회원 역할 변경.
+   * @param memberId - 대상 회원 ID
+   * @param role - 새 역할 (USER | FAMILY | ADMIN)
+   */
+  async patchAdminMemberRole(
+    memberId: number,
+    role: "USER" | "FAMILY" | "ADMIN"
+  ): Promise<Member> {
+    return this.request<Member>(`/admin/members/${memberId}/role`, {
+      method: "PATCH",
+      data: { role },
+    });
+  }
+
+  /**
+   * GET /admin/workout/rooms
+   * 운동방 목록/검색 (방 이름/방장/활성 여부).
+   * @param params - query, active, page, size
+   * @returns PageResponse<WorkoutRoom>
+   */
+  async getAdminWorkoutRooms(
+    params?: AdminWorkoutRoomListParams
+  ): Promise<PageResponse<WorkoutRoom>> {
+    const searchParams = new URLSearchParams();
+    if (params?.query) searchParams.set("query", params.query);
+    if (params?.active != null) searchParams.set("active", String(params.active));
+    if (params?.page != null) searchParams.set("page", String(params.page));
+    if (params?.size != null) searchParams.set("size", String(params.size));
+    const qs = searchParams.toString();
+    return this.request<PageResponse<WorkoutRoom>>(
+      `/admin/workout/rooms${qs ? `?${qs}` : ""}`
+    );
+  }
+
+  /**
+   * GET /admin/workout/rooms/{roomId}
+   * 운동방 상세 (규칙 + 멤버).
+   * @param roomId - 방 ID
+   * @returns WorkoutRoomDetail
+   */
+  async getAdminWorkoutRoomDetail(roomId: number): Promise<WorkoutRoomDetail> {
+    return this.request<WorkoutRoomDetail>(`/admin/workout/rooms/${roomId}`);
+  }
+
+  /**
+   * PUT /admin/workout/rooms/{roomId}
+   * 운동방 규칙 수정 (기간/정원/주간목표/벌금).
+   * @param roomId - 방 ID
+   * @param body - startDate, endDate(optional), maxMembers, minWeeklyWorkouts, penaltyPerMiss
+   * @returns WorkoutRoom (updated)
+   */
+  async updateAdminWorkoutRoom(
+    roomId: number,
+    body: AdminUpdateRoomRequest
+  ): Promise<WorkoutRoom> {
+    return this.request<WorkoutRoom>(`/admin/workout/rooms/${roomId}`, {
+      method: "PUT",
+      data: body,
+    });
   }
 }
 

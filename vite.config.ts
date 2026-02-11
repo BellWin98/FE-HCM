@@ -9,6 +9,11 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: 'autoUpdate', // service worker 자동 업데이트
+      includeAssets: ['favicon.ico', 'robots.txt', 'icons/*', 'firebase-messaging-sw.js'],
+      devOptions: {
+        enabled: true,
+        suppressWarnings: true,
+      },
       manifest: {
         name: 'HCM', // 설치 배너에 표시되는 이름
         short_name: 'HCM', // 아이콘 아래에 표시될 이름

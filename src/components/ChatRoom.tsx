@@ -7,6 +7,7 @@ import SockJS from "sockjs-client";
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Loader2 } from 'lucide-react';
+import { ensureFcmToken } from '@/lib/firebase';
 import { Textarea } from './ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -31,6 +32,13 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
 
   const roomId = currentWorkoutRoom.workoutRoomInfo?.id;
   const accessToken = localStorage.getItem('accessToken');
+
+  // FCM 토큰 등록 (한 번만)
+  useEffect(() => {
+    ensureFcmToken().catch(() => {
+      // 사용자가 권한을 거부한 경우 무시
+    });
+  }, []);
 
   // 맨 처음 로드 시 또는 새 메시지 수신 시 채팅방 내부 스크롤만 하단으로 이동
   useEffect(() => {
@@ -83,11 +91,11 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
 
     // 운동방에 없거나, 로그아웃 시 연결 해제
     if (!roomId || !accessToken) {
-        if (clientRef.current && clientRef.current.active) {
-            clientRef.current.deactivate();
-            clientRef.current = null;
-        }
-        return;
+      if (clientRef.current && clientRef.current.active) {
+        clientRef.current.deactivate();
+        clientRef.current = null;
+      }
+      return;
     }
 
     // 메시지 수신 핸들러
@@ -101,7 +109,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
       } catch (e) {
         // ignore
       }
-    };    
+    };
 
     const fetchInitialMessages = async () => {
       try {
@@ -120,44 +128,44 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
 
     // 이미 연결된 경우, 중복 연결 방지
     if (clientRef.current && clientRef.current.active) {
-        return;
+      return;
     }
     const client = new Client({
-        webSocketFactory: () => {
-            return new SockJS(`${WS_URL}/wss`);
-        },
-        connectHeaders: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-        // debug: (str) => {
-        //     console.log(new Date(), str);
-        // },
-        reconnectDelay: 5000,
-        onConnect: () => {
-            setIsConnected(true);
+      webSocketFactory: () => {
+        return new SockJS(`${WS_URL}/wss`);
+      },
+      connectHeaders: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      // debug: (str) => {
+      //     console.log(new Date(), str);
+      // },
+      reconnectDelay: 5000,
+      onConnect: () => {
+        setIsConnected(true);
 
-            // 구독
-            client.subscribe(`/topic/chat/room/${roomId}`, onMessageReceived);
-            
-            // 구독 후 초기 메시지 로드
-            fetchInitialMessages();
+        // 구독
+        client.subscribe(`/topic/chat/room/${roomId}`, onMessageReceived);
 
-            // (선택) 입장 메시지 전송 등
-        },
-        onDisconnect: () => {
-            setIsConnected(false);
-        },
-        onStompError: (frame) => {
-            setIsConnected(false);
-            alert('채팅 서버 연결 오류: ' + frame.headers['message']);
-        },
+        // 구독 후 초기 메시지 로드
+        fetchInitialMessages();
+
+        // (선택) 입장 메시지 전송 등
+      },
+      onDisconnect: () => {
+        setIsConnected(false);
+      },
+      onStompError: (frame) => {
+        setIsConnected(false);
+        alert('채팅 서버 연결 오류: ' + frame.headers['message']);
+      },
     });
     client.activate();
     clientRef.current = client;
     return () => {
-        if (clientRef.current && clientRef.current.active) {
-            client.deactivate();
-        }
+      if (clientRef.current && clientRef.current.active) {
+        client.deactivate();
+      }
     };
   }, [roomId, accessToken]);
 
@@ -171,12 +179,24 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
     clientRef.current.publish({
       destination: `/app/chat/room/${roomId}/send`,
       body: JSON.stringify(msg),
-      headers: { Authorization: `Bearer ${accessToken}`,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
         'content-type': 'application/json'
       },
     });
     setInput('');
     setTimeout(() => api.updateLastRead(roomId), 500); // 서버 반영 시간 고려 약간의 딜레이
+
+    // 동일 운동방 사용자에게 푸시 알림 트리거
+    if (roomId) {
+      api.notifyRoomMembers(roomId, {
+        title: member.nickname + "님이 메시지를 보냈어요!",
+        body: input.trim(),
+        type: "CHAT",
+      }).catch((notifyErr) => {
+        console.warn('채팅 알림 전송 실패', notifyErr);
+      });
+    }    
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -231,7 +251,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
         <CardTitle className='text-xl font-bold'>💬 채팅방</CardTitle>
       </CardHeader>
       <CardContent>
-        <div 
+        <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
           className="h-64 overflow-y-auto bg-slate-50 rounded p-2 mb-2 flex flex-col"
@@ -240,7 +260,7 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
             <div className="flex justify-center items-center p-2">
               <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
             </div>
-          )}          
+          )}
           {messages.map((msg) => {
             const isMine = msg.sender === member.nickname;
             return (
@@ -253,9 +273,8 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
                   <img src={msg.imageUrl} alt="첨부 이미지" className="max-w-xs max-h-40 rounded" />
                 ) : (
                   <span
-                    className={`text-sm px-3 py-1 rounded-lg whitespace-pre-wrap ${
-                      isMine ? 'bg-blue-100 text-blue-900' : 'bg-white text-gray-900 border'
-                    }`}
+                    className={`text-sm px-3 py-1 rounded-lg whitespace-pre-wrap ${isMine ? 'bg-blue-100 text-blue-900' : 'bg-white text-gray-900 border'
+                      }`}
                   >
                     {msg.content}
                   </span>

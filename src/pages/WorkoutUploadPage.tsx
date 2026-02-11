@@ -1,23 +1,23 @@
 import { Layout } from '@/components/layout/Layout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WorkoutSuccessDialog } from '@/components/WorkoutSuccessDialog';
+import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { WorkoutType, WORKOUT_TYPES, UserProfile } from '@/types';
+import { WORKOUT_TYPES, WorkoutType } from '@/types';
 import { format } from 'date-fns';
-import { da, ko } from 'date-fns/locale';
+import { ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const toDateOnly = (date) => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -26,7 +26,12 @@ const today = toDateOnly(new Date());
 const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000));
 
 export const WorkoutUploadPage = () => {
+  const { member } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const currentWorkoutRoom = location.state?.currentWorkoutRoom;
+
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [workoutDate, setWorkoutDate] = useState<Date>(new Date());
@@ -36,8 +41,9 @@ export const WorkoutUploadPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [currentStreak, setCurrentStreak] = useState(0);
+  const [totalWorkoutDays, settotalWorkoutDays] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [workoutRoomId, setWorkoutRoomId] = useState<number | null>(null);
 
   const processFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -189,12 +195,25 @@ export const WorkoutUploadPage = () => {
         duration: parseInt(duration)
       };
 
-      await api.uploadWorkout(workoutData, selectedImages);
+      // await api.uploadWorkout(workoutData, selectedImages);
 
-      // 유저 프로필에서 스트릭 정보 가져오기
-      const profile = await api.getUserProfile() as UserProfile;
-      setCurrentStreak(profile.currentStreak);
+      if (workoutRoomId) {
+        // 날짜가 오늘인지 확인 (타임스탬프 비교)
+        const isTodayParams = today.getTime() === toDateOnly(workoutDate).getTime();
+        
+        // 날짜에 따라 메시지 분기 처리
+        const dateText = isTodayParams ? "오늘" : format(workoutDate, 'yyyy-MM-dd'); 
+        // 포맷 함수가 없다면 `${workoutDate.getMonth() + 1}월 ${workoutDate.getDate()}일` 사용
+        api.notifyRoomMembers(workoutRoomId, {
+          title: `${member.nickname}님이 ${dateText} 운동을 인증했어요!`,
+          body: `운동시간: ${duration}분`,
+          type: "WORKOUT",
+        }).catch((notifyErr) => {
+          console.warn('운동 업로드 알림 전송 실패', notifyErr);
+        });
+      }
 
+      settotalWorkoutDays(member.totalWorkoutDays + 1);
       // 성공 다이얼로그 표시
       setShowSuccessDialog(true);
     } catch (err) {
@@ -204,6 +223,13 @@ export const WorkoutUploadPage = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (currentWorkoutRoom) {
+      console.log("전달받은 방 정보:", currentWorkoutRoom);
+      setWorkoutRoomId(currentWorkoutRoom.workoutRoomInfo.id);
+    }
+  }, [currentWorkoutRoom]);  
 
   // 성공 다이얼로그 표시 1초 후 자동으로 대시보드로 이동
   useEffect(() => {
@@ -227,7 +253,7 @@ export const WorkoutUploadPage = () => {
         <WorkoutSuccessDialog
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
-          currentStreak={currentStreak}
+          totalWorkoutDays={totalWorkoutDays}
           // onNavigate={handleNavigateToDashboard}
         />
         <Card>
