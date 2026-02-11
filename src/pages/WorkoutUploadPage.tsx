@@ -195,7 +195,7 @@ export const WorkoutUploadPage = () => {
         duration: parseInt(duration)
       };
 
-      // await api.uploadWorkout(workoutData, selectedImages);
+      await api.uploadWorkout(workoutData, selectedImages);
 
       if (workoutRoomId) {
         // 날짜가 오늘인지 확인 (타임스탬프 비교)
