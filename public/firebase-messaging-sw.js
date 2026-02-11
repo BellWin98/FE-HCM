@@ -31,7 +31,6 @@ messaging.onBackgroundMessage((payload) => {
     body: body || "",
     icon: icon || "/icons/pwa-192x192.png",
     tag: "chat-message",
-    renotify: true,
     priority: "high",
     data: {
       url: path || "/",
