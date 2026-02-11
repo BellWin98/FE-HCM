@@ -25,17 +25,13 @@ const messaging = firebase.messaging();
 
 // 백그라운드 메시지 수신 시 표시
 messaging.onBackgroundMessage((payload) => {
-  const { title, body, icon, path } = payload.data || {};
+  const { title, body, icon } = payload.data || {};
   const notificationTitle = title || "새 알림";
   const notificationOptions = {
     body: body || "",
     icon: icon || "/icons/pwa-192x192.png",
     tag: "chat-message",
     priority: "high",
-    data: {
-      url: path || "/",
-      timestamp: Date.now(),
-    },
   };
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
