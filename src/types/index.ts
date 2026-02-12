@@ -99,6 +99,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, nickname: string) => Promise<void>;
+  socialLogin: (accessToken: string, refreshToken: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
   checkEmailDuplicate: (email: string) => Promise<{ success: boolean }>;

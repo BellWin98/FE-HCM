@@ -18,6 +18,7 @@ import AdminHomePage from './pages/admin/AdminHomePage';
 import AdminMembersPage from './pages/admin/AdminMembersPage';
 import AdminRoomsPage from './pages/admin/AdminRoomsPage';
 import AdminRoomDetailPage from './pages/admin/AdminRoomDetailPage';
+import OAuthCallbackPage from './pages/OAuthCallbackPage';
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const AppRoutes = () => (
     <Route path="/" element={<Index />} />
     <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />
+    <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
     <Route path="/dashboard" element={
       <ProtectedRoute>
         <DashboardPage />

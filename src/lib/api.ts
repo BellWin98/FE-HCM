@@ -168,7 +168,7 @@ class ApiClient {
   }
 
   async getCurrentUser() {
-    return this.request("/auth/me");
+    return this.request("/members/me");
   }
 
   // Room APIs (예시)
