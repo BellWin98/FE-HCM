@@ -53,7 +53,7 @@ export const WorkoutSuccessDialog = ({
               {workoutMessageInfo.emoji} {workoutMessageInfo.message}
             </div>            
             <div className="text-xs text-gray-400">
-              1초 후 자동으로 대시보드로 이동합니다.
+              2초 후 자동으로 대시보드로 이동합니다.
             </div>
           </DialogDescription>
         </DialogHeader>
