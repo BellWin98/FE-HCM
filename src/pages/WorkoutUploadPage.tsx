@@ -41,7 +41,7 @@ export const WorkoutUploadPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [totalWorkoutDays, settotalWorkoutDays] = useState(0);
+  const [totalWorkoutDays, setTotalWorkoutDays] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [workoutRoomId, setWorkoutRoomId] = useState<number | null>(null);
 
@@ -221,7 +221,7 @@ export const WorkoutUploadPage = () => {
           console.warn('운동 업로드 알림 전송 실패', notifyErr);
         });
       }
-      settotalWorkoutDays(member.totalWorkoutDays + 1);
+      setTotalWorkoutDays(member.totalWorkoutDays + 1);
       // 성공 다이얼로그 표시
       setShowSuccessDialog(true);
     } catch (err) {
@@ -239,21 +239,16 @@ export const WorkoutUploadPage = () => {
     }
   }, [currentWorkoutRoom]);  
 
-  // 성공 다이얼로그 표시 1초 후 자동으로 대시보드로 이동
+  // 성공 다이얼로그 표시 5초 후 자동으로 대시보드로 이동
   useEffect(() => {
     if (showSuccessDialog) {
       const timer = setTimeout(() => {
         navigate('/dashboard');
-      }, 1000);
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
   }, [showSuccessDialog, navigate]);
-
-  // const handleNavigateToDashboard = () => {
-  //   setShowSuccessDialog(false);
-  //   navigate('/dashboard');
-  // };
 
   return (
     <Layout>
@@ -262,7 +257,6 @@ export const WorkoutUploadPage = () => {
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
           totalWorkoutDays={totalWorkoutDays}
-          // onNavigate={handleNavigateToDashboard}
         />
         <Card>
           <CardHeader>
