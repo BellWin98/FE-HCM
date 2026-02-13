@@ -185,7 +185,7 @@ export interface TradingProfitLossSummary {
 export interface TradingProfitLossPeriod {
   startDate: string;
   endDate: string;
-  periodType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | 'CUSTOM';
+  periodType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | 'ALL' | 'CUSTOM';
 }
 
 // 벌금 계좌 관련 타입 정의

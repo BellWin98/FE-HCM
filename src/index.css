@@ -95,7 +95,39 @@
     @apply border-border;
   }
 
+  html {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* iOS/Android safe area for mobile */
+  .pb-safe {
+    padding-bottom: 1.5rem;
+  }
+  .pb-safe-bottom {
+    padding-bottom: 4rem;
+  }
+  @supports (padding: max(1px, env(safe-area-inset-bottom))) {
+    .pb-safe {
+      padding-bottom: max(2rem, env(safe-area-inset-bottom));
+    }
+    .pb-safe-bottom {
+      padding-bottom: max(4rem, calc(env(safe-area-inset-bottom) + 2rem));
+    }
+  }
+
+  /* Hide scrollbar but keep scroll on mobile */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }

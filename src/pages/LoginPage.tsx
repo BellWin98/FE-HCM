@@ -115,7 +115,7 @@ const koreanToEnglish = (text: string): string => {
         </CardHeader>
         <CardContent>
           {/* Social login buttons */}
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             <Button
               variant="outline"
               className="w-full h-12 gap-2 bg-white hover:bg-gray-50"
@@ -150,7 +150,7 @@ const koreanToEnglish = (text: string): string => {
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">또는</span>
             </div>
-          </div>
+          </div> */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
