@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { StockPortfolio, StockHolding } from '@/types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { StockPortfolio, StockHolding, TradingProfitLossSummary } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronRight, ArrowUpDown } from 'lucide-react';
@@ -11,9 +11,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { api } from '@/lib/api';
 import StockChart from '@/components/StockChart';
 import StockHoldingListItem from './StockHoldingListItem';
 import { cn } from '@/lib/utils';
+
+const formatDateLocal = (date: Date) => {
+  const y = date.getFullYear();
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  const d = date.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(amount);
@@ -47,6 +55,26 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<ViewMode>('marketValue');
   const [sortOption, setSortOption] = useState<SortOption>('profitRateAsc');
+  const [tradesSummary, setTradesSummary] = useState<TradingProfitLossSummary | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetch = async () => {
+      try {
+        const today = new Date();
+        const data = (await api.getTradingProfitLoss({
+          startDate: '2020-01-01',
+          endDate: formatDateLocal(today),
+          periodType: 'ALL',
+        })) as TradingProfitLossSummary;
+        if (!cancelled) setTradesSummary(data);
+      } catch {
+        if (!cancelled) setTradesSummary(null);
+      }
+    };
+    fetch();
+    return () => { cancelled = true; };
+  }, []);
 
   const sortedHoldings = useMemo(() => {
     return [...portfolio.holdings].sort((a, b) => {
@@ -172,6 +200,7 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
               holding={holding}
               isMobile={isMobile}
               dark={dark}
+              trades={(tradesSummary?.trades ?? []).filter((t) => t.stockCode === holding.stockCode)}
             />
           ))
         )}
