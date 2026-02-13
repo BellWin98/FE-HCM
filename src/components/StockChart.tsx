@@ -3,15 +3,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { StockHolding } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface StockChartProps {
   holdings: StockHolding[];
   totalMarketValue: number;
+  dark?: boolean;
 }
 
-const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) => {
+const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue, dark }) => {
   const isMobile = useIsMobile();
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ko-KR', {
@@ -138,32 +140,41 @@ const StockChart: React.FC<StockChartProps> = ({ holdings, totalMarketValue }) =
       </Card> */}
 
       {/* 수익률 분포 */}
-      <Card>
+      <Card className={dark ? 'bg-gray-800/50 border-gray-700' : ''}>
         <CardHeader>
-          <CardTitle>수익 분포</CardTitle>
-          <CardDescription>
+          <CardTitle className={dark ? 'text-gray-100' : ''}>수익 분포</CardTitle>
+          <CardDescription className={dark ? 'text-gray-400' : ''}>
             보유 종목들의 수익 현황입니다.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-3 gap-4'}`}>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">
+            <div className={cn(
+              'text-center p-4 rounded-lg',
+              dark ? 'bg-red-900/30' : 'bg-red-50'
+            )}>
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {holdings.filter(h => h.profitLossRate > 0).length}
               </div>
-              <div className="text-sm text-red-600">수익 종목</div>
+              <div className="text-sm text-red-600 dark:text-red-400">수익 종목</div>
             </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">
+            <div className={cn(
+              'text-center p-4 rounded-lg',
+              dark ? 'bg-blue-900/30' : 'bg-blue-50'
+            )}>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {holdings.filter(h => h.profitLossRate < 0).length}
               </div>
-              <div className="text-sm text-blue-600">손실 종목</div>
+              <div className="text-sm text-blue-600 dark:text-blue-400">손실 종목</div>
             </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <div className="text-2xl font-bold text-gray-600">
+            <div className={cn(
+              'text-center p-4 rounded-lg',
+              dark ? 'bg-gray-800' : 'bg-gray-50'
+            )}>
+              <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
                 {holdings.filter(h => h.profitLossRate === 0).length}
               </div>
-              <div className="text-sm text-gray-600">보합 종목</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">보합 종목</div>
             </div>
           </div>
         </CardContent>

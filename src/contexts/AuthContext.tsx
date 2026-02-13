@@ -48,6 +48,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const socialLogin = async (accessToken: string, refreshToken: string) => {
+    setLoading(true);
+    try {
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+
+      const currentMember = await api.getCurrentUser() as Member;
+
+      localStorage.setItem('member', JSON.stringify(currentMember));
+      setMember(currentMember);
+    } catch (error) {
+      localStorage.removeItem('member');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      throw new Error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const register = async (email: string, password: string, nickname: string) => {
     setLoading(true);
     try {
@@ -120,6 +140,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated: !!member,
     login,
     register,
+    socialLogin,
     logout,
     loading,
     checkEmailDuplicate,

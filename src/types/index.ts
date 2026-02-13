@@ -99,6 +99,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, nickname: string) => Promise<void>;
+  socialLogin: (accessToken: string, refreshToken: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
   checkEmailDuplicate: (email: string) => Promise<{ success: boolean }>;
@@ -184,7 +185,7 @@ export interface TradingProfitLossSummary {
 export interface TradingProfitLossPeriod {
   startDate: string;
   endDate: string;
-  periodType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | 'CUSTOM';
+  periodType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | 'ALL' | 'CUSTOM';
 }
 
 // 벌금 계좌 관련 타입 정의
