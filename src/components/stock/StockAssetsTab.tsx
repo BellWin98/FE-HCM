@@ -54,7 +54,7 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<ViewMode>('marketValue');
-  const [sortOption, setSortOption] = useState<SortOption>('profitRateAsc');
+  const [sortOption, setSortOption] = useState<SortOption>('marketValueDesc');
   const [tradesSummary, setTradesSummary] = useState<TradingProfitLossSummary | null>(null);
 
   useEffect(() => {
@@ -162,10 +162,10 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
             <SelectValue placeholder="정렬 기준" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="profitRateAsc">총 수익률 낮은 순</SelectItem>
-            <SelectItem value="profitRateDesc">총 수익률 높은 순</SelectItem>
-            <SelectItem value="marketValueAsc">평가금 낮은 순</SelectItem>
             <SelectItem value="marketValueDesc">평가금 높은 순</SelectItem>
+            <SelectItem value="marketValueAsc">평가금 낮은 순</SelectItem>
+            <SelectItem value="profitRateDesc">총 수익률 높은 순</SelectItem>
+            <SelectItem value="profitRateAsc">총 수익률 낮은 순</SelectItem>
           </SelectContent>
         </Select>
         {/* <div className="flex gap-1">
