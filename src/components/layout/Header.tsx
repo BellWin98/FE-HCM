@@ -31,16 +31,16 @@ export const Header = () => {
   };
 
   return (
-    <header className="border-b bg-white sticky top-0 z-50">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div 
           className="flex items-center space-x-2 cursor-pointer"
           onClick={() => navigate('/')}
         >
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
             <span className="text-white font-bold text-sm">HCM</span>
           </div>
-          <h1 className="text-xl font-bold text-gray-900">헬창마을</h1>
+          <h1 className="text-xl font-bold text-slate-900">헬창마을</h1>
         </div>
 
         {isAuthenticated ? (

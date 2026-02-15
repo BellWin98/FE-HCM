@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   TradingProfitLossSummary,
   TradingProfitLossPeriod,
@@ -135,7 +135,7 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
 
   const canGoNext = navOffset < 0;
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -149,11 +149,11 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [appliedPeriod]);
 
   useEffect(() => {
     fetchData();
-  }, [appliedPeriod.startDate, appliedPeriod.endDate, appliedPeriod.periodType]);
+  }, [fetchData]);
 
   const periodTitle = useMemo(() => {
     const start = parseLocalDate(appliedPeriod.startDate);
