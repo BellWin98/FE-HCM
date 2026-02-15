@@ -56,19 +56,21 @@ export const WelcomePage = () => {
       <section className="container mx-auto px-4 pt-12 pb-20 sm:pt-20 sm:pb-28">
         <div className="text-center max-w-4xl mx-auto">
           <p className="inline-block px-4 py-1.5 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium mb-6">
-            의지가 아니라, 시스템으로 습관을 만듭니다
+            의지가 아닌, 시스템으로 운동 습관을 만듭니다.
           </p>
           <h1 className="text-4xl sm:text-6xl font-black text-slate-900 mb-6 leading-tight tracking-tight">
-            돈을 잃어야
+            돈을 걸어야
             <br />
             <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
               움직인다.
             </span>
           </h1>
           <p className="text-lg sm:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            친구와 운동방 만들고, 사진으로 인증하고, 못 하면 벌금.
+            친구와 운동방 만들고, 
             <br className="hidden sm:block" />
-            확실한 동기부여로 운동 습관을 완성하세요.
+            운동 인증샷 올리고, 
+            <br className="hidden sm:block" />
+            횟수 못 채우면 벌금!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -91,10 +93,10 @@ export const WelcomePage = () => {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
-              '혼자 결심만 하고 2주 만에 포기',
-              '"내일 하지 뭐"가 매일 반복',
-              '친구와 약속만 하고 실천은 안 함',
-              '벌금 걸어봤자 정산이 애매함',
+              '작심삼일의 연속',
+              '매일 반복되는 "내일부터"',
+              '운동 동기부여가 없을 때',
+              '벌금 관리하기 귀찮을 때',
             ].map((text, i) => (
               <div
                 key={i}
@@ -106,7 +108,7 @@ export const WelcomePage = () => {
             ))}
           </div>
           <p className="text-center text-indigo-600 font-semibold mt-6">
-            헬창마을이 해결해 드립니다 →
+            헬창마을이 해결해 드립니다
           </p>
         </div>
       </section>
@@ -115,10 +117,10 @@ export const WelcomePage = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-slate-900 mb-4">
-            한 곳에 다 모인, 운동 책임 플랫폼
+            올인원 운동 인증 플랫폼
           </h2>
           <p className="text-center text-slate-600 mb-16 max-w-2xl mx-auto">
-            인증·벌금·채팅·정산까지, 단체 채팅 앱 따로 쓸 필요 없어요.
+            운동 인증 · 벌금 관리 · 채팅방
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
@@ -136,7 +138,7 @@ export const WelcomePage = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-slate-600 text-sm">
-                  주간 최소 횟수·벌금액·인원만 설정하면, 우리 팀/동호회/친구끼리 바로 시작해요.
+                  주간 최소 인증횟수 + 1회 미인증시 벌금
                 </p>
               </CardContent>
             </Card>
@@ -150,12 +152,13 @@ export const WelcomePage = () => {
                 </div>
                 <CardTitle className="text-lg">운동 인증</CardTitle>
                 <CardDescription className="font-semibold text-emerald-600">
-                  사진 + 시간만 넣으면 인증 끝
+                  인증샷 + 운동 시간 + 운동종류
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-slate-600 text-sm">
-                  드래그로 사진 올리고, 종목·시간만 입력. 방 멤버가 서로 확인해서 허수 인증을 막아요.
+                  운동 인증샷 올리고, <br/>
+                  방 멤버가 서로 확인해요
                 </p>
               </CardContent>
             </Card>
@@ -169,12 +172,12 @@ export const WelcomePage = () => {
                 </div>
                 <CardTitle className="text-lg">벌금 관리</CardTitle>
                 <CardDescription className="font-semibold text-amber-600">
-                  공식 계좌로 정리·투명 정산
+                  공용 계좌로 투명하게 정산
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-slate-600 text-sm">
-                  방장 계좌 등록 후 누가 얼마 냈는지 앱에서 한눈에. 돈 주고받는 게 부담스럽지 않아요.
+                  벌금 계좌를 등록하면 누가 얼마 냈는지 앱에서 한눈에 볼 수 있어요.
                 </p>
               </CardContent>
             </Card>
@@ -188,12 +191,12 @@ export const WelcomePage = () => {
                 </div>
                 <CardTitle className="text-lg">방 채팅</CardTitle>
                 <CardDescription className="font-semibold text-violet-600">
-                  단체 채팅 앱 따로 안 써도 됨
+                  카톡이 필요 없어요.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-slate-600 text-sm">
-                  인증·벌금 이야기를 같은 방에서 바로. 푸시 알림으로 새 메시지 즉시 확인해요.
+                  운동방 멤버와의 소통공간이에요
                 </p>
               </CardContent>
             </Card>
@@ -210,7 +213,7 @@ export const WelcomePage = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-slate-600 text-sm">
-                  부상·여행·시험 기간엔 휴식일 등록. 해당 기간엔 벌금 없어요.
+                  운동 쉬고싶을 때 휴식일을 등록하면<br/>해당 기간엔 벌금이 없어요.
                 </p>
               </CardContent>
             </Card>
@@ -224,7 +227,7 @@ export const WelcomePage = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-slate-600 text-sm">
-                  이번 주 누가 얼마 했는지, 누가 빼먹었는지 한 화면에서 보여줘요.
+                  운동 현황과 인증 랭킹을 볼 수 있어요.
                 </p>
               </CardContent>
             </Card>
@@ -238,7 +241,7 @@ export const WelcomePage = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-slate-600 text-sm">
-                  내 운동 피드·통계가 쌓여서 성취감이 생겨요.
+                  내 운동 피드를 통해 성취감이 생겨요.
                 </p>
               </CardContent>
             </Card>
@@ -252,7 +255,7 @@ export const WelcomePage = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-slate-600 text-sm">
-                  방에서 무슨 일 있으면 바로 알려줘서 참여율이 올라가요.
+                  운동 인증하거나 채팅을 보내면 <br />푸시 알림이 와요.
                 </p>
               </CardContent>
             </Card>
@@ -271,7 +274,7 @@ export const WelcomePage = () => {
             이번 주말, 친구하고 운동방 만들어 볼까요?
           </h2>
           <p className="text-slate-600 mb-8 max-w-xl mx-auto">
-            규칙만 정하면 됩니다. 주 3회 인증, 못 하면 5천 원—이렇게요.
+            규칙만 정하면 됩니다. "주 3회 인증 필수, 한번 빼먹으면 5000원"
           </p>
         </div>
       </section>
