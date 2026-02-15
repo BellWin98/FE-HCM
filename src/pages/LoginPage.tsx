@@ -64,7 +64,7 @@ const koreanToEnglish = (text: string): string => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  type SocialProvider = 'google' | 'kakao';
+  type SocialProvider = 'google' | 'kakao' | 'naver';
 
   const handleSocialLogin = (provider: SocialProvider) => {
     try {
@@ -115,7 +115,7 @@ const koreanToEnglish = (text: string): string => {
         </CardHeader>
         <CardContent>
           {/* Social login buttons */}
-          {/* <div className="space-y-3">
+          <div className="space-y-3">
             <Button
               variant="outline"
               className="w-full h-12 gap-2 bg-white hover:bg-gray-50"
@@ -130,6 +130,17 @@ const koreanToEnglish = (text: string): string => {
               </svg>
               Google로 계속하기
             </Button>
+            {/* <Button
+              variant="outline"
+              className="w-full h-12 gap-2 bg-[#03C75A] hover:bg-[#02b351] text-white border-[#03C75A]"
+              onClick={() => handleSocialLogin("naver")}
+              disabled={loading}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+                <path d="M16.273 12.845L7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845z"/>
+              </svg>
+              네이버로 계속하기
+            </Button>             */}
 
             <Button
               variant="outline"
@@ -150,7 +161,7 @@ const koreanToEnglish = (text: string): string => {
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">또는</span>
             </div>
-          </div> */}
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
