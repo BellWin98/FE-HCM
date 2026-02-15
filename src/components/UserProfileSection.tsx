@@ -213,7 +213,7 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center space-x-2">
-              <Target className="h-4 w-4 text-blue-500" />
+              <Target className="h-4 w-4 text-brand-primary" />
               <div>
                 <p className="text-sm font-medium">총 운동일</p>
                 <p className="text-2xl font-bold">{profile.totalWorkoutDays}일</p>

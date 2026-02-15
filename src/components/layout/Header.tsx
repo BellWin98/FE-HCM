@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -15,9 +16,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 export const Header = () => {
   const { member, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isAdmin = member?.role === 'ADMIN';
+  const isStockPage = location.pathname.startsWith('/stock');
 
   const handleLogout = () => {
     logout();
@@ -31,16 +34,16 @@ export const Header = () => {
   };
 
   return (
-    <header className="border-b bg-white sticky top-0 z-50">
+    <header className={isStockPage ? 'border-b bg-white sticky top-0 z-50' : 'border-b border-white/10 bg-brand-bg/95 backdrop-blur sticky top-0 z-50'}>
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div 
           className="flex items-center space-x-2 cursor-pointer"
           onClick={() => navigate('/')}
         >
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">HCM</span>
+          <div className={isStockPage ? 'w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center' : 'w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center'}>
+            <span className={isStockPage ? 'text-white font-bold text-sm' : 'text-brand-bg font-bold text-sm'}>HCM</span>
           </div>
-          <h1 className="text-xl font-bold text-gray-900">헬창마을</h1>
+          <h1 className={isStockPage ? 'text-xl font-bold text-gray-900' : 'text-xl font-bold text-brand-foreground'}>헬창마을</h1>
         </div>
 
         {isAuthenticated ? (
@@ -62,19 +65,19 @@ export const Header = () => {
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Button variant="ghost" className={`relative h-8 w-8 rounded-full ${!isStockPage ? 'text-brand-foreground hover:bg-white/10' : ''}`}>
                     <Avatar className="h-9 w-9">
-                      <AvatarFallback>
+                      <AvatarFallback className={!isStockPage ? 'bg-brand-primary text-brand-bg' : ''}>
                         {member?.nickname?.slice(0,2)?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuContent className={`w-56 ${!isStockPage ? 'bg-brand-surface border-white/10 text-brand-foreground' : ''}`} align="end">
                     <div className="flex items-center justify-start gap-2 p-2">
                       <div className="flex flex-col space-y-1 leading-none">
                         <p className="font-medium">{member?.nickname}</p>
-                        <p className="w-[200px] truncate text-sm text-muted-foreground">
+                        <p className={`w-[200px] truncate text-sm ${!isStockPage ? 'text-brand-foreground/70' : 'text-muted-foreground'}`}>
                           {member?.email}
                         </p>
                       </div>
@@ -118,10 +121,10 @@ export const Header = () => {
           </>
         ) : (
           <div className="flex space-x-2">
-            <Button variant="outline" onClick={() => navigate('/login')} size="sm">
+            <Button variant={isStockPage ? 'outline' : 'outline'} onClick={() => navigate('/login')} size="sm" className={!isStockPage ? 'border-brand-primary text-brand-primary hover:bg-brand-primary/10' : ''}>
               로그인
             </Button>
-            <Button onClick={() => navigate('/register')} size="sm">
+            <Button onClick={() => navigate('/register')} size="sm" className={!isStockPage ? 'bg-brand-primary text-brand-bg hover:bg-brand-primary/90' : ''}>
               회원가입
             </Button>
           </div>
@@ -130,18 +133,18 @@ export const Header = () => {
 
       {/* 모바일 메뉴 드롭다운 */}
       {isMobile && isAuthenticated && isMobileMenuOpen && (
-        <div className="border-t bg-white shadow-lg">
+        <div className={isStockPage ? 'border-t bg-white shadow-lg' : 'border-t border-white/10 bg-brand-surface shadow-lg'}>
           <div className="px-4 py-3 space-y-3">
             {/* 사용자 정보 */}
-            <div className="flex items-center space-x-3 pb-3 border-b">
+            <div className={`flex items-center space-x-3 pb-3 ${isStockPage ? 'border-b' : 'border-b border-white/10'}`}>
               <Avatar className="h-10 w-10">
                 <AvatarFallback>
                   {member?.nickname?.slice(0,2)?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium">{member?.nickname}</p>
-                <p className="text-sm text-gray-600">{member?.email}</p>
+                <p className={`font-medium ${isStockPage ? '' : 'text-brand-foreground'}`}>{member?.nickname}</p>
+                <p className={`text-sm ${isStockPage ? 'text-gray-600' : 'text-brand-foreground/70'}`}>{member?.email}</p>
               </div>
             </div>
 

@@ -20,18 +20,18 @@ export const DashboardHeader = ({
   onNavigateToAdminRooms,
 }: DashboardHeaderProps) => {
   return (
-    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-6">
+    <div className="bg-brand-surface border border-white/10 text-brand-foreground rounded-lg p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-5">{title}</h1>
-          <p className="text-medium">{subtitle}</p>
+          <h1 className="text-3xl font-bold mb-5 text-brand-primary">{title}</h1>
+          <p className="text-medium text-brand-foreground/90">{subtitle}</p>
         </div>
         {isAdmin && (
           <div className="flex flex-col sm:flex-row gap-1.5">
             {isMemberInWorkoutRoom && (
               <Button
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-sm px-3 py-2"
+                className="bg-white/10 border-white/20 text-brand-foreground hover:bg-white/20 text-sm px-3 py-2"
                 onClick={onShowAvailableRooms}
                 disabled={isLoadingAvailableRooms}
               >
@@ -40,7 +40,7 @@ export const DashboardHeader = ({
             )}
             <Button
               variant="outline"
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-sm px-3 py-2"
+              className="bg-white/10 border-white/20 text-brand-foreground hover:bg-white/20 text-sm px-3 py-2"
               onClick={onNavigateToAdminRooms}
             >
               <span className="truncate">내 운동방 보기</span>

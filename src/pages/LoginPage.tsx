@@ -105,11 +105,11 @@ const koreanToEnglish = (text: string): string => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-brand-bg p-4 pb-safe">
+      <Card className="w-full max-w-md bg-brand-surface border border-white/10">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">로그인</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className="text-2xl text-center text-brand-foreground">로그인</CardTitle>
+          <CardDescription className="text-center text-brand-foreground/80">
             헬창마을에 오신 것을 환영합니다
           </CardDescription>
         </CardHeader>
@@ -118,7 +118,7 @@ const koreanToEnglish = (text: string): string => {
           <div className="space-y-3">
             <Button
               variant="outline"
-              className="w-full h-12 gap-2 bg-white hover:bg-gray-50"
+              className="w-full h-12 gap-2 bg-white/5 border-white/20 text-brand-foreground hover:bg-white/10"
               onClick={() => handleSocialLogin("google")}
               disabled={loading}
             >
@@ -156,15 +156,15 @@ const koreanToEnglish = (text: string): string => {
           </div>          
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
+              <div className="w-full border-t border-white/20" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">또는</span>
+              <span className="bg-brand-surface px-2 text-brand-foreground/60">또는</span>
             </div>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">이메일</Label>
+              <Label htmlFor="email" className="text-brand-foreground">이메일</Label>
               <Input
                 id="email"
                 type="email"
@@ -180,10 +180,11 @@ const koreanToEnglish = (text: string): string => {
                   }
                 }}
                 disabled={loading}
+                className="bg-white/5 border-white/20 text-brand-foreground placeholder:text-brand-foreground/50"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">비밀번호</Label>
+              <Label htmlFor="password" className="text-brand-foreground">비밀번호</Label>
               <Input
                 id="password"
                 type="password"
@@ -199,6 +200,7 @@ const koreanToEnglish = (text: string): string => {
                   }
                 }}
                 disabled={loading}
+                className="bg-white/5 border-white/20 text-brand-foreground placeholder:text-brand-foreground/50"
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -210,7 +212,7 @@ const koreanToEnglish = (text: string): string => {
               />
               <Label
                 htmlFor="rememberEmail"
-                className="text-sm font-normal cursor-pointer"
+                className="text-sm font-normal cursor-pointer text-brand-foreground"
               >
                 이메일 저장
               </Label>
@@ -220,19 +222,19 @@ const koreanToEnglish = (text: string): string => {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-brand-primary text-brand-bg hover:bg-brand-primary/90" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               로그인
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
+          <div className="mt-4 text-center text-sm text-brand-foreground/80">
             계정이 없으신가요?{' '}
-            <Link to="/register" className="text-blue-600 hover:underline">
+            <Link to="/register" className="text-brand-primary hover:underline">
               회원가입
             </Link>
           </div>
           <div className="mt-4 text-center text-sm">
-            <Link to="/" className="text-blue-600 hover:underline">
+            <Link to="/" className="text-brand-primary hover:underline">
               홈으로 가기
             </Link>
           </div>          

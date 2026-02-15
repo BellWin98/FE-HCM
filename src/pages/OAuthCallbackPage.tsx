@@ -41,10 +41,10 @@ const OAuthCallbackPage = () => {
   }, [searchParams, socialLogin, navigate, toast]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
       <div className="flex flex-col items-center gap-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-        <p className="text-gray-600 text-sm">소셜 로그인 처리 중입니다...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary" />
+        <p className="text-brand-foreground/80 text-sm">소셜 로그인 처리 중입니다...</p>
       </div>
     </div>
   );

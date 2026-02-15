@@ -98,7 +98,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
   const getWorkoutTypeColor = (workoutType: string) => {
     const colors: { [key: string]: string } = {
       '헬스(가슴)': 'bg-red-100 text-red-800',
-      '헬스(등)': 'bg-blue-100 text-blue-800',
+      '헬스(등)': 'bg-brand-primary/20 text-brand-primary',
       '헬스(어깨)': 'bg-green-100 text-green-800',
       '헬스(하체)': 'bg-purple-100 text-purple-800',
       '테니스': 'bg-yellow-100 text-yellow-800',

@@ -258,10 +258,10 @@ export const WorkoutUploadPage = () => {
           onOpenChange={setShowSuccessDialog}
           totalWorkoutDays={totalWorkoutDays}
         />
-        <Card>
+        <Card className="bg-brand-surface border-white/10">
           <CardHeader>
-            <CardTitle>운동 인증 사진 업로드</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-brand-foreground">운동 인증 사진 업로드</CardTitle>
+            <CardDescription className="text-brand-foreground/80">
               오늘의 운동을 인증해보세요! <br/> 사진과 함께 운동 정보를 입력해주세요.
             </CardDescription>
           </CardHeader>
@@ -269,13 +269,13 @@ export const WorkoutUploadPage = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* 이미지 업로드 */}
               <div className="space-y-2">
-                <Label htmlFor="workout-image">운동 인증 사진</Label>
+                <Label htmlFor="workout-image" className="text-brand-foreground">운동 인증 사진</Label>
                 <div
                   className={cn(
                     "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
                     isDragging
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-300 hover:border-gray-400"
+                      ? "border-brand-primary bg-brand-primary/10"
+                      : "border-white/20 hover:border-brand-primary/50"
                   )}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -314,7 +314,7 @@ export const WorkoutUploadPage = () => {
                             htmlFor="image-upload"
                             className="cursor-pointer"
                           >
-                            <Button type="button" variant="outline" asChild>
+                            <Button type="button" variant="outline" className="border-white/20 text-brand-foreground hover:bg-white/10" asChild>
                               <span>사진 추가</span>
                             </Button>
                           </label>
@@ -322,6 +322,7 @@ export const WorkoutUploadPage = () => {
                         <Button
                           type="button"
                           variant="outline"
+                          className="border-white/20 text-brand-foreground hover:bg-white/10"
                           onClick={() => {
                             setSelectedImages([]);
                             setImagePreviews([]);
@@ -331,25 +332,25 @@ export const WorkoutUploadPage = () => {
                         </Button>
                       </div>
                       {imagePreviews.length >= 3 && (
-                        <p className="text-xs text-center text-gray-500">
+                        <p className="text-xs text-center text-brand-foreground/60">
                           최대 3장까지 업로드 가능합니다.
                         </p>
                       )}
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <Upload className="h-12 w-12 mx-auto text-gray-400" />
+                      <Upload className="h-12 w-12 mx-auto text-brand-foreground/50" />
                       <div>
                         <label
                           htmlFor="image-upload"
-                          className="cursor-pointer text-blue-600 hover:text-blue-500"
+                          className="cursor-pointer text-brand-primary hover:text-brand-primary/90"
                         >
                           클릭해서 사진 선택
                         </label>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-brand-foreground/70">
                           또는 파일을 드래그해서 업로드하세요
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-brand-foreground/50 mt-1">
                           JPEG, PNG, WebP (최대 10MB, 최대 3장까지 선택 가능)
                         </p>
                       </div>
@@ -368,14 +369,14 @@ export const WorkoutUploadPage = () => {
 
               {/* 운동 일자 */}
               <div className="space-y-2">
-                <Label>운동 일자 *</Label>
+                <Label className="text-brand-foreground">운동 일자 *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !workoutDate && "text-muted-foreground"
+                        "w-full justify-start text-left font-normal border-white/20 text-brand-foreground hover:bg-white/10",
+                        !workoutDate && "text-brand-foreground/60"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -400,15 +401,15 @@ export const WorkoutUploadPage = () => {
                     />
                   </PopoverContent>
                 </Popover>
-                <p className="text-xs text-gray-500 px-3">
+                <p className="text-xs text-brand-foreground/60 px-3">
                 이번주 운동일자만 이번주 운동횟수에 반영됩니다.
                 </p>                
               </div>
 
               {/* 운동 종류 */}
               <div className="space-y-2">
-                <Label htmlFor="workout-type">운동 종류 (최대 3개)</Label>
-                <div className="border rounded-lg p-4 space-y-3 max-h-60 overflow-y-auto">
+                <Label htmlFor="workout-type" className="text-brand-foreground">운동 종류 (최대 3개)</Label>
+                <div className="border border-white/20 rounded-lg p-4 space-y-3 max-h-60 overflow-y-auto bg-white/5">
                   {WORKOUT_TYPES.map((type) => (
                     <div key={type} className="flex items-center space-x-2">
                       <Checkbox
@@ -475,9 +476,9 @@ export const WorkoutUploadPage = () => {
 
               {/* 운동 시간 */}
               <div className="space-y-2">
-                <Label htmlFor="duration">운동 시간 (분) *</Label>
+                <Label htmlFor="duration" className="text-brand-foreground">운동 시간 (분) *</Label>
                 <Input
-                  className='text-sm'
+                  className="text-sm bg-white/5 border-white/20 text-brand-foreground placeholder:text-brand-foreground/50"
                   id="duration"
                   type="number"
                   min="10"
@@ -486,7 +487,7 @@ export const WorkoutUploadPage = () => {
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                 />
-                <p className="text-xs text-gray-500 px-3">
+                <p className="text-xs text-brand-foreground/60 px-3">
                   최소 10분, 최대 720분(12시간)까지 입력 가능합니다.
                 </p>
               </div>
@@ -501,12 +502,12 @@ export const WorkoutUploadPage = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 border-white/20 text-brand-foreground hover:bg-white/10"
                   onClick={() => navigate('/dashboard')}
                 >
                   취소
                 </Button>
-                <Button type="submit" className="flex-1" disabled={loading}>
+                <Button type="submit" className="flex-1 bg-brand-primary text-brand-bg hover:bg-brand-primary/90" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   운동 인증하기
                 </Button>

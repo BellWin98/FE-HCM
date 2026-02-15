@@ -198,7 +198,7 @@ export const PenaltyPaymentComponent: React.FC<PenaltyPaymentProps> = ({ roomId,
                     {remainingAmount > 0 && (
                       <div>
                         <p className="text-sm text-gray-500">잔여 금액</p>
-                        <p className="font-medium text-red-600">{remainingAmount.toLocaleString()}원</p>
+                        <p className="font-medium text-brand-penalty">{remainingAmount.toLocaleString()}원</p>
                       </div>
                     )}
                   </div>

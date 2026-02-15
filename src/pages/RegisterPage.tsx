@@ -209,11 +209,11 @@ export const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-brand-bg p-4 pb-safe">
+      <Card className="w-full max-w-md bg-brand-surface border border-white/10">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">회원가입</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className="text-2xl text-center text-brand-foreground">회원가입</CardTitle>
+          <CardDescription className="text-center text-brand-foreground/80">
             친구들과 운동 습관을 만들어보세요
           </CardDescription>
         </CardHeader>
@@ -221,7 +221,7 @@ export const RegisterPage = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* 이메일 입력 및 중복 확인 */}
             <div className="space-y-2">
-              <Label htmlFor="email">이메일</Label>
+              <Label htmlFor="email" className="text-brand-foreground">이메일</Label>
               <div className="flex space-x-2">
                 <Input
                   id="email"
@@ -242,7 +242,7 @@ export const RegisterPage = () => {
                     }
                   }}
                   disabled={loading || isEmailVerified}
-                  className="flex-1"
+                  className="flex-1 bg-white/5 border-white/20 text-brand-foreground placeholder:text-brand-foreground/50"
                 />
                 <Button
                   type="button"
@@ -294,7 +294,7 @@ export const RegisterPage = () => {
             {/* 인증 코드 입력 */}
             {verificationSent && !isEmailVerified && (
               <div className="space-y-2">
-                <Label htmlFor="verificationCode">인증 코드</Label>
+                <Label htmlFor="verificationCode" className="text-brand-foreground">인증 코드</Label>
                 <div className="flex space-x-2">
                   <Input
                     id="verificationCode"
@@ -304,7 +304,7 @@ export const RegisterPage = () => {
                     onChange={(e) => setVerificationCode(e.target.value)}
                     disabled={loading}
                     maxLength={6}
-                    className="flex-1"
+                    className="flex-1 bg-white/5 border-white/20 text-brand-foreground placeholder:text-brand-foreground/50"
                   />
                   <Button
                     type="button"
@@ -323,7 +323,7 @@ export const RegisterPage = () => {
                 
                 {/* 카운트다운 및 재발송 */}
                 <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-1 text-gray-600">
+                  <div className="flex items-center space-x-1 text-brand-foreground/70">
                     <Clock className="h-4 w-4" />
                     <span>{formatTime(countdown)}</span>
                   </div>
@@ -334,7 +334,7 @@ export const RegisterPage = () => {
                       disabled={loading}
                       variant="ghost"
                       size="sm"
-                      className="text-blue-600 hover:text-blue-700"
+                      className="text-brand-primary hover:text-brand-primary/90"
                     >
                       재발송
                     </Button>
@@ -345,14 +345,14 @@ export const RegisterPage = () => {
 
             {/* 이메일 인증 완료 표시 */}
             {isEmailVerified && (
-              <div className="flex items-center space-x-2 text-sm text-green-600 bg-green-50 p-2 rounded-md">
+              <div className="flex items-center space-x-2 text-sm text-brand-primary bg-brand-primary/20 p-2 rounded-md">
                 <CheckCircle className="h-4 w-4" />
                 <span>이메일 인증이 완료되었습니다</span>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="nickname">닉네임</Label>
+              <Label htmlFor="nickname" className="text-brand-foreground">닉네임</Label>
               <Input
                 id="nickname"
                 type="text"
@@ -367,10 +367,11 @@ export const RegisterPage = () => {
                   }
                 }}
                 disabled={loading}
+                className="bg-white/5 border-white/20 text-brand-foreground placeholder:text-brand-foreground/50"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">비밀번호</Label>
+              <Label htmlFor="password" className="text-brand-foreground">비밀번호</Label>
               <Input
                 id="password"
                 type="password"
@@ -388,10 +389,11 @@ export const RegisterPage = () => {
                   }
                 }}
                 disabled={loading}
+                className="bg-white/5 border-white/20 text-brand-foreground placeholder:text-brand-foreground/50"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+              <Label htmlFor="confirmPassword" className="text-brand-foreground">비밀번호 확인</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -409,6 +411,7 @@ export const RegisterPage = () => {
                   }
                 }}
                 disabled={loading}
+                className="bg-white/5 border-white/20 text-brand-foreground placeholder:text-brand-foreground/50"
               />
             </div>
             
@@ -424,19 +427,19 @@ export const RegisterPage = () => {
               </Alert>
             )} */}
             
-            <Button type="submit" className="w-full" disabled={loading || !isEmailVerified}>
+            <Button type="submit" className="w-full bg-brand-primary text-brand-bg hover:bg-brand-primary/90" disabled={loading || !isEmailVerified}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               회원가입
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
+          <div className="mt-4 text-center text-sm text-brand-foreground/80">
             이미 계정이 있으신가요?{' '}
-            <Link to="/login" className="text-blue-600 hover:underline">
+            <Link to="/login" className="text-brand-primary hover:underline">
               로그인
             </Link>
           </div>
           <div className="mt-4 text-center text-sm">
-            <Link to="/" className="text-blue-600 hover:underline">
+            <Link to="/" className="text-brand-primary hover:underline">
               홈으로 가기
             </Link>
           </div>          

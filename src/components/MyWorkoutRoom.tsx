@@ -74,12 +74,12 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
         <Popover>
           <PopoverTrigger asChild>
             <div
-              className={`flex flex-col items-center justify-center p-1 ${isToday ? 'bg-indigo-200' : ''} cursor-pointer`}
+              className={`flex flex-col items-center justify-center p-1 ${isToday ? 'bg-brand-primary/20' : ''} cursor-pointer`}
             >
               <span className="text-xs">{format(day, 'd')}</span>
               <div className="flex items-center justify-center mt-1 h-4">
                 {hasActivity && (
-                  <span className={`${currentMemberActivity ? 'text-green-500' : 'text-blue-500'} text-2xl leading-none -mt-1`}>•</span>
+                  <span className={`${currentMemberActivity ? 'text-green-500' : 'text-brand-primary'} text-2xl leading-none -mt-1`}>•</span>
                 )}
               </div>
             </div>
@@ -106,7 +106,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
                     {s.status === 'completed' ? (
                       <Popover>
                         <PopoverTrigger>
-                          <Badge variant="secondary" className="bg-green-100 text-green-800 cursor-pointer">
+                          <Badge variant="secondary" className="bg-brand-primary/30 text-brand-primary cursor-pointer border-0">
                             인증
                           </Badge>
                         </PopoverTrigger>
@@ -184,7 +184,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
                     ) : s.status === 'rest' ? (
                       <Popover>
                         <PopoverTrigger>
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 cursor-pointer">휴식</Badge>
+                          <Badge variant="secondary" className="bg-brand-foreground/20 text-brand-foreground cursor-pointer border-0">휴식</Badge>
                         </PopoverTrigger>
                         <PopoverContent>
                           <div className="p-2">
@@ -224,7 +224,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
                   <span className="text-gray-600">내 활동(휴식일 제외)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-blue-500 text-lg">•</span>
+                  <span className="text-brand-primary text-lg">•</span>
                   <span className="text-gray-600">다른 멤버 활동</span>
                 </div>
               </div>
@@ -272,7 +272,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
                         index === 0 ? 'bg-yellow-100 text-yellow-800' :
                         index === 1 ? 'bg-gray-100 text-gray-800' :
                         index === 2 ? 'bg-orange-100 text-orange-800' :
-                        'bg-blue-100 text-blue-800'
+                        'bg-brand-foreground/20 text-brand-foreground'
                       }`}>
                         {index + 1}
                       </div>

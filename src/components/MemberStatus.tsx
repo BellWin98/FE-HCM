@@ -43,11 +43,11 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
     }, [carouselApi]);
 
     return (
-        <Card>
+        <Card className="bg-brand-surface border-white/10">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl font-bold">🔥 이번주 운동 현황</CardTitle>
+                <CardTitle className="text-xl font-bold text-brand-foreground">🔥 이번주 운동 현황</CardTitle>
                 {/* <CardDescription>주간 현황</CardDescription> */}
               </div>
             </div>
@@ -64,7 +64,7 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
               const hasWorkoutToday = member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'))?.workoutDate;
               
               return (
-                <div key={member.id} className={`flex items-center justify-between p-3 rounded-md ${isRestToday ? 'bg-blue-50 border-2 border-blue-200' : 'bg-slate-50'}`}>
+                <div key={member.id} className={`flex items-center justify-between p-3 rounded-md ${isRestToday ? 'bg-brand-primary/10 border-2 border-brand-primary/30' : 'bg-white/5'}`}>
                   <div className="flex items-center gap-3">
                     <span 
                       className="font-bold text-sm"
@@ -76,7 +76,7 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
                       <>
                         <Popover>
                           <PopoverTrigger>
-                            <Badge variant="secondary" className="bg-green-100 text-green-800 cursor-pointer">
+                            <Badge variant="secondary" className="bg-brand-primary/30 text-brand-primary cursor-pointer border-0">
                               오늘 인증
                             </Badge>
                           </PopoverTrigger>
@@ -157,7 +157,7 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
                     ) : isRestToday ? (
                     <Popover>
                       <PopoverTrigger>
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 cursor-pointer">휴식</Badge>
+                        <Badge variant="secondary" className="bg-brand-foreground/20 text-brand-foreground cursor-pointer border-0">휴식</Badge>
                       </PopoverTrigger>
                       <PopoverContent>
                         <div className="p-2">
@@ -172,7 +172,7 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
                   </div>
                   <div className="flex items-center gap-2">
                     {isRestToday ? (
-                      <div className="flex items-center gap-1 text-blue-600">
+                      <div className="flex items-center gap-1 text-brand-primary">
                         <Pause className="w-4 h-4" />
                         <span className="text-sm font-medium">휴식일</span>
                       </div>

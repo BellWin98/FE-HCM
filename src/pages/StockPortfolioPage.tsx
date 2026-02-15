@@ -100,7 +100,7 @@ const StockPortfolioPage = () => {
   const pageBg = darkMode ? 'bg-gray-950' : 'bg-gray-50';
 
   return (
-    <Layout>
+    <Layout variant="default">
       <div className={cn('min-h-screen min-h-[100dvh] overflow-x-hidden', pageBg, 'pb-safe-bottom')}>
         <div className="max-w-2xl mx-auto w-full overflow-x-hidden min-h-0">
           {/* 상단 탭: 자산 | 수익분석 */}

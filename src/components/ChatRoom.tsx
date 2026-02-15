@@ -268,12 +268,12 @@ export const ChatRoom = ({ currentWorkoutRoom }) => {
                 key={msg.id}
                 className={`mb-2 flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
               >
-                <span className={`text-xs ${isMine ? 'text-blue-600' : 'text-gray-500'}`}>{msg.sender} {msg.type === 'IMAGE' && '[이미지]'}</span>
+                <span className={`text-xs ${isMine ? 'text-brand-primary' : 'text-brand-foreground/60'}`}>{msg.sender} {msg.type === 'IMAGE' && '[이미지]'}</span>
                 {msg.type === 'IMAGE' ? (
                   <img src={msg.imageUrl} alt="첨부 이미지" className="max-w-xs max-h-40 rounded" />
                 ) : (
                   <span
-                    className={`text-sm px-3 py-1 rounded-lg whitespace-pre-wrap ${isMine ? 'bg-blue-100 text-blue-900' : 'bg-white text-gray-900 border'
+                    className={`text-sm px-3 py-1 rounded-lg whitespace-pre-wrap ${isMine ? 'bg-brand-primary/30 text-brand-foreground' : 'bg-brand-surface text-brand-foreground border border-white/10'
                       }`}
                   >
                     {msg.content}

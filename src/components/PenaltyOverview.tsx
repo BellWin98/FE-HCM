@@ -210,7 +210,7 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
           </div>
           <div className="rounded-md bg-gray-50 p-3 text-center">
             <div className="text-[11px] sm:text-xs text-gray-500">잔여합계</div>
-            <div className={`text-sm sm:text-base font-semibold ${totals.remain > 0 ? 'text-red-600' : ''}`}>{totals.remain.toLocaleString()}원</div>
+            <div className={`text-sm sm:text-base font-semibold ${totals.remain > 0 ? 'text-brand-penalty' : ''}`}>{totals.remain.toLocaleString()}원</div>
           </div> */}
         </div>
 
@@ -265,7 +265,7 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
                       </div>
                       <div>
                         <div className="text-[11px] sm:text-xs text-gray-500">잔여</div>
-                        <div className={`text-sm sm:text-base font-semibold ${remain > 0 ? 'text-red-600' : ''}`}>{remain.toLocaleString()}원</div>
+                        <div className={`text-sm sm:text-base font-semibold ${remain > 0 ? 'text-brand-penalty' : ''}`}>{remain.toLocaleString()}원</div>
                       </div> */}
                     </div>
                   </button>

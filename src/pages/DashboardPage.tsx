@@ -157,7 +157,9 @@ export const DashboardPage = () => {
   if (isLoading || !availableWorkoutRooms) {
     return (
       <Layout>
-        <div>Loading...</div>
+        <div className="min-h-[40vh] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary" />
+        </div>
       </Layout>
     );
   }
@@ -200,10 +202,10 @@ export const DashboardPage = () => {
         {/* 탭 컨텐츠 */}
         {currentWorkoutRoom ? (
           <Tabs defaultValue="room" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="room">운동방</TabsTrigger>
-              <TabsTrigger value="penalty">벌금 관리</TabsTrigger>
-              <TabsTrigger value="chatroom">채팅방</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 bg-brand-surface border border-white/10 p-1">
+              <TabsTrigger value="room" className="data-[state=active]:bg-brand-primary data-[state=active]:text-brand-bg data-[state=inactive]:text-brand-foreground/80">운동방</TabsTrigger>
+              <TabsTrigger value="penalty" className="data-[state=active]:bg-brand-primary data-[state=active]:text-brand-bg data-[state=inactive]:text-brand-foreground/80">벌금 관리</TabsTrigger>
+              <TabsTrigger value="chatroom" className="data-[state=active]:bg-brand-primary data-[state=active]:text-brand-bg data-[state=inactive]:text-brand-foreground/80">채팅방</TabsTrigger>
             </TabsList>
 
             <TabsContent value="room" className="space-y-6">

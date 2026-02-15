@@ -210,7 +210,7 @@ export const PenaltyAccountView: React.FC<PenaltyAccountViewProps> = ({ roomId }
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-500">총 벌금</p>
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-2xl font-bold text-brand-penalty">
                   {getTotalPenaltyAmount().toLocaleString()}원
                 </p>
               </div>
@@ -269,7 +269,7 @@ export const PenaltyAccountView: React.FC<PenaltyAccountViewProps> = ({ roomId }
                       {remainingAmount > 0 && (
                         <div>
                           <p className="text-sm text-gray-500">잔여 금액</p>
-                          <p className="font-medium text-red-600">{remainingAmount.toLocaleString()}원</p>
+                          <p className="font-medium text-brand-penalty">{remainingAmount.toLocaleString()}원</p>
                         </div>
                       )}
                     </div>

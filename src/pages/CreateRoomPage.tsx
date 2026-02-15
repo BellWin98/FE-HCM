@@ -144,17 +144,17 @@ const koreanToEnglish = (text: string): string => {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto">
-        <Card>
+        <Card className="bg-brand-surface border-white/10">
           <CardHeader>
-            <CardTitle>운동 인증 방 만들기</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-brand-foreground">운동 인증 방 만들기</CardTitle>
+            <CardDescription className="text-brand-foreground/80">
               친구들과 함께할 운동 인증 방을 만들어보세요.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="room-name">방 이름 *</Label>
+                <Label htmlFor="room-name" className="text-brand-foreground">방 이름 *</Label>
                 <Input
                   id="room-name"
                   placeholder="예: 헬스 3개월 도전"
@@ -162,12 +162,13 @@ const koreanToEnglish = (text: string): string => {
                   onChange={(e) => setRoomName(e.target.value)}
                   minLength={2}
                   maxLength={20}
+                  className="bg-white/5 border-white/20 text-brand-foreground placeholder:text-brand-foreground/50"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="min-workouts">주간 최소 운동 횟수</Label>
+                  <Label htmlFor="min-workouts" className="text-brand-foreground">주간 최소 운동 횟수</Label>
                   <Input
                     id="min-workouts"
                     type="number"
@@ -175,12 +176,13 @@ const koreanToEnglish = (text: string): string => {
                     max="7"
                     value={minWeeklyWorkouts}
                     onChange={(e) => setMinWeeklyWorkouts(e.target.value)}
+                    className="bg-white/5 border-white/20 text-brand-foreground"
                   />
-                  <p className="text-xs text-gray-500">일주일에 최소 몇 번 운동할지 설정하세요</p>
+                  <p className="text-xs text-brand-foreground/60">일주일에 최소 몇 번 운동할지 설정하세요</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="penalty">1회 누락당 벌금 (원)</Label>
+                  <Label htmlFor="penalty" className="text-brand-foreground"><span className="text-brand-penalty">1회 누락당 벌금 (원)</span></Label>
                   <Input
                     id="penalty"
                     type="number"
@@ -189,21 +191,22 @@ const koreanToEnglish = (text: string): string => {
                     step="1000"
                     value={penaltyPerMiss}
                     onChange={(e) => setPenaltyPerMiss(e.target.value)}
+                    className="bg-white/5 border-white/20 text-brand-foreground border-l-2 border-l-brand-penalty/50"
                   />
-                  <p className="text-xs text-gray-500">운동을 빠뜨릴 때마다 부과될 벌금</p>
+                  <p className="text-xs text-brand-penalty/90">운동을 빠뜨릴 때마다 부과될 벌금</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>시작일 *</Label>
+                  <Label className="text-brand-foreground">시작일 *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !startDate && "text-muted-foreground"
+                          "w-full justify-start text-left font-normal border-white/20 text-brand-foreground hover:bg-white/10",
+                          !startDate && "text-brand-foreground/60"
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -227,25 +230,25 @@ const koreanToEnglish = (text: string): string => {
                       />
                     </PopoverContent>
                   </Popover>
-                  <p className="text-xs text-gray-500">매주 월요일만 선택 가능합니다.</p>
+                  <p className="text-xs text-brand-foreground/60">매주 월요일만 선택 가능합니다.</p>
                 </div>
 
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 ">
-                    <Label className="mb-0">종료일</Label>
+                    <Label className="mb-0 text-brand-foreground">종료일</Label>
                     <Checkbox id="enable-end-date" checked={enableEndDate} onCheckedChange={(checked) => {
                       setEnableEndDate(!!checked);
                       if (!checked) setEndDate(undefined);
                     }} />
-                    <span className="text-xs text-gray-500">종료일 설정</span>
+                    <span className="text-xs text-brand-foreground/60">종료일 설정</span>
                   </div>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
-                          (!endDate || !enableEndDate) && "text-muted-foreground"
+                          "w-full justify-start text-left font-normal border-white/20 text-brand-foreground hover:bg-white/10",
+                          (!endDate || !enableEndDate) && "text-brand-foreground/60"
                         )}
                         disabled={!enableEndDate}
                       >
@@ -270,13 +273,13 @@ const koreanToEnglish = (text: string): string => {
                       />
                     </PopoverContent>
                   </Popover>
-                  <p className="text-xs text-gray-500" style={{marginTop: 7}}>매주 일요일만 선택 가능합니다.</p>
+                  <p className="text-xs text-brand-foreground/60" style={{marginTop: 7}}>매주 일요일만 선택 가능합니다.</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="max-members">최대 참여 인원</Label>
+                  <Label htmlFor="max-members" className="text-brand-foreground">최대 참여 인원</Label>
                   <Input
                     id="max-members"
                     type="number"
@@ -284,12 +287,13 @@ const koreanToEnglish = (text: string): string => {
                     max="10"
                     value={maxMembers}
                     onChange={(e) => setMaxMembers(e.target.value)}
+                    className="bg-white/5 border-white/20 text-brand-foreground"
                   />
-                  <p className="text-xs text-gray-500">방장 포함 최대 참여 가능한 인원수</p>
+                  <p className="text-xs text-brand-foreground/60">방장 포함 최대 참여 가능한 인원수</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="entry-code">방 비밀번호</Label>
+                  <Label htmlFor="entry-code" className="text-brand-foreground">방 비밀번호</Label>
                   <Input
                     id="entry-code"
                     value={entryCode}
@@ -306,8 +310,9 @@ const koreanToEnglish = (text: string): string => {
                     }}
                     minLength={2}
                     maxLength={10}
+                    className="bg-white/5 border-white/20 text-brand-foreground placeholder:text-brand-foreground/50"
                   />
-                  <p className="text-xs text-gray-500">2자리 이상 10자리 이하의 방 비밀번호</p>
+                  <p className="text-xs text-brand-foreground/60">2자리 이상 10자리 이하의 방 비밀번호</p>
                 </div> 
               </div>
              
@@ -322,12 +327,12 @@ const koreanToEnglish = (text: string): string => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 border-white/20 text-brand-foreground hover:bg-white/10"
                   onClick={() => navigate('/dashboard')}
                 >
                   취소
                 </Button>
-                <Button type="submit" className="flex-1" disabled={loading}>
+                <Button type="submit" className="flex-1 bg-brand-primary text-brand-bg hover:bg-brand-primary/90" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   방 만들기
                 </Button>

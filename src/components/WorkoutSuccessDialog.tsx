@@ -57,25 +57,25 @@ export const WorkoutSuccessDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xs sm:max-w-sm w-[90vw] p-4">
+      <DialogContent className="max-w-xs sm:max-w-sm w-[90vw] p-4 bg-brand-surface border-white/10 text-brand-foreground">
         <DialogHeader>
           <div className="flex justify-center mb-4">
-            <CheckCircle2 className="h-12 w-12 text-green-500" />
+            <CheckCircle2 className="h-12 w-12 text-brand-primary" />
           </div>
-          <DialogTitle className="text-center text-xl">
+          <DialogTitle className="text-center text-xl text-brand-foreground">
             운동 인증 완료!
           </DialogTitle>
-          <DialogDescription className="text-center space-y-3 pt-3">
-            <div className="flex items-center justify-center space-x-2 text-2xl font-bold">
-              <Flame className={`h-6 w-6 ${workoutMessageInfo.color}`} />
-              <span className={workoutMessageInfo.color}>
+          <DialogDescription className="text-center space-y-3 pt-3 text-brand-foreground/80">
+            <div className="flex items-center justify-center space-x-2 text-2xl font-bold text-brand-primary">
+              <Flame className="h-6 w-6" />
+              <span>
                 총 {totalWorkoutDays}일 인증했어요!
               </span>
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-brand-foreground/90">
               {workoutMessageInfo.emoji} {workoutMessageInfo.message}
             </div>            
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-brand-foreground/60">
               5초 후 자동으로 대시보드로 이동합니다.
             </div>
           </DialogDescription>

@@ -69,7 +69,7 @@ export const MyPage = () => {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary" />
         </div>
       </Layout>
     );
@@ -79,12 +79,12 @@ export const MyPage = () => {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
-          <Card className="w-full max-w-md">
+          <Card className="w-full max-w-md bg-brand-surface border-white/10">
             <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="text-red-500 mb-4">⚠️</div>
+              <div className="text-center text-brand-foreground">
+                <div className="text-brand-penalty mb-4">⚠️</div>
                 <p className="text-lg font-medium mb-2">오류가 발생했습니다</p>
-                <p className="text-muted-foreground">{error}</p>
+                <p className="text-brand-foreground/80">{error}</p>
               </div>
             </CardContent>
           </Card>
@@ -97,16 +97,16 @@ export const MyPage = () => {
     <Layout>
       <div className="space-y-6">
         {/* 헤더 */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg p-6">
+        <div className="bg-brand-surface border border-white/10 text-brand-foreground rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">마이페이지</h1>
-              <p className="text-lg opacity-90">
+              <h1 className="text-3xl font-bold mb-2 text-brand-primary">마이페이지</h1>
+              <p className="text-lg text-brand-foreground/90">
                 안녕하세요, {member?.nickname}님! 🏋️‍♂️
               </p>
             </div>
             <div className="flex items-center space-x-2">
-              <Badge variant="secondary" className="bg-white/20 text-white">
+              <Badge variant="secondary" className="bg-brand-primary/20 text-brand-primary border-0">
                 {member?.role === 'ADMIN' ? '관리자' : member?.role === 'FAMILY' ? '가족' : '회원'}
               </Badge>
             </div>
@@ -116,20 +116,20 @@ export const MyPage = () => {
         {/* 모바일에서는 탭, 데스크톱에서는 사이드바 */}
         {isMobile ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="profile" className="flex items-center space-x-1">
+            <TabsList className="grid w-full grid-cols-4 bg-brand-surface border border-white/10 p-1">
+              <TabsTrigger value="profile" className="flex items-center space-x-1 data-[state=active]:bg-brand-primary data-[state=active]:text-brand-bg data-[state=inactive]:text-brand-foreground/80">
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">프로필</span>
               </TabsTrigger>
-              <TabsTrigger value="feed" className="flex items-center space-x-1">
+              <TabsTrigger value="feed" className="flex items-center space-x-1 data-[state=active]:bg-brand-primary data-[state=active]:text-brand-bg data-[state=inactive]:text-brand-foreground/80">
                 <Activity className="h-4 w-4" />
                 <span className="hidden sm:inline">피드</span>
               </TabsTrigger>
-              <TabsTrigger value="stats" className="flex items-center space-x-1">
+              <TabsTrigger value="stats" className="flex items-center space-x-1 data-[state=active]:bg-brand-primary data-[state=active]:text-brand-bg data-[state=inactive]:text-brand-foreground/80">
                 <Trophy className="h-4 w-4" />
                 <span className="hidden sm:inline">통계</span>
               </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center space-x-1">
+              <TabsTrigger value="settings" className="flex items-center space-x-1 data-[state=active]:bg-brand-primary data-[state=active]:text-brand-bg data-[state=inactive]:text-brand-foreground/80">
                 <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline">설정</span>
               </TabsTrigger>
@@ -166,9 +166,9 @@ export const MyPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* 사이드바 */}
             <div className="lg:col-span-1">
-              <Card>
+              <Card className="bg-brand-surface border-white/10">
                 <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
+                  <CardTitle className="flex items-center space-x-2 text-brand-foreground">
                     <User className="h-5 w-5" />
                     <span>메뉴</span>
                   </CardTitle>
@@ -178,8 +178,8 @@ export const MyPage = () => {
                     onClick={() => setActiveTab('profile')}
                     className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
                       activeTab === 'profile' 
-                        ? 'bg-blue-100 text-blue-700' 
-                        : 'hover:bg-gray-100'
+                        ? 'bg-brand-primary/20 text-brand-primary' 
+                        : 'hover:bg-white/10 text-brand-foreground'
                     }`}
                   >
                     <div className="flex items-center space-x-2">
@@ -191,8 +191,8 @@ export const MyPage = () => {
                     onClick={() => setActiveTab('feed')}
                     className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
                       activeTab === 'feed' 
-                        ? 'bg-blue-100 text-blue-700' 
-                        : 'hover:bg-gray-100'
+                        ? 'bg-brand-primary/20 text-brand-primary' 
+                        : 'hover:bg-white/10 text-brand-foreground'
                     }`}
                   >
                     <div className="flex items-center space-x-2">
@@ -204,8 +204,8 @@ export const MyPage = () => {
                     onClick={() => setActiveTab('stats')}
                     className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
                       activeTab === 'stats' 
-                        ? 'bg-blue-100 text-blue-700' 
-                        : 'hover:bg-gray-100'
+                        ? 'bg-brand-primary/20 text-brand-primary' 
+                        : 'hover:bg-white/10 text-brand-foreground'
                     }`}
                   >
                     <div className="flex items-center space-x-2">
@@ -217,8 +217,8 @@ export const MyPage = () => {
                     onClick={() => setActiveTab('settings')}
                     className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
                       activeTab === 'settings' 
-                        ? 'bg-blue-100 text-blue-700' 
-                        : 'hover:bg-gray-100'
+                        ? 'bg-brand-primary/20 text-brand-primary' 
+                        : 'hover:bg-white/10 text-brand-foreground'
                     }`}
                   >
                     <div className="flex items-center space-x-2">

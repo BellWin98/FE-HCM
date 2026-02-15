@@ -4,6 +4,13 @@
 
 @layer base {
   :root {
+    /* Workout flow brand (Neon Lime + Deep Dark) */
+    --brand-bg: #0A0A0A;
+    --brand-surface: #141414;
+    --brand-primary: #B8FF3C;
+    --brand-foreground: #F2F2F2;
+    --brand-penalty: #EF4444;
+
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 

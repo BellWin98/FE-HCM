@@ -16,6 +16,14 @@ export default {
     },
     extend: {
       colors: {
+        /* Workout flow brand palette */
+        brand: {
+          bg: "#0A0A0A",
+          surface: "#141414",
+          primary: "#B8FF3C",
+          foreground: "#F2F2F2",
+          penalty: "#EF4444",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

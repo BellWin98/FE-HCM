@@ -27,14 +27,14 @@ export const WorkoutStatsSection = ({ stats }: WorkoutStatsSectionProps) => {
 
   const getStreakColor = (streak: number) => {
     if (streak >= 30) return 'text-purple-600';
-    if (streak >= 14) return 'text-blue-600';
+    if (streak >= 14) return 'text-brand-primary';
     if (streak >= 7) return 'text-green-600';
     return 'text-orange-600';
   };
 
   const getStreakBadge = (streak: number) => {
     if (streak >= 30) return { text: '🔥 불타는 헬창', color: 'bg-purple-100 text-purple-800' };
-    if (streak >= 14) return { text: '💪 강력한 헬창', color: 'bg-blue-100 text-blue-800' };
+    if (streak >= 14) return { text: '💪 강력한 헬창', color: 'bg-brand-primary/20 text-brand-primary' };
     if (streak >= 7) return { text: '🏃‍♂️ 열정적인 헬창', color: 'bg-green-100 text-green-800' };
     return { text: '🌱 성장하는 헬창', color: 'bg-orange-100 text-orange-800' };
   };
@@ -123,11 +123,11 @@ export const WorkoutStatsSection = ({ stats }: WorkoutStatsSectionProps) => {
         <CardContent>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
+              <div className="text-center p-4 bg-brand-primary/10 rounded-lg">
+                <div className="text-2xl font-bold text-brand-primary">
                   {stats.monthlyWorkouts}회
                 </div>
-                <div className="text-sm text-blue-600">이번 달 운동</div>
+                <div className="text-sm text-brand-primary">이번 달 운동</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">
@@ -190,9 +190,9 @@ export const WorkoutStatsSection = ({ stats }: WorkoutStatsSectionProps) => {
               </div>
             )}
             {stats.monthlyWorkouts >= 20 && (
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <div className="text-center p-3 bg-brand-primary/10 rounded-lg">
                 <div className="text-2xl mb-1">💪</div>
-                <div className="text-xs font-medium text-blue-700">월 20회</div>
+                <div className="text-xs font-medium text-brand-primary">월 20회</div>
               </div>
             )}
             {stats.totalDuration >= 1000 && (
