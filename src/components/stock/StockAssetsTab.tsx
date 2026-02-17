@@ -35,6 +35,7 @@ const getProfitLossColor = (amount: number) => {
 };
 
 type ViewMode = 'marketValue' | 'currentPrice' | 'profitLoss';
+type DisplayMode = 'currentPrice' | 'marketValue'; // 현재가 | 평가금
 type SortOption = 'profitRateAsc' | 'profitRateDesc' | 'marketValueAsc' | 'marketValueDesc';
 
 interface StockAssetsTabProps {
@@ -54,6 +55,7 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<ViewMode>('marketValue');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('marketValue');
   const [sortOption, setSortOption] = useState<SortOption>('marketValueDesc');
   const [tradesSummary, setTradesSummary] = useState<TradingProfitLossSummary | null>(null);
 
@@ -168,25 +170,41 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
             <SelectItem value="profitRateAsc">총 수익률 낮은 순</SelectItem>
           </SelectContent>
         </Select>
-        {/* <div className="flex gap-1">
-          {(['marketValue', 'currentPrice', 'profitLoss'] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setViewMode(mode)}
-              className={cn(
-                'px-3 py-2 text-xs rounded-md min-h-[40px]',
-                viewMode === mode
-                  ? dark
-                    ? 'bg-gray-700 text-white'
-                    : 'bg-gray-200 text-gray-900'
-                  : textMuted
-              )}
-            >
-              {mode === 'marketValue' ? '평가금' : mode === 'currentPrice' ? '현재가' : '손익'}
-            </button>
-          ))}
-        </div> */}
+        <div
+          className={cn(
+            'inline-flex rounded-lg overflow-hidden border text-sm',
+            dark ? 'border-gray-600' : 'border-gray-200'
+          )}
+        >
+          <button
+            type="button"
+            onClick={() => setDisplayMode('currentPrice')}
+            className={cn(
+              'px-4 py-2 min-w-[70px] font-medium transition-colors',
+              displayMode === 'currentPrice'
+                ? dark
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'bg-gray-900 text-white'
+                : textMuted
+            )}
+          >
+            현재가
+          </button>
+          <button
+            type="button"
+            onClick={() => setDisplayMode('marketValue')}
+            className={cn(
+              'px-4 py-2 min-w-[70px] font-medium transition-colors',
+              displayMode === 'marketValue'
+                ? dark
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'bg-gray-900 text-white'
+                : textMuted
+            )}
+          >
+            평가금
+          </button>
+        </div>
       </div>
 
       {/* 보유 종목 목록 */}
@@ -198,6 +216,7 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
             <StockHoldingListItem
               key={holding.stockCode}
               holding={holding}
+              displayMode={displayMode}
               isMobile={isMobile}
               dark={dark}
               trades={(tradesSummary?.trades ?? []).filter((t) => t.stockCode === holding.stockCode)}
