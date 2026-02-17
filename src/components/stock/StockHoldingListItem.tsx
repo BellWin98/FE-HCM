@@ -43,8 +43,11 @@ const formatDateSafe = (date: Date, formatStr: string, fallback: string): string
   }
 };
 
+export type DisplayMode = 'currentPrice' | 'marketValue';
+
 interface StockHoldingListItemProps {
   holding: StockHolding;
+  displayMode: DisplayMode;
   isMobile: boolean;
   dark?: boolean;
   trades?: TradingProfitLoss[];
@@ -52,6 +55,7 @@ interface StockHoldingListItemProps {
 
 const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
   holding,
+  displayMode,
   isMobile,
   dark,
   trades = [],
@@ -219,6 +223,12 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
     </div>
   );
 
+  const dayChangeRate = holding.dayChangeRate;
+  const dayChangeDisplay =
+    dayChangeRate != null
+      ? `${dayChangeRate >= 0 ? '+' : ''}${dayChangeRate.toFixed(1)}%`
+      : '—';
+
   if (isMobile) {
     return (
       <div className={cn('rounded-lg border', borderColor, cardBg)}>
@@ -236,17 +246,42 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
             <div className="font-semibold text-gray-900 dark:text-gray-100 truncate">
               {holding.stockName}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {holding.quantity.toLocaleString()}주
-            </div>
+            {displayMode === 'currentPrice' ? (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                내 평균 {formatCurrency(holding.averagePrice)}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {holding.quantity.toLocaleString(undefined, { maximumFractionDigits: 6 })}주
+              </div>
+            )}
           </div>
           <div className="text-right shrink-0">
-            <div className="font-semibold text-gray-900 dark:text-gray-100">
-              {formatCurrency(holding.marketValue)}
-            </div>
-            <div className={cn('text-sm font-medium', getProfitLossColor(holding.profitLoss))}>
-              {formatCurrency(holding.profitLoss)} ({formatPercentage(holding.profitLossRate)})
-            </div>
+            {displayMode === 'currentPrice' ? (
+              <>
+                <div className="font-semibold text-gray-900 dark:text-gray-100">
+                  {formatCurrency(holding.currentPrice)}
+                </div>
+                {/* <div
+                  className={cn(
+                    'text-sm font-medium',
+                    dayChangeRate != null ? getProfitLossColor(dayChangeRate) : textMuted
+                  )}
+                >
+                  {dayChangeDisplay}
+                </div> */}
+              </>
+            ) : (
+              <>
+                <div className="font-semibold text-gray-900 dark:text-gray-100">
+                  {formatCurrency(holding.marketValue)}
+                </div>
+                <div className={cn('text-sm font-medium', getProfitLossColor(holding.profitLoss))}>
+                  {holding.profitLoss >= 0 ? '+' : ''}
+                  {formatCurrency(holding.profitLoss)} ({formatPercentage(holding.profitLossRate)})
+                </div>
+              </>
+            )}
           </div>
           {expanded ? (
             <ChevronUp className="h-5 w-5 text-gray-400 shrink-0" />
@@ -276,26 +311,51 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
             <div className="font-semibold text-gray-900 dark:text-gray-100">
               {holding.stockName}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {holding.stockCode} · {holding.quantity.toLocaleString()}주
-            </div>
+            {displayMode === 'currentPrice' ? (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                내 평균 {formatCurrency(holding.averagePrice)}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {holding.quantity.toLocaleString(undefined, { maximumFractionDigits: 6 })}주
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-6">
-          <div className="text-right">
-            <p className={cn('text-xs', textMuted)}>현재가</p>
-            <p className="font-medium">{formatCurrency(holding.currentPrice)}</p>
-          </div>
-          <div className="text-right">
-            <p className={cn('text-xs', textMuted)}>평가금액</p>
-            <p className="font-medium">{formatCurrency(holding.marketValue)}</p>
-          </div>
-          <div className="text-right">
-            <p className={cn('text-xs', textMuted)}>손익</p>
-            <div className={cn('font-semibold', getProfitLossColor(holding.profitLoss))}>
-              {formatCurrency(holding.profitLoss)} ({formatPercentage(holding.profitLossRate)})
-            </div>
-          </div>
+          {displayMode === 'currentPrice' ? (
+            <>
+              <div className="text-right">
+                <p className={cn('text-xs', textMuted)}>현재가</p>
+                <p className="font-medium">{formatCurrency(holding.currentPrice)}</p>
+              </div>
+              {/* <div className="text-right">
+                <p className={cn('text-xs', textMuted)}>전일종가대비</p>
+                <div
+                  className={cn(
+                    'font-semibold',
+                    dayChangeRate != null ? getProfitLossColor(dayChangeRate) : textMuted
+                  )}
+                >
+                  {dayChangeDisplay}
+                </div>
+              </div> */}
+            </>
+          ) : (
+            <>
+              <div className="text-right">
+                <p className={cn('text-xs', textMuted)}>총 금액</p>
+                <p className="font-medium">{formatCurrency(holding.marketValue)}</p>
+              </div>
+              <div className="text-right">
+                <p className={cn('text-xs', textMuted)}>수익금</p>
+                <div className={cn('font-semibold', getProfitLossColor(holding.profitLoss))}>
+                  {holding.profitLoss >= 0 ? '+' : ''}
+                  {formatCurrency(holding.profitLoss)} ({formatPercentage(holding.profitLossRate)})
+                </div>
+              </div>
+            </>
+          )}
           {expanded ? (
             <ChevronUp className="h-5 w-5 text-gray-400 shrink-0" />
           ) : (

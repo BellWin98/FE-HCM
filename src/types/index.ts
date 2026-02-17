@@ -136,6 +136,8 @@ export interface StockHolding {
   profitLoss: number;
   profitLossRate: number;
   sector: string;
+  /** 전일 종가 대비 변동률(%) - API에서 제공 시 표시 */
+  dayChangeRate?: number;
 }
 
 export interface StockPortfolio {
