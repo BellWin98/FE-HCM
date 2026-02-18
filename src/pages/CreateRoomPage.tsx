@@ -125,8 +125,8 @@ const koreanToEnglish = (text: string): string => {
         name: roomName.trim(),
         minWeeklyWorkouts: parseInt(minWeeklyWorkouts),
         penaltyPerMiss: parseInt(penaltyPerMiss),
-        startDate: formatDateToYmd(startDate),
-        endDate: enableEndDate && endDate ? formatDateToYmd(endDate) : null,
+        // startDate: formatDateToYmd(startDate),
+        // endDate: enableEndDate && endDate ? formatDateToYmd(endDate) : null,
         maxMembers: parseInt(maxMembers),
         entryCode: entryCode.trim(),
       };
@@ -194,7 +194,7 @@ const koreanToEnglish = (text: string): string => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>시작일 *</Label>
                   <Popover>
@@ -272,7 +272,7 @@ const koreanToEnglish = (text: string): string => {
                   </Popover>
                   <p className="text-xs text-gray-500" style={{marginTop: 7}}>매주 일요일만 선택 가능합니다.</p>
                 </div>
-              </div>
+              </div> */}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
