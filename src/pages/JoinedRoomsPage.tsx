@@ -2,7 +2,6 @@ import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { WorkoutRoom } from '@/types';
 import { Eye, List, Users } from 'lucide-react';
@@ -10,8 +9,7 @@ import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
-const AdminJoinedRoomsPage = () => {
-  const { member } = useAuth();
+const JoinedRoomsPage = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -20,10 +18,6 @@ const AdminJoinedRoomsPage = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        if (member?.role !== 'ADMIN') {
-          navigate('/dashboard', { replace: true });
-          return;
-        }
         const data = await api.getMyJoinedWorkoutRooms() as WorkoutRoom[];
         setRooms(data);
       } catch (e) {
@@ -33,7 +27,7 @@ const AdminJoinedRoomsPage = () => {
       }
     };
     load();
-  }, [member, navigate]);
+  }, []);
 
   return (
     <Layout>
@@ -45,7 +39,7 @@ const AdminJoinedRoomsPage = () => {
                 <List className="h-5 w-5" />
                 내 운동방
               </h1>
-              <p className="text-sm opacity-90 mt-2">ADMIN 전용</p>
+              <p className="text-sm opacity-90 mt-2">참여 중인 운동방 목록</p>
             </div>
             <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={() => navigate('/dashboard')}>
               <Eye className="mr-2 h-4 w-4" /> 대시보드로
@@ -89,9 +83,9 @@ const AdminJoinedRoomsPage = () => {
                     </span>
                   </div>
                   <div className="text-sm text-muted-foreground">방장: {room.ownerNickname}</div>
-                  <div className="text-sm text-muted-foreground">
+                  {/* <div className="text-sm text-muted-foreground">
                     기간: {format(new Date(room.startDate), 'yyyy-MM-dd')} ~ {room.endDate ? format(new Date(room.endDate), 'yyyy-MM-dd') : ''}
-                  </div>
+                  </div> */}
                   <div className="pt-1">
                     <Badge variant={room.isActive ? 'default' : 'secondary'}>{room.isActive ? '활성' : '비활성'}</Badge>
                   </div>
@@ -105,6 +99,6 @@ const AdminJoinedRoomsPage = () => {
   );
 };
 
-export default AdminJoinedRoomsPage;
+export default JoinedRoomsPage;
 
 

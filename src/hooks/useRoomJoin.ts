@@ -3,34 +3,33 @@ import { koreanToEnglish } from '@/lib/koreanToEnglish';
 import { useState } from 'react';
 
 export const useRoomJoin = () => {
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
-  const [password, setPassword] = useState('');
+  const [showRoomCodeDialog, setShowRoomCodeDialog] = useState(false);
+  const [roomCode, setRoomCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState('');
 
-  const handleJoinWorkoutRoom = (workoutRoomId: number) => {
-    setSelectedRoomId(workoutRoomId);
-    setShowPasswordDialog(true);
+  const openRoomCodeDialog = () => {
+    setRoomCode('');
+    setError('');
+    setShowRoomCodeDialog(true);
   };
 
-  const handlePasswordChange = (value: string) => {
-    const processedValue = koreanToEnglish(value.replace(/\s/g, ''));
+  const handleRoomCodeChange = (value: string) => {
+    const processedValue = koreanToEnglish(value.replace(/\s/g, '')).toUpperCase();
     if (processedValue.length <= 10) {
-      setPassword(processedValue);
+      setRoomCode(processedValue);
     }
   };
 
-  const handlePasswordSubmit = async () => {
+  const handleCodeSubmit = async () => {
     setError('');
-    if (!selectedRoomId || !password.trim()) return;
+    if (!roomCode.trim()) return;
 
     setIsJoining(true);
     try {
-      await api.joinWorkoutRoomByEntryCode(selectedRoomId, password);
-      setShowPasswordDialog(false);
-      setPassword('');
-      setSelectedRoomId(null);
+      await api.joinWorkoutRoomByCode(roomCode.trim());
+      setShowRoomCodeDialog(false);
+      setRoomCode('');
 
       // 방 참여 후 페이지 새로고침
       window.location.reload();
@@ -42,23 +41,20 @@ export const useRoomJoin = () => {
   };
 
   const handleDialogClose = () => {
-    setShowPasswordDialog(false);
-    setPassword('');
-    setSelectedRoomId(null);
+    setShowRoomCodeDialog(false);
+    setRoomCode('');
     setError('');
   };
 
   return {
-    showPasswordDialog,
-    setShowPasswordDialog,
-    selectedRoomId,
-    setSelectedRoomId,
-    password,
+    showRoomCodeDialog,
+    setShowRoomCodeDialog,
+    roomCode,
     isJoining,
     error,
-    handleJoinWorkoutRoom,
-    handlePasswordChange,
-    handlePasswordSubmit,
+    openRoomCodeDialog,
+    handleRoomCodeChange,
+    handleCodeSubmit,
     handleDialogClose,
   };
 };

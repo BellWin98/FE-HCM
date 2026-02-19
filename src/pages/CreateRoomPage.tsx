@@ -31,47 +31,18 @@ export const CreateRoomPage = () => {
 
   const today = getTodayYmd();
 
-  const convertKoreanToEnglish = (text: string) => {
-    const koreanToEnglishMap: { [key: string]: string } = {
-      'ㅂ': 'q', 'ㅈ': 'w', 'ㄷ': 'e', 'ㄱ': 'r', 'ㅅ': 't', 'ㅛ': 'y', 'ㅕ': 'u', 'ㅑ': 'i', 'ㅐ': 'o', 'ㅔ': 'p',
-      'ㅁ': 'a', 'ㄴ': 's', 'ㅇ': 'd', 'ㄹ': 'f', 'ㅎ': 'g', 'ㅗ': 'h', 'ㅓ': 'j', 'ㅏ': 'k', 'ㅣ': 'l',
-      'ㅋ': 'z', 'ㅌ': 'x', 'ㅊ': 'c', 'ㅍ': 'v', 'ㅠ': 'b', 'ㅜ': 'n', 'ㅡ': 'm',
-      'ㅃ': 'Q', 'ㅉ': 'W', 'ㄸ': 'E', 'ㄲ': 'R', 'ㅆ': 'T', 'ㅒ': 'O', 'ㅖ': 'P'
-    };
-    
-    return text.split('').map(char => koreanToEnglishMap[char] || char).join('');
+  const generateRandomEntryCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 혼동 가능 문자 제외 (0,O,1,I)
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
   };
 
-// 한글을 영어로 변환하는 함수
-const koreanToEnglish = (text: string): string => {
-  const koreanMap: { [key: string]: string } = {
-    // 자음
-    'ㄱ': 'r', 'ㄲ': 'R', 'ㄴ': 's', 'ㄷ': 'e', 'ㄸ': 'E', 'ㄹ': 'f',
-    'ㅁ': 'a', 'ㅂ': 'q', 'ㅃ': 'Q', 'ㅅ': 't', 'ㅆ': 'T', 'ㅇ': 'd',
-    'ㅈ': 'w', 'ㅉ': 'W', 'ㅊ': 'c', 'ㅋ': 'z', 'ㅌ': 'x', 'ㅍ': 'v', 'ㅎ': 'g',
-    // 모음
-    'ㅏ': 'k', 'ㅐ': 'o', 'ㅑ': 'i', 'ㅒ': 'O', 'ㅓ': 'j', 'ㅔ': 'p',
-    'ㅕ': 'u', 'ㅖ': 'P', 'ㅗ': 'h', 'ㅘ': 'hk', 'ㅙ': 'ho', 'ㅚ': 'hl',
-    'ㅛ': 'y', 'ㅜ': 'n', 'ㅝ': 'nj', 'ㅞ': 'np', 'ㅟ': 'nl', 'ㅠ': 'b', 'ㅡ': 'm', 'ㅢ': 'ml', 'ㅣ': 'l',
-    // 완성된 글자
-    '가': 'rk', '각': 'rk', '간': 'rks', '갇': 'rke', '갈': 'rkf', '갉': 'rka', '갊': 'rkq', '갋': 'rkt', '갌': 'rkd', '갍': 'rkw', '갎': 'rkc', '갏': 'rkz',
-    '나': 'sk', '낙': 'sk', '난': 'sks', '낟': 'ske', '날': 'skf', '낡': 'ska', '낢': 'skq', '낣': 'skt', '낤': 'skd', '낥': 'skw', '낦': 'skc', '낧': 'skz',
-    '다': 'ek', '닥': 'ek', '단': 'eks', '닫': 'eke', '달': 'ekf', '닭': 'eka', '닮': 'ekq', '닯': 'ekt', '닰': 'ekd', '닱': 'ekw', '닲': 'ekc', '닳': 'ekz',
-    '라': 'fk', '락': 'fk', '란': 'fks', '랃': 'fke', '랄': 'fkf', '랅': 'fka', '랆': 'fkq', '랇': 'fkt', '랈': 'fkd', '랉': 'fkw', '랊': 'fkc', '랋': 'fkz',
-    '마': 'ak', '막': 'ak', '만': 'aks', '맏': 'ake', '말': 'akf', '맑': 'aka', '맒': 'akq', '맓': 'akt', '맔': 'akd', '맕': 'akw', '맖': 'akc', '맗': 'akz',
-    '바': 'qk', '박': 'qk', '반': 'qks', '받': 'qke', '발': 'qkf', '밝': 'qka', '밞': 'qkq', '밟': 'qkt', '밠': 'qkd', '밡': 'qkw', '밢': 'qkc', '밣': 'qkz',
-    '사': 'tk', '삭': 'tk', '산': 'tks', '삳': 'tke', '살': 'tkf', '삵': 'tka', '삶': 'tkq', '삷': 'tkt', '삸': 'tkd', '삹': 'tkw', '삺': 'tkc', '삻': 'tkz',
-    '아': 'dk', '악': 'dk', '안': 'dks', '앋': 'dke', '알': 'dkf', '앍': 'dka', '앎': 'dkq', '앏': 'dkt', '앐': 'dkd', '앑': 'dkw', '앒': 'dkc', '앓': 'dkz',
-    '자': 'wk', '작': 'wk', '잔': 'wks', '잗': 'wke', '잘': 'wkf', '잚': 'wka', '잛': 'wkq', '잜': 'wkt', '잝': 'wkd', '잞': 'wkw', '잟': 'wkc', '잠': 'wkz',
-    '차': 'ck', '착': 'ck', '찬': 'cks', '찯': 'cke', '찰': 'ckf', '찱': 'cka', '찲': 'ckq', '찳': 'ckt', '찴': 'ckd', '찵': 'ckw', '찶': 'ckc', '찷': 'ckz',
-    '카': 'zk', '칵': 'zk', '칸': 'zks', '칻': 'zke', '칼': 'zkf', '칽': 'zka', '칾': 'zkq', '칿': 'zkt', '캀': 'zkd', '캁': 'zkw', '캂': 'zkc', '캃': 'zkz',
-    '타': 'xk', '탁': 'xk', '탄': 'xks', '탇': 'xke', '탈': 'xkf', '탉': 'xka', '탊': 'xkq', '탋': 'xkt', '탌': 'xkd', '탍': 'xkw', '탎': 'xkc', '탏': 'xkz',
-    '파': 'vk', '팩': 'vk', '판': 'vks', '팯': 'vke', '팰': 'vkf', '팱': 'vka', '팲': 'vkq', '팳': 'vkt', '팴': 'vkd', '팵': 'vkw', '팶': 'vkc', '팷': 'vkz',
-    '하': 'gk', '학': 'gk', '한': 'gks', '핟': 'gke', '할': 'gkf', '핡': 'gka', '핢': 'gkq', '핣': 'gkt', '핤': 'gkd', '핥': 'gkw', '핦': 'gkc', '핧': 'gkz'
+  const handleGenerateEntryCode = () => {
+    setEntryCode(generateRandomEntryCode());
   };
-
-  return text.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, (char) => koreanMap[char] || char);
-};
 
   const validateForm = () => {
     if (!roomName.trim()) {
@@ -99,12 +70,12 @@ const koreanToEnglish = (text: string): string => {
     }
 
     if (!entryCode.trim()) {
-      setError('방 비밀번호를 입력해주세요.');
+      setError('운동방 코드를 생성해주세요.');
       return false;
     }
 
-    if (entryCode.length < 2 || entryCode.length > 10) {
-      setError('방 비밀번호는 2-10자 사이여야 합니다.');
+    if (entryCode.length < 6 || entryCode.length > 10) {
+      setError('운동방 코드는 6-10자 사이여야 합니다.');
       return false;
     }
 
@@ -125,8 +96,8 @@ const koreanToEnglish = (text: string): string => {
         name: roomName.trim(),
         minWeeklyWorkouts: parseInt(minWeeklyWorkouts),
         penaltyPerMiss: parseInt(penaltyPerMiss),
-        startDate: formatDateToYmd(startDate),
-        endDate: enableEndDate && endDate ? formatDateToYmd(endDate) : null,
+        // startDate: formatDateToYmd(startDate),
+        // endDate: enableEndDate && endDate ? formatDateToYmd(endDate) : null,
         maxMembers: parseInt(maxMembers),
         entryCode: entryCode.trim(),
       };
@@ -194,7 +165,7 @@ const koreanToEnglish = (text: string): string => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>시작일 *</Label>
                   <Popover>
@@ -272,43 +243,37 @@ const koreanToEnglish = (text: string): string => {
                   </Popover>
                   <p className="text-xs text-gray-500" style={{marginTop: 7}}>매주 일요일만 선택 가능합니다.</p>
                 </div>
+              </div> */}
+
+              <div className="space-y-2">
+                <Label htmlFor="max-members">최대 참여 인원</Label>
+                <Input
+                  id="max-members"
+                  type="number"
+                  min="2"
+                  max="10"
+                  value={maxMembers}
+                  onChange={(e) => setMaxMembers(e.target.value)}
+                  className="max-w-xs"
+                />
+                <p className="text-xs text-gray-500">방장 포함 최대 참여 가능한 인원수</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="max-members">최대 참여 인원</Label>
-                  <Input
-                    id="max-members"
-                    type="number"
-                    min="2"
-                    max="10"
-                    value={maxMembers}
-                    onChange={(e) => setMaxMembers(e.target.value)}
-                  />
-                  <p className="text-xs text-gray-500">방장 포함 최대 참여 가능한 인원수</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="entry-code">방 비밀번호</Label>
+              <div className="space-y-2">
+                <Label>운동방 코드</Label>
+                <div className="flex gap-2 items-center">
                   <Input
                     id="entry-code"
                     value={entryCode}
-                    onChange={(e) => {
-                      const processedValue = koreanToEnglish(e.target.value);
-                      if (processedValue.length <= 10) {
-                        setEntryCode(processedValue);
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === ' ') {
-                        e.preventDefault();
-                      }
-                    }}
-                    minLength={2}
-                    maxLength={10}
+                    readOnly
+                    className="max-w-xs font-mono bg-muted"
+                    placeholder="코드 생성 버튼을 클릭하세요"
                   />
-                  <p className="text-xs text-gray-500">2자리 이상 10자리 이하의 방 비밀번호</p>
-                </div> 
+                  <Button type="button" variant="outline" onClick={handleGenerateEntryCode}>
+                    코드 생성
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500">버튼을 클릭하면 랜덤 코드가 생성됩니다. 방장만 코드 변경이 가능합니다.</p>
               </div>
              
 

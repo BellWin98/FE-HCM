@@ -58,34 +58,34 @@ export type WorkoutRoomRulesValidationInput = {
  * Returns error message (Korean) or null when valid.
  */
 export function validateWorkoutRoomRules(input: WorkoutRoomRulesValidationInput): string | null {
-  const todayYmd = input.todayYmd ?? getTodayYmd();
-  const enforceNotPast = input.enforceNotPast ?? true;
+  // const todayYmd = input.todayYmd ?? getTodayYmd();
+  // const enforceNotPast = input.enforceNotPast ?? true;
 
-  if (!input.startDate) {
-    return '운동 인증 시작일을 설정해주세요.';
-  }
+  // if (!input.startDate) {
+  //   return '운동 인증 시작일을 설정해주세요.';
+  // }
 
-  if (enforceNotPast && formatDateToYmd(input.startDate) < todayYmd) {
-    return '시작일은 오늘 이후여야 합니다.';
-  }
+  // if (enforceNotPast && formatDateToYmd(input.startDate) < todayYmd) {
+  //   return '시작일은 오늘 이후여야 합니다.';
+  // }
 
-  // Start date: Monday only (CreateRoom UX rule)
-  if (input.startDate.getDay() !== 1) {
-    return '시작일은 월요일만 선택 가능합니다.';
-  }
+  // // Start date: Monday only (CreateRoom UX rule)
+  // if (input.startDate.getDay() !== 1) {
+  //   return '시작일은 월요일만 선택 가능합니다.';
+  // }
 
-  if (input.enableEndDate && input.endDate) {
-    if (input.startDate >= input.endDate) {
-      return '종료일은 시작일보다 늦어야 합니다.';
-    }
-    if (enforceNotPast && formatDateToYmd(input.endDate) < todayYmd) {
-      return '종료일은 오늘 이후여야 합니다.';
-    }
-    // End date: Sunday only (CreateRoom UX rule)
-    if (input.endDate.getDay() !== 0) {
-      return '종료일은 일요일만 선택 가능합니다.';
-    }
-  }
+  // if (input.enableEndDate && input.endDate) {
+  //   if (input.startDate >= input.endDate) {
+  //     return '종료일은 시작일보다 늦어야 합니다.';
+  //   }
+  //   if (enforceNotPast && formatDateToYmd(input.endDate) < todayYmd) {
+  //     return '종료일은 오늘 이후여야 합니다.';
+  //   }
+  //   // End date: Sunday only (CreateRoom UX rule)
+  //   if (input.endDate.getDay() !== 0) {
+  //     return '종료일은 일요일만 선택 가능합니다.';
+  //   }
+  // }
 
   const minWorkouts = toInt(input.minWeeklyWorkouts);
   if (Number.isNaN(minWorkouts) || minWorkouts < 1 || minWorkouts > 7) {
