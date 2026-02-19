@@ -468,6 +468,17 @@ class ApiClient {
   }
 
   /**
+   * DELETE /admin/members/{memberId}
+   * 회원 삭제.
+   * @param memberId - 대상 회원 ID
+   */
+  async deleteAdminMember(memberId: number): Promise<void> {
+    return this.request<void>(`/admin/members/${memberId}`, {
+      method: "DELETE",
+    });
+  }
+
+  /**
    * GET /admin/workout/rooms
    * 운동방 목록/검색 (방 이름/방장/활성 여부).
    * @param params - query, active, page, size
@@ -511,6 +522,17 @@ class ApiClient {
     return this.request<WorkoutRoom>(`/admin/workout/rooms/${roomId}`, {
       method: "PUT",
       data: body,
+    });
+  }
+
+  /**
+   * DELETE /admin/workout/rooms/{roomId}
+   * 운동방 삭제.
+   * @param roomId - 방 ID
+   */
+  async deleteAdminWorkoutRoom(roomId: number): Promise<void> {
+    return this.request<void>(`/admin/workout/rooms/${roomId}`, {
+      method: "DELETE",
     });
   }
 }

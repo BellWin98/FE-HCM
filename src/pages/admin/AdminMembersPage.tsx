@@ -12,7 +12,7 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Member } from '@/types';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { RefreshCcw, Search } from 'lucide-react';
+import { RefreshCcw, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { AdminStateBlock } from '@/components/admin/AdminStateBlock';
 
@@ -60,6 +60,10 @@ const AdminMembersPage = () => {
     target: Member | null;
     nextRole: Role | null;
   }>({ open: false, target: null, nextRole: null });
+  const [pendingDelete, setPendingDelete] = useState<{
+    open: boolean;
+    target: Member | null;
+  }>({ open: false, target: null });
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -93,6 +97,22 @@ const AdminMembersPage = () => {
       queryClient.invalidateQueries({ queryKey: ['adminMembers'] });
       if (currentMember?.id === updated.id) {
         updateMember({ role: updated.role });
+      }
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err));
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (memberId: number) => api.deleteAdminMember(memberId),
+    onSuccess: () => {
+      toast.success('회원이 삭제되었습니다.');
+      queryClient.invalidateQueries({ queryKey: ['adminMembers'] });
+      
+      // 현재 페이지가 비어있으면 이전 페이지로 이동
+      if (content.length === 1 && currentPage > 0) {
+        setPage((p) => Math.max(0, p - 1));
       }
     },
     onError: (err) => {
@@ -147,6 +167,19 @@ const AdminMembersPage = () => {
     if (!target || !nextRole) return;
     closeConfirm();
     roleMutation.mutate({ memberId: target.id, role: nextRole });
+  };
+
+  const openDeleteConfirm = (target: Member) => {
+    setPendingDelete({ open: true, target });
+  };
+
+  const closeDeleteConfirm = () => setPendingDelete({ open: false, target: null });
+
+  const confirmDelete = async () => {
+    const target = pendingDelete.target;
+    if (!target) return;
+    closeDeleteConfirm();
+    deleteMutation.mutate(target.id);
   };
 
   return (
@@ -252,12 +285,14 @@ const AdminMembersPage = () => {
                       <TableHead className="w-[120px] text-right">운동일수</TableHead>
                       <TableHead className="w-[140px] text-right">누적 벌금</TableHead>
                       <TableHead className="w-[140px]">가입일</TableHead>
+                      <TableHead className="w-[100px] text-right">작업</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {content.map((m) => {
                       const isMe = currentMember?.id === m.id;
                       const isUpdatingThisRow = roleMutation.isPending && updatingMemberId === m.id;
+                      const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === m.id;
                       return (
                         <TableRow key={m.id}>
                           <TableCell className="font-mono text-xs text-muted-foreground">{m.id}</TableCell>
@@ -272,7 +307,7 @@ const AdminMembersPage = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Select value={m.role} onValueChange={(v) => openConfirm(m, v as Role)} disabled={isUpdatingThisRow}>
+                              <Select value={m.role} onValueChange={(v) => openConfirm(m, v as Role)} disabled={isUpdatingThisRow || isDeletingThisRow}>
                                 <SelectTrigger className="w-[160px]">
                                   <SelectValue />
                                 </SelectTrigger>
@@ -290,6 +325,18 @@ const AdminMembersPage = () => {
                           <TableCell className="text-right tabular-nums">{m.totalWorkoutDays ?? 0}</TableCell>
                           <TableCell className="text-right tabular-nums">{(m.totalPenalty ?? 0).toLocaleString()}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{formatDate(m.createdAt)}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openDeleteConfirm(m)}
+                              disabled={isDeletingThisRow || isUpdatingThisRow}
+                              className="gap-1"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              {isDeletingThisRow ? '삭제 중...' : '삭제'}
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
@@ -380,6 +427,39 @@ const AdminMembersPage = () => {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={closeConfirm}>취소</AlertDialogCancel>
             <AlertDialogAction onClick={confirmChange}>변경</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={pendingDelete.open} onOpenChange={(open) => (open ? null : closeDeleteConfirm())}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>회원을 삭제할까요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete.target ? (
+                <div className="space-y-2">
+                  <div>
+                    대상: <span className="font-medium text-foreground">{pendingDelete.target.nickname}</span> ({pendingDelete.target.email})
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    이 작업은 되돌릴 수 없습니다. 정말로 이 회원을 삭제하시겠습니까?
+                  </div>
+                  {currentMember?.id === pendingDelete.target.id ? (
+                    <div className="mt-2 text-sm font-medium text-destructive">
+                      본인 계정을 삭제하면 즉시 로그아웃됩니다.
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                '이 작업은 되돌릴 수 없습니다.'
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={closeDeleteConfirm}>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              삭제
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

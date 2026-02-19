@@ -17,10 +17,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { WorkoutRoom } from '@/types';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { RefreshCcw, Search } from 'lucide-react';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { RefreshCcw, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type ActiveFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
 
@@ -40,11 +42,17 @@ function getErrorMessage(err: unknown) {
 }
 
 const AdminRoomsPage = () => {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>('ALL');
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
+  const [pendingDelete, setPendingDelete] = useState<{
+    open: boolean;
+    target: WorkoutRoom | null;
+  }>({ open: false, target: null });
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -71,6 +79,22 @@ const AdminRoomsPage = () => {
     queryKey: ['adminWorkoutRooms', listParams],
     queryFn: () => api.getAdminWorkoutRooms(listParams),
     placeholderData: keepPreviousData,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (roomId: number) => api.deleteAdminWorkoutRoom(roomId),
+    onSuccess: () => {
+      toast.success('운동방이 삭제되었습니다.');
+      queryClient.invalidateQueries({ queryKey: ['adminWorkoutRooms'] });
+      
+      // 현재 페이지가 비어있으면 이전 페이지로 이동
+      if (content.length === 1 && currentPage > 0) {
+        setPage((p) => Math.max(0, p - 1));
+      }
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err));
+    },
   });
 
   const content = roomsQuery.data?.content ?? [];
@@ -104,6 +128,19 @@ const AdminRoomsPage = () => {
     }
     return items;
   }, [currentPage, totalPages]);
+
+  const openDeleteConfirm = (target: WorkoutRoom) => {
+    setPendingDelete({ open: true, target });
+  };
+
+  const closeDeleteConfirm = () => setPendingDelete({ open: false, target: null });
+
+  const confirmDelete = async () => {
+    const target = pendingDelete.target;
+    if (!target) return;
+    closeDeleteConfirm();
+    deleteMutation.mutate(target.id);
+  };
 
   return (
     <Layout>
@@ -207,6 +244,7 @@ const AdminRoomsPage = () => {
                       r.penaltyPerMiss ?? 0
                     ).toLocaleString()}원`;
                     const periodText = `${formatDate(r.startDate)} ~ ${formatDate(r.endDate)}`;
+                    const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === r.id;
 
                     return (
                       <div
@@ -247,9 +285,19 @@ const AdminRoomsPage = () => {
                           </div>
                         </div>
 
-                        <div className="mt-4">
-                          <Button asChild className="w-full" size="sm" variant="outline">
+                        <div className="mt-4 flex gap-2">
+                          <Button asChild className="flex-1" size="sm" variant="outline" disabled={isDeletingThisRow}>
                             <Link to={`/admin/rooms/${r.id}`}>상세 보기</Link>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openDeleteConfirm(r)}
+                            disabled={isDeletingThisRow}
+                            className="gap-1"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            {isDeletingThisRow ? '삭제 중...' : '삭제'}
                           </Button>
                         </div>
                       </div>
@@ -270,7 +318,7 @@ const AdminRoomsPage = () => {
                           <TableHead className="w-[150px] text-right">인원</TableHead>
                           <TableHead className="w-[220px]">기간</TableHead>
                           <TableHead className="w-[220px]">규칙</TableHead>
-                          <TableHead className="w-[110px] text-right">상세</TableHead>
+                          <TableHead className="w-[180px] text-right">작업</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -280,6 +328,7 @@ const AdminRoomsPage = () => {
                           const rulesText = `주 ${r.minWeeklyWorkouts ?? 0}회 · 미달 ${(
                             r.penaltyPerMiss ?? 0
                           ).toLocaleString()}원`;
+                          const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === r.id;
                           return (
                             <TableRow key={r.id}>
                               <TableCell className="font-mono text-xs text-muted-foreground">{r.id}</TableCell>
@@ -297,9 +346,21 @@ const AdminRoomsPage = () => {
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground">{rulesText}</TableCell>
                               <TableCell className="text-right">
-                                <Button asChild size="sm" variant="outline">
-                                  <Link to={`/admin/rooms/${r.id}`}>상세</Link>
-                                </Button>
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button asChild size="sm" variant="outline" disabled={isDeletingThisRow}>
+                                    <Link to={`/admin/rooms/${r.id}`}>상세</Link>
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openDeleteConfirm(r)}
+                                    disabled={isDeletingThisRow}
+                                    className="gap-1"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                    {isDeletingThisRow ? '삭제 중...' : '삭제'}
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           );
@@ -364,6 +425,39 @@ const AdminRoomsPage = () => {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={pendingDelete.open} onOpenChange={(open) => (open ? null : closeDeleteConfirm())}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>운동방을 삭제할까요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete.target ? (
+                <div className="space-y-2">
+                  <div>
+                    대상: <span className="font-medium text-foreground">{pendingDelete.target.name}</span> (ID: {pendingDelete.target.id})
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    이 작업은 되돌릴 수 없습니다. 정말로 이 운동방을 삭제하시겠습니까?
+                  </div>
+                  {pendingDelete.target.currentMembers && pendingDelete.target.currentMembers > 0 ? (
+                    <div className="mt-2 text-sm font-medium text-destructive">
+                      현재 {pendingDelete.target.currentMembers}명의 회원이 참여 중입니다.
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                '이 작업은 되돌릴 수 없습니다.'
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={closeDeleteConfirm}>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };
