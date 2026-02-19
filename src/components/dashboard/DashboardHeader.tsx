@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Plus } from 'lucide-react';
 import { WorkoutRoom } from '@/types';
 
 interface DashboardHeaderProps {
@@ -18,6 +19,7 @@ interface DashboardHeaderProps {
   onShowAvailableRooms: () => void;
   onNavigateToMyRooms: () => void;
   onSelectRoom?: (roomId: number) => void;
+  onCreateWorkoutRoom?: () => void;
 }
 
 export const DashboardHeader = ({
@@ -30,6 +32,7 @@ export const DashboardHeader = ({
   onShowAvailableRooms,
   onNavigateToMyRooms,
   onSelectRoom,
+  onCreateWorkoutRoom,
 }: DashboardHeaderProps) => {
   return (
     <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-6">
@@ -42,6 +45,16 @@ export const DashboardHeader = ({
         </div>
         {isMemberInWorkoutRoom && (
           <div className="flex flex-col sm:flex-row gap-1.5 shrink-0">
+            {onCreateWorkoutRoom && (
+              <Button
+                variant="outline"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-sm px-3 py-2"
+                onClick={onCreateWorkoutRoom}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                <span className="truncate">방 만들기</span>
+              </Button>
+            )}
             <Button
               variant="outline"
               className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-sm px-3 py-2"

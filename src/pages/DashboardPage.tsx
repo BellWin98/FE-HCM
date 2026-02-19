@@ -195,6 +195,7 @@ export const DashboardPage = () => {
           onShowAvailableRooms={handleShowAvailableRooms}
           onNavigateToMyRooms={() => navigate('/rooms/joined')}
           onSelectRoom={handleSelectRoom}
+          onCreateWorkoutRoom={handleCreateWorkoutRoom}
         />
 
         {/* 통계 카드 */}
