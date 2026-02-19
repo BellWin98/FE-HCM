@@ -186,6 +186,19 @@ class ApiClient {
     });
   }
 
+  async joinWorkoutRoomByCode(entryCode: string) {
+    return this.request("/workout/rooms/join", {
+      method: "POST",
+      data: { entryCode },
+    });
+  }
+
+  async regenerateRoomEntryCode(roomId: number) {
+    return this.request(`/workout/rooms/${roomId}/regenerate-entry-code`, {
+      method: "POST",
+    });
+  }
+
   async getCurrentWorkoutRoom() {
     return this.request("/workout/rooms/current");
   }

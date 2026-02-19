@@ -28,6 +28,7 @@ export interface WorkoutRoom {
   currentMembers: number;
   ownerNickname: string;
   isActive: boolean;
+  entryCode?: string;
 }
 
 export interface WorkoutRoomDetail {

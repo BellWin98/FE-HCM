@@ -6,11 +6,12 @@ import { Badge } from "./ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Calendar } from "./ui/calendar";
 import MemberStatus from "./MemberStatus";
+import { RoomCodeSection } from "./RoomCodeSection";
 import ChatRoom from "./ChatRoom";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "./ui/carousel";
 import { Dialog, DialogContent } from "./ui/dialog";
 
-export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
+export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRegenerateEntryCode, isRegeneratingEntryCode }) => {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [zoomImageUrls, setZoomImageUrls] = useState<string[] | null>(null);
     const [zoomImageIndex, setZoomImageIndex] = useState<number>(0);
@@ -205,8 +206,26 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember }) => {
       );
     };
   
+    const isOwner = currentWorkoutRoom.workoutRoomInfo?.ownerNickname === currentMember?.nickname;
+    const entryCode = currentWorkoutRoom.workoutRoomInfo?.entryCode;
+
     return (
       <div className="space-y-6">
+        {entryCode != null && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">🔑 운동방 입장 코드</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RoomCodeSection
+                entryCode={entryCode}
+                isOwner={isOwner}
+                onRegenerate={onRegenerateEntryCode}
+                isRegenerating={isRegeneratingEntryCode}
+              />
+            </CardContent>
+          </Card>
+        )}
         <MemberStatus currentWorkoutRoom={currentWorkoutRoom} today={today} />
         <Card>
           <CardHeader>

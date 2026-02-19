@@ -74,6 +74,11 @@ const AppRoutes = () => (
         <JoinedRoomsPage />
       </RequireRole>
     } />
+    <Route path="/rooms/joined" element={
+      <ProtectedRoute>
+        <JoinedRoomsPage />
+      </ProtectedRoute>
+    } />
     <Route path="/workout/upload" element={
       <ProtectedRoute>
         <WorkoutUploadPage />

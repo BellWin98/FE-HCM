@@ -4,7 +4,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MyActivityCard } from '@/components/dashboard/MyActivityCard';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { AvailableRoomsDialog } from '@/components/dialogs/AvailableRoomsDialog';
-import { PasswordDialog } from '@/components/dialogs/PasswordDialog';
+import { RoomCodeDialog } from '@/components/dialogs/RoomCodeDialog';
 import { RestDayDialog } from '@/components/dialogs/RestDayDialog';
 import { Layout } from '@/components/layout/Layout';
 import MyWorkoutRoom from '@/components/MyWorkoutRoom';
@@ -17,7 +17,7 @@ import { useRestDay } from '@/hooks/useRestDay';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
 import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
-import { WorkoutRoom } from '@/types';
+import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
 import { initializeApp } from 'firebase/app';
 import { onMessage } from 'firebase/messaging';
 import { getToken } from 'firebase/messaging';
@@ -52,8 +52,10 @@ export const DashboardPage = () => {
   const {
     isLoading,
     isMemberInWorkoutRoom,
+    joinedRooms,
     availableWorkoutRooms,
     currentWorkoutRoom,
+    setCurrentWorkoutRoom,
   } = useDashboardData();
 
   const roomJoin = useRoomJoin();
@@ -100,8 +102,8 @@ export const DashboardPage = () => {
 
   // 모든 운동방 보기 관련 상태
   const [showAvailableRoomsDialog, setShowAvailableRoomsDialog] = useState(false);
-  const [isLoadingAvailableRooms, setIsLoadingAvailableRooms] = useState(false);
   const [joinedRoomIds, setJoinedRoomIds] = useState<number[]>([]);
+  const [isRegeneratingEntryCode, setIsRegeneratingEntryCode] = useState(false);
 
   // 오늘이 휴식일인지 확인하는 함수
   const isTodayRestDay = () => {
@@ -130,23 +132,37 @@ export const DashboardPage = () => {
 
   const handleCreateWorkoutRoom = () => navigate('/rooms/create');
 
-  const handleShowAvailableRooms = async () => {
-    setIsLoadingAvailableRooms(true);
+  const handleShowAvailableRooms = () => {
+    setJoinedRoomIds(joinedRooms.map((r) => r.id));
+    setShowAvailableRoomsDialog(true);
+  };
+
+  const handleSelectRoom = async (roomId: number) => {
     try {
-      // ADMIN 전용: 내가 이미 참여한 방 목록을 불러와서 표시/제어
-      if (member?.role === 'ADMIN') {
-        try {
-          const myRooms = (await api.getMyJoinedWorkoutRooms()) as WorkoutRoom[];
-          setJoinedRoomIds(myRooms.map((r) => r.id));
-        } catch {
-          // 무시: 실패해도 다이얼로그는 열림
-        }
+      const detail = await api.getWorkoutRoomDetail(roomId) as WorkoutRoomDetail;
+      try {
+        localStorage.setItem('lastViewedWorkoutRoomId', String(roomId));
+      } catch {
+        // ignore
       }
-      setShowAvailableRoomsDialog(true);
+      setCurrentWorkoutRoom(detail);
     } catch {
-      // 에러 처리
+      // 무시
+    }
+  };
+
+  const handleRegenerateEntryCode = async () => {
+    const roomId = currentWorkoutRoom?.workoutRoomInfo?.id;
+    if (!roomId) return;
+    setIsRegeneratingEntryCode(true);
+    try {
+      await api.regenerateRoomEntryCode(roomId);
+      const detail = await api.getWorkoutRoomDetail(roomId) as WorkoutRoomDetail;
+      setCurrentWorkoutRoom(detail);
+    } catch {
+      // 에러 시 토스트 등 처리 가능
     } finally {
-      setIsLoadingAvailableRooms(false);
+      setIsRegeneratingEntryCode(false);
     }
   };
 
@@ -172,11 +188,13 @@ export const DashboardPage = () => {
               ? `안녕하세요 ${member?.nickname ?? '사용자'}님!`
               : '새로운 운동방에 참여하고 건강한 습관을 만들어보세요!'
           }
-          isAdmin={member?.role === 'ADMIN'}
           isMemberInWorkoutRoom={isMemberInWorkoutRoom}
-          isLoadingAvailableRooms={isLoadingAvailableRooms}
+          isLoadingAvailableRooms={false}
+          joinedRooms={joinedRooms}
+          currentRoomId={currentWorkoutRoom?.workoutRoomInfo?.id}
           onShowAvailableRooms={handleShowAvailableRooms}
-          onNavigateToAdminRooms={() => navigate('/admin/my-rooms')}
+          onNavigateToMyRooms={() => navigate('/rooms/joined')}
+          onSelectRoom={handleSelectRoom}
         />
 
         {/* 통계 카드 */}
@@ -207,7 +225,13 @@ export const DashboardPage = () => {
             </TabsList>
 
             <TabsContent value="room" className="space-y-6">
-              <MyWorkoutRoom currentWorkoutRoom={currentWorkoutRoom} today={today} currentMember={member} />
+              <MyWorkoutRoom
+                currentWorkoutRoom={currentWorkoutRoom}
+                today={today}
+                currentMember={member}
+                onRegenerateEntryCode={handleRegenerateEntryCode}
+                isRegeneratingEntryCode={isRegeneratingEntryCode}
+              />
             </TabsContent>
 
             <TabsContent value="penalty" className="space-y-6">
@@ -232,17 +256,17 @@ export const DashboardPage = () => {
           <AvailableWorkoutRooms
             workoutRooms={availableWorkoutRooms}
             onCreateWorkoutRoom={handleCreateWorkoutRoom}
-            onJoinWorkoutRoom={roomJoin.handleJoinWorkoutRoom}
+            onJoinByCode={roomJoin.openRoomCodeDialog}
           />
         )}
 
         {/* 비밀번호 다이얼로그 */}
-        <PasswordDialog
-          open={roomJoin.showPasswordDialog}
-          onOpenChange={roomJoin.setShowPasswordDialog}
-          password={roomJoin.password}
-          onPasswordChange={roomJoin.handlePasswordChange}
-          onSubmit={roomJoin.handlePasswordSubmit}
+        <RoomCodeDialog
+          open={roomJoin.showRoomCodeDialog}
+          onOpenChange={roomJoin.setShowRoomCodeDialog}
+          roomCode={roomJoin.roomCode}
+          onRoomCodeChange={roomJoin.handleRoomCodeChange}
+          onSubmit={roomJoin.handleCodeSubmit}
           onClose={roomJoin.handleDialogClose}
           isJoining={roomJoin.isJoining}
           error={roomJoin.error}
@@ -270,13 +294,10 @@ export const DashboardPage = () => {
           open={showAvailableRoomsDialog}
           onOpenChange={setShowAvailableRoomsDialog}
           rooms={availableWorkoutRooms}
-          isLoading={isLoadingAvailableRooms}
+          isLoading={false}
           isAdmin={member?.role === 'ADMIN'}
           joinedRoomIds={joinedRoomIds}
-          onJoinRoom={(roomId) => {
-            roomJoin.setSelectedRoomId(roomId);
-            roomJoin.setShowPasswordDialog(true);
-          }}
+          onJoinByCode={roomJoin.openRoomCodeDialog}
           onClose={handleAvailableRoomsDialogClose}
         />
       </div>

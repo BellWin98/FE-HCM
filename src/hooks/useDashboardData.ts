@@ -7,54 +7,74 @@ export const useDashboardData = () => {
   const location = useLocation();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isMemberInWorkoutRoom, setIsMemberInWorkoutRoom] = useState(false);
+  const [joinedRooms, setJoinedRooms] = useState<WorkoutRoom[]>([]);
   const [availableWorkoutRooms, setAvailableWorkoutRooms] = useState<WorkoutRoom[]>([]);
   const [currentWorkoutRoom, setCurrentWorkoutRoom] = useState<WorkoutRoomDetail | null>(null);
+
+  const isMemberInWorkoutRoom = joinedRooms.length > 0;
 
   useEffect(() => {
     const loadDashboardStats = async () => {
       setIsLoading(true);
-      const isMemberInRoom = await api.isMemberInWorkoutRoom() as boolean;
-      setIsMemberInWorkoutRoom(isMemberInRoom);
-      const rooms = await api.getAvailableWorkoutRooms() as WorkoutRoom[];
-      setAvailableWorkoutRooms(rooms);
+      try {
+        const [myRooms, allRooms] = await Promise.all([
+          api.getMyJoinedWorkoutRooms() as Promise<WorkoutRoom[]>,
+          api.getAvailableWorkoutRooms() as Promise<WorkoutRoom[]>,
+        ]);
+        setJoinedRooms(myRooms);
+        setAvailableWorkoutRooms(allRooms);
 
-      // 라우터 state에 currentWorkoutRoom이 오면 우선 반영
-      const state = location.state as { currentWorkoutRoom?: WorkoutRoomDetail } | null;
-      if (state?.currentWorkoutRoom) {
-        setCurrentWorkoutRoom(state.currentWorkoutRoom);
-        try {
-          localStorage.setItem('lastViewedWorkoutRoomId', String(state.currentWorkoutRoom.workoutRoomInfo.id));
-        } catch {
-          // ignore: storage may be unavailable
-        }
-      } else if (isMemberInRoom) {
-        let restored: WorkoutRoomDetail | null = null;
-        try {
-          const lastId = localStorage.getItem('lastViewedWorkoutRoomId');
-          if (lastId) {
-            restored = await api.getWorkoutRoomDetail(Number(lastId)) as WorkoutRoomDetail;
+        // 라우터 state에 currentWorkoutRoom이 오면 우선 반영
+        const state = location.state as { currentWorkoutRoom?: WorkoutRoomDetail } | null;
+        if (state?.currentWorkoutRoom) {
+          setCurrentWorkoutRoom(state.currentWorkoutRoom);
+          try {
+            localStorage.setItem('lastViewedWorkoutRoomId', String(state.currentWorkoutRoom.workoutRoomInfo?.id));
+          } catch {
+            // ignore: storage may be unavailable
           }
-        } catch {
-          // ignore: best-effort restore
-        }
+        } else if (myRooms.length > 0) {
+          let restored: WorkoutRoomDetail | null = null;
+          try {
+            const lastId = localStorage.getItem('lastViewedWorkoutRoomId');
+            if (lastId) {
+              const roomId = Number(lastId);
+              const isJoined = myRooms.some((r) => r.id === roomId);
+              if (isJoined) {
+                restored = await api.getWorkoutRoomDetail(roomId) as WorkoutRoomDetail;
+              }
+            }
+          } catch {
+            // ignore: best-effort restore
+          }
 
-        if (restored) {
-          setCurrentWorkoutRoom(restored);
-        } else {
-          const currentRoom = await api.getCurrentWorkoutRoom() as WorkoutRoomDetail;
-          setCurrentWorkoutRoom(currentRoom);
+          if (restored) {
+            setCurrentWorkoutRoom(restored);
+          } else {
+            const firstRoomId = myRooms[0].id;
+            const detail = await api.getWorkoutRoomDetail(firstRoomId) as WorkoutRoomDetail;
+            setCurrentWorkoutRoom(detail);
+            try {
+              localStorage.setItem('lastViewedWorkoutRoomId', String(firstRoomId));
+            } catch {
+              // ignore
+            }
+          }
         }
+      } catch {
+        setJoinedRooms([]);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     loadDashboardStats();
-  }, [isMemberInWorkoutRoom, location.state]);
+  }, [location.state]);
 
   return {
     isLoading,
     isMemberInWorkoutRoom,
+    joinedRooms,
     availableWorkoutRooms,
     setAvailableWorkoutRooms,
     currentWorkoutRoom,

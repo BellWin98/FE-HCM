@@ -13,7 +13,7 @@ interface AvailableRoomsDialogProps {
   isLoading: boolean;
   isAdmin: boolean;
   joinedRoomIds: number[];
-  onJoinRoom: (roomId: number) => void;
+  onJoinByCode: () => void;
   onClose: () => void;
 }
 
@@ -24,7 +24,7 @@ export const AvailableRoomsDialog = ({
   isLoading,
   isAdmin,
   joinedRoomIds,
-  onJoinRoom,
+  onJoinByCode,
   onClose,
 }: AvailableRoomsDialogProps) => {
   return (
@@ -67,10 +67,10 @@ export const AvailableRoomsDialog = ({
                         </span>
                       </div>
                       <div className="text-sm text-muted-foreground">방장: {workoutRoom.ownerNickname}</div>
-                      <div className="text-sm text-muted-foreground">
+                      {/* <div className="text-sm text-muted-foreground">
                         기간: {format(new Date(workoutRoom.startDate), 'yyyy-MM-dd')} ~{' '}
                         {workoutRoom.endDate ? format(new Date(workoutRoom.endDate), 'yyyy-MM-dd') : ''}
-                      </div>
+                      </div> */}
                       <div className="flex items-center gap-2">
                         <Badge variant={workoutRoom.isActive ? 'default' : 'secondary'}>
                           {workoutRoom.isActive ? '활성' : '비활성'}
@@ -78,19 +78,17 @@ export const AvailableRoomsDialog = ({
                       </div>
                     </div>
                   </CardContent>
-                  {isAdmin && (
-                    <div className="p-4 pt-0">
-                      {joinedRoomIds.includes(workoutRoom.id) ? (
-                        <Button className="w-full" variant="outline" disabled>
-                          참여중
-                        </Button>
-                      ) : (
-                        <Button className="w-full" onClick={() => onJoinRoom(workoutRoom.id)}>
-                          참여하기
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                  <div className="p-4 pt-0">
+                    {joinedRoomIds.includes(workoutRoom.id) ? (
+                      <Button className="w-full" variant="outline" disabled>
+                        참여중
+                      </Button>
+                    ) : (
+                      <Button className="w-full" onClick={onJoinByCode}>
+                        코드로 입장
+                      </Button>
+                    )}
+                  </div>
                 </Card>
               ))}
             </div>
