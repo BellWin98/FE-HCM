@@ -36,8 +36,8 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
   const [error, setError] = useState('');
 
   const validateForm = () => {
-    if (editForm.nickname.length < 2 || editForm.nickname.length > 10) {
-      setError('닉네임은 2-10자 사이여야 합니다.');
+    if (editForm.nickname.length < 2 || editForm.nickname.length > 5) {
+      setError('닉네임은 2-5자 사이여야 합니다.');
       return false;
     }
 
@@ -173,9 +173,9 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
                     <Input
                       id="nickname"
                       type="text"
-                      placeholder="닉네임 (2-10자)"
+                      placeholder="닉네임 (2-5자)"
                       minLength={2}
-                      maxLength={10}
+                      maxLength={5}
                       value={editForm.nickname}
                       onChange={(e) => setEditForm({ ...editForm, nickname: e.target.value.replace(/\s/g, '') })}
                       onKeyDown={(e) => {

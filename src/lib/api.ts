@@ -418,6 +418,10 @@ class ApiClient {
       return await this.request(`/members/workout-feed?page=${page}&size=${size}`);
   }
 
+  async getMemberWorkoutFeed(memberId: number, page: number = 0, size: number = 20) {
+    return await this.request(`/members/${memberId}/workout-feed?page=${page}&size=${size}`);
+  }
+
   async getUserWorkoutStats() {
     return await this.request("/members/workout-stats");
   }
@@ -436,6 +440,23 @@ class ApiClient {
 
   async unlikeWorkout(workoutId: number) {
     return await this.request(`/workouts/${workoutId}/like`, { method: "DELETE" });
+  }
+
+  async getWorkoutComments(workoutId: number) {
+    return await this.request(`/workouts/${workoutId}/comments`);
+  }
+
+  async createWorkoutComment(workoutId: number, content: string) {
+    return await this.request(`/workouts/${workoutId}/comments`, {
+      method: "POST",
+      data: { content },
+    });
+  }
+
+  async deleteWorkoutComment(commentId: number) {
+    return await this.request(`/workouts/comments/${commentId}`, {
+      method: "DELETE",
+    });
   }
 
   // ─── Admin APIs (contract-first; backend endpoints TBD) ─────────────────────
