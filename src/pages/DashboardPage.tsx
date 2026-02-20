@@ -24,6 +24,7 @@ import { getToken } from 'firebase/messaging';
 import { getMessaging } from 'firebase/messaging';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 
 
 const firebaseConfig = {
@@ -173,7 +174,15 @@ export const DashboardPage = () => {
   if (isLoading || !availableWorkoutRooms) {
     return (
       <Layout>
-        <div>Loading...</div>
+        <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <div className="text-center space-y-1">
+              <p className="text-lg font-medium text-foreground">데이터를 불러오는 중...</p>
+              <p className="text-sm text-muted-foreground">잠시만 기다려주세요</p>
+            </div>
+          </div>
+        </div>
       </Layout>
     );
   }
