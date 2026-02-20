@@ -67,11 +67,20 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
   const borderColor = dark ? 'border-gray-700' : 'border-gray-200';
 
   const tradesGrouped = useMemo(() => {
-    const sorted = [...trades].sort((a, b) =>
-      tradeSortOrder === 'desc'
-        ? b.tradeDate.localeCompare(a.tradeDate)
-        : a.tradeDate.localeCompare(b.tradeDate)
-    );
+    const sorted = [...trades].sort((a, b) => {
+      // 먼저 날짜순 정렬
+      const dateCompare =
+        tradeSortOrder === 'desc'
+          ? b.tradeDate.localeCompare(a.tradeDate)
+          : a.tradeDate.localeCompare(b.tradeDate);
+      if (dateCompare !== 0) return dateCompare;
+
+      // 같은 날짜면 매수(BUY)를 먼저 표시
+      if (a.tradeType === 'BUY' && b.tradeType === 'SELL') return -1;
+      if (a.tradeType === 'SELL' && b.tradeType === 'BUY') return 1;
+
+      return 0;
+    });
     const byDate: Record<string, TradingProfitLoss[]> = {};
     for (const t of sorted) {
       if (!byDate[t.tradeDate]) byDate[t.tradeDate] = [];
@@ -190,7 +199,7 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
                   <div className="space-y-2">
                     {dayTrades.map((t, i) => (
                       <div
-                        key={`${dateStr}-${i}`}
+                        key={`${dateStr}-${t.tradeType}-${i}`}
                         className="flex items-center justify-between py-2 min-h-[44px]"
                       >
                         <div className="flex items-baseline gap-2 min-w-0">

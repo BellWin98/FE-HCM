@@ -39,9 +39,17 @@ const StockTradingHistoryDialog: React.FC<StockTradingHistoryDialogProps> = ({
   const groupedTrades = useMemo(() => {
     if (!trades.length) return [];
     
-    // 날짜순으로 정렬 (최신순)
+    // 날짜순으로 정렬 (최신순), 같은 날짜 내에서 매수 → 매도 순서
     const sorted = [...trades].sort((a, b) => {
-      return new Date(b.tradeDate).getTime() - new Date(a.tradeDate).getTime();
+      // 먼저 날짜순 정렬 (최신순)
+      const dateCompare = b.tradeDate.localeCompare(a.tradeDate);
+      if (dateCompare !== 0) return dateCompare;
+      
+      // 같은 날짜면 매수(BUY)를 먼저 표시
+      if (a.tradeType === 'BUY' && b.tradeType === 'SELL') return -1;
+      if (a.tradeType === 'SELL' && b.tradeType === 'BUY') return 1;
+      
+      return 0;
     });
 
     // 날짜별로 그룹화
@@ -90,7 +98,7 @@ const StockTradingHistoryDialog: React.FC<StockTradingHistoryDialogProps> = ({
                     
                     return (
                       <div
-                        key={`${trade.stockCode}-${trade.tradeDate}-${tradeIndex}`}
+                        key={`${trade.stockCode}-${trade.tradeDate}-${trade.tradeType}-${tradeIndex}`}
                         className="flex items-start gap-3"
                       >
                         {/* 날짜 - 첫 번째 항목에만 표시 */}
