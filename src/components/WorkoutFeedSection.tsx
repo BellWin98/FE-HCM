@@ -48,7 +48,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
 
   // feed가 배열이 아닐 경우 빈 배열로 처리, likes/comments 누락 시 0으로 보정 (API 필드명 차이 대응)
   const safeFeed = (Array.isArray(feed) ? feed : []).map((item) => {
-    const raw = item as Record<string, unknown>;
+    const raw = item as unknown as Record<string, unknown>;
     const likeNum = typeof item.likes === 'number' ? item.likes : (typeof raw.likeCount === 'number' ? raw.likeCount : (typeof raw.like_count === 'number' ? raw.like_count : 0));
     const commentNum = typeof item.comments === 'number' ? item.comments : (typeof raw.commentCount === 'number' ? raw.commentCount : (typeof raw.comment_count === 'number' ? raw.comment_count : 0));
     return { ...item, likes: likeNum, comments: commentNum };
