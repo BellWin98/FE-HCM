@@ -4,7 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { WorkoutFeedItem, PageResponse, WorkoutComment } from '@/types';
 import { api } from '@/lib/api';
+<<<<<<< feature/issue-53
 import { Activity, Heart, MessageCircle, Calendar, Clock, MapPin, X, RefreshCw } from 'lucide-react';
+=======
+import { Activity, Heart, MessageCircle, Calendar, Clock, MapPin, X } from 'lucide-react';
+>>>>>>> dev
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -19,10 +23,16 @@ interface WorkoutFeedSectionProps {
   onFeedUpdate: (feed: WorkoutFeedItem[]) => void;
   initialIsLastPage?: boolean;
   memberId?: number; // 타 유저 피드 조회 시 사용
+<<<<<<< feature/issue-53
   onRefresh?: () => void | Promise<void>;
 }
 
 export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = false, memberId, onRefresh }: WorkoutFeedSectionProps) => {
+=======
+}
+
+export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = false, memberId }: WorkoutFeedSectionProps) => {
+>>>>>>> dev
   const { member } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(0);
