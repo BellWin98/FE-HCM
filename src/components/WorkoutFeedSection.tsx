@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { WorkoutFeedItem, PageResponse, WorkoutComment } from '@/types';
 import { api } from '@/lib/api';
-import { Activity, Heart, MessageCircle, Calendar, Clock, MapPin, X } from 'lucide-react';
+import { Activity, Heart, MessageCircle, Calendar, Clock, MapPin, X, RefreshCw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -19,9 +19,10 @@ interface WorkoutFeedSectionProps {
   onFeedUpdate: (feed: WorkoutFeedItem[]) => void;
   initialIsLastPage?: boolean;
   memberId?: number; // 타 유저 피드 조회 시 사용
+  onRefresh?: () => void | Promise<void>;
 }
 
-export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = false, memberId }: WorkoutFeedSectionProps) => {
+export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = false, memberId, onRefresh }: WorkoutFeedSectionProps) => {
   const { member } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -35,8 +36,13 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
   const [commentContent, setCommentContent] = useState<Record<number, string>>({});
   const [submittingComment, setSubmittingComment] = useState<Record<number, boolean>>({});
 
-  // feed가 배열이 아닐 경우 빈 배열로 처리
-  const safeFeed = Array.isArray(feed) ? feed : [];
+  // feed가 배열이 아닐 경우 빈 배열로 처리, likes/comments 누락 시 0으로 보정 (API 필드명 차이 대응)
+  const safeFeed = (Array.isArray(feed) ? feed : []).map((item) => {
+    const raw = item as Record<string, unknown>;
+    const likeNum = typeof item.likes === 'number' ? item.likes : (typeof raw.likeCount === 'number' ? raw.likeCount : (typeof raw.like_count === 'number' ? raw.like_count : 0));
+    const commentNum = typeof item.comments === 'number' ? item.comments : (typeof raw.commentCount === 'number' ? raw.commentCount : (typeof raw.comment_count === 'number' ? raw.comment_count : 0));
+    return { ...item, likes: likeNum, comments: commentNum };
+  });
 
   // 캐러셀 인덱스 추적
   useEffect(() => {
@@ -200,10 +206,23 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Activity className="h-5 w-5" />
-            <span>운동 인증 피드</span>
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center space-x-2">
+              <Activity className="h-5 w-5" />
+              <span>운동 인증 피드</span>
+            </CardTitle>
+            {onRefresh && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onRefresh()}
+                aria-label="피드 새로고침"
+                className="shrink-0"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {safeFeed.length === 0 ? (
@@ -311,7 +330,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
                             aria-label={item.isLiked ? '좋아요 취소' : '좋아요'}
                           >
                             <Heart className={`h-4 w-4 ${item.isLiked ? 'fill-current' : ''}`} />
-                            <span>{item.likes}</span>
+                            <span>{item.likes ?? 0}</span>
                           </Button>
                           <Button
                             variant="ghost"
@@ -322,7 +341,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
                             aria-expanded={expandedComments[item.id] || false}
                           >
                             <MessageCircle className="h-4 w-4" />
-                            <span>{item.comments}</span>
+                            <span>{item.comments ?? 0}</span>
                           </Button>
                         </div>
                         <div className="text-xs text-muted-foreground">

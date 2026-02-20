@@ -7,15 +7,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserProfile, WorkoutStats, WorkoutFeedItem, UserSettings } from '@/types';
+import { UserProfile, WorkoutStats, WorkoutFeedItem, UserSettings, type PageResponse } from '@/types';
 import { api } from '@/lib/api';
 import { User, Activity, Settings, Trophy, Calendar, Target, Zap } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
 export const MyPage = () => {
   const { member, updateMember } = useAuth();
   const isMobile = useIsMobile();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('profile');
   
   // 상태 관리
@@ -27,33 +30,41 @@ export const MyPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLastPage, setIsLastPage] = useState(false);
 
-  // 데이터 로딩
+  // 피드만 재조회 (좋아요/댓글 반영용)
+  const loadWorkoutFeed = useCallback(async () => {
+    if (!member) return;
+    try {
+      const feed = (await api.getUserWorkoutFeed(0, 20)) as WorkoutFeedItem[] | PageResponse<WorkoutFeedItem>;
+      const feedArray = Array.isArray(feed) ? feed : feed.content ?? [];
+      setWorkoutFeed(feedArray);
+      if (!Array.isArray(feed) && feed.last !== undefined) {
+        setIsLastPage(feed.last);
+      }
+    } catch (err) {
+      console.error('Failed to load workout feed:', err);
+      toast.error('피드를 불러오는데 실패했습니다.');
+    }
+  }, [member]);
+
+  // 초기 데이터 로딩 (마이페이지 진입 시)
   useEffect(() => {
+    if (!member || location.pathname !== '/mypage') return;
+
     const loadUserData = async () => {
-      if (!member) return;
-      
       setIsLoading(true);
       setError(null);
-      
       try {
-        // 병렬로 데이터 로딩
         const [profile, feed] = await Promise.all([
           api.getUserProfile(),
           api.getUserWorkoutFeed(0, 20),
-          // api.getUserWorkoutStats(),
-          // api.getUserSettings(),
         ]);
-        
         setUserProfile(profile as UserProfile);
-        // setWorkoutStats(stats as WorkoutStats);
-        // API 응답이 페이징된 경우 content 필드에서 배열 추출
-        const feedArray = Array.isArray(feed) ? feed : feed.content || [];
+        const feedData = feed as WorkoutFeedItem[] | PageResponse<WorkoutFeedItem>;
+        const feedArray = Array.isArray(feedData) ? feedData : feedData.content ?? [];
         setWorkoutFeed(feedArray);
-        if (!Array.isArray(feed) && feed.last !== undefined) {
-          setIsLastPage(feed.last);  
+        if (!Array.isArray(feedData) && feedData.last !== undefined) {
+          setIsLastPage(feedData.last);
         }
-        
-        // setUserSettings(settings as UserSettings);
       } catch (err) {
         console.error('Failed to load user data:', err);
         setError('데이터를 불러오는데 실패했습니다.');
@@ -63,7 +74,13 @@ export const MyPage = () => {
     };
 
     loadUserData();
-  }, [member]);
+  }, [member, location.pathname]);
+
+  // 피드 탭 활성화 시 최신 피드 재조회 (좋아요/댓글 반영)
+  useEffect(() => {
+    if (activeTab !== 'feed' || !member) return;
+    loadWorkoutFeed();
+  }, [activeTab, member, loadWorkoutFeed]);
 
   if (isLoading) {
     return (
@@ -148,6 +165,7 @@ export const MyPage = () => {
                 feed={workoutFeed}
                 onFeedUpdate={setWorkoutFeed}
                 initialIsLastPage={isLastPage}
+                onRefresh={loadWorkoutFeed}
               />
             </TabsContent>
 
@@ -244,6 +262,7 @@ export const MyPage = () => {
                   feed={workoutFeed}
                   onFeedUpdate={setWorkoutFeed}
                   initialIsLastPage={isLastPage}
+                  onRefresh={loadWorkoutFeed}
                 />
               )}
               {activeTab === 'stats' && (

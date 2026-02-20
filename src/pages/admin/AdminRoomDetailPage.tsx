@@ -1,23 +1,17 @@
 import { Layout } from '@/components/layout/Layout';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CalendarIcon, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
-import { formatDateToYmd, getTodayYmd, parseDateLikeToDate, validateWorkoutRoomRules } from '@/lib/workoutRoomRules';
+import { validateWorkoutRoomRules } from '@/lib/workoutRoomRules';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AdminStateBlock } from '@/components/admin/AdminStateBlock';
 
 const AdminRoomDetailPage = () => {
@@ -25,7 +19,6 @@ const AdminRoomDetailPage = () => {
   const queryClient = useQueryClient();
 
   const numericRoomId = useMemo(() => Number(roomId), [roomId]);
-  const todayYmd = useMemo(() => getTodayYmd(), []);
 
   const detailQuery = useQuery({
     queryKey: ['adminWorkoutRoomDetail', numericRoomId],
@@ -37,9 +30,6 @@ const AdminRoomDetailPage = () => {
   const room = detailQuery.data?.workoutRoomInfo ?? null;
 
   const [initialized, setInitialized] = useState(false);
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [enableEndDate, setEnableEndDate] = useState(false);
   const [maxMembers, setMaxMembers] = useState('10');
   const [minWeeklyWorkouts, setMinWeeklyWorkouts] = useState('3');
   const [penaltyPerMiss, setPenaltyPerMiss] = useState('5000');
@@ -49,49 +39,38 @@ const AdminRoomDetailPage = () => {
   useEffect(() => {
     setInitialized(false);
     setLocalError('');
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setEnableEndDate(false);
   }, [numericRoomId]);
 
-  const hydrateFromRoom = (r: typeof room) => {
+  const hydrateFromRoom = useCallback((r: typeof room) => {
     if (!r) return;
-    const sd = parseDateLikeToDate(r.startDate);
-    const ed = parseDateLikeToDate(r.endDate);
-    setStartDate(sd);
-    setEndDate(ed);
-    setEnableEndDate(Boolean(ed));
     setMaxMembers(String(r.maxMembers ?? 10));
     setMinWeeklyWorkouts(String(r.minWeeklyWorkouts ?? 3));
     setPenaltyPerMiss(String(r.penaltyPerMiss ?? 5000));
-  };
+  }, []);
 
   useEffect(() => {
     if (!room || initialized) return;
     hydrateFromRoom(room);
     setInitialized(true);
-  }, [room, initialized]);
+  }, [room, initialized, hydrateFromRoom]);
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!Number.isFinite(numericRoomId)) throw new Error('유효하지 않은 roomId 입니다.');
 
       const error = validateWorkoutRoomRules({
-        startDate,
-        endDate,
-        enableEndDate,
+        enableEndDate: false,
         maxMembers,
         minWeeklyWorkouts,
         penaltyPerMiss,
-        todayYmd,
-        enforceNotPast: false,
       });
       if (error) throw new Error(error);
 
-      // startDate is guaranteed by validation.
+      if (!room) throw new Error('운동방 정보가 없습니다.');
+
       const body = {
-        startDate: formatDateToYmd(startDate as Date),
-        endDate: enableEndDate && endDate ? formatDateToYmd(endDate) : null,
+        startDate: room.startDate,
+        endDate: room.endDate ?? null,
         maxMembers: Number.parseInt(maxMembers, 10),
         minWeeklyWorkouts: Number.parseInt(minWeeklyWorkouts, 10),
         penaltyPerMiss: Number.parseInt(penaltyPerMiss, 10),
@@ -156,83 +135,9 @@ const AdminRoomDetailPage = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>규칙 설정</CardTitle>
-                  <CardDescription>기간 / 정원 / 주간 목표 / 벌금 규칙을 수정합니다.</CardDescription>
+                  <CardDescription>정원 / 주간 목표 / 벌금 규칙을 수정합니다.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label className="text-xs md:text-sm">시작일 *</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn('w-full justify-start text-left font-normal', !startDate && 'text-muted-foreground')}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {startDate ? format(startDate, 'PPP', { locale: ko }) : <span>시작일 선택</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={startDate}
-                            onSelect={setStartDate}
-                            disabled={(date) => {
-                              return date.getDay() !== 1;
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <p className="text-xs text-muted-foreground">매주 월요일만 선택 가능합니다.</p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Label className="mb-0 text-xs md:text-sm">종료일</Label>
-                        <Checkbox
-                          id="admin-enable-end-date"
-                          checked={enableEndDate}
-                          onCheckedChange={(checked) => {
-                            const enabled = Boolean(checked);
-                            setEnableEndDate(enabled);
-                            if (!enabled) setEndDate(undefined);
-                          }}
-                        />
-                        <span className="text-xs text-muted-foreground">종료일 설정</span>
-                      </div>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              'w-full justify-start text-left font-normal',
-                              (!endDate || !enableEndDate) && 'text-muted-foreground'
-                            )}
-                            disabled={!enableEndDate}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {endDate && enableEndDate ? format(endDate, 'PPP', { locale: ko }) : <span>종료일 선택</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={endDate}
-                            onSelect={setEndDate}
-                            disabled={(date) => {
-                              return date.getDay() !== 0;
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <p className="text-xs text-muted-foreground" style={{ marginTop: 7 }}>
-                        매주 일요일만 선택 가능합니다.
-                      </p>
-                    </div>
-                  </div>
-
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="admin-max-members" className="text-xs md:text-sm">
