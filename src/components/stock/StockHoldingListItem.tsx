@@ -262,16 +262,13 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
                 <div className="font-semibold text-gray-900 dark:text-gray-100">
                   {formatCurrency(holding.currentPrice)}
                 </div>
-                {/* <div
-                  className={cn(
-                    'text-sm font-medium',
-                    dayChangeRate != null ? getProfitLossColor(dayChangeRate) : textMuted
-                  )}
-                >
-                  {dayChangeDisplay}
-                </div> */}
+                {dayChangeRate != null && (
+                  <div className={cn('text-sm font-medium', getProfitLossColor(dayChangeRate))}>
+                    {dayChangeDisplay}
+                  </div>
+                )}
               </>
-            ) : (
+            ) : ( 
               <>
                 <div className="font-semibold text-gray-900 dark:text-gray-100">
                   {formatCurrency(holding.marketValue)}
@@ -328,18 +325,12 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
               <div className="text-right">
                 <p className={cn('text-xs', textMuted)}>현재가</p>
                 <p className="font-medium">{formatCurrency(holding.currentPrice)}</p>
+                {dayChangeRate != null && (
+                  <p className={cn('text-sm font-medium', getProfitLossColor(dayChangeRate))}>
+                    {dayChangeDisplay}
+                  </p>
+                )}
               </div>
-              {/* <div className="text-right">
-                <p className={cn('text-xs', textMuted)}>전일종가대비</p>
-                <div
-                  className={cn(
-                    'font-semibold',
-                    dayChangeRate != null ? getProfitLossColor(dayChangeRate) : textMuted
-                  )}
-                >
-                  {dayChangeDisplay}
-                </div>
-              </div> */}
             </>
           ) : (
             <>

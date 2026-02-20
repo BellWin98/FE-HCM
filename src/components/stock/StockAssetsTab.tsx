@@ -67,7 +67,7 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
       try {
         const today = new Date();
         const data = (await api.getTradingProfitLoss({
-          startDate: '2020-01-01',
+          startDate: '2025-06-01',
           endDate: formatDateLocal(today),
           periodType: 'ALL',
         })) as TradingProfitLossSummary;
