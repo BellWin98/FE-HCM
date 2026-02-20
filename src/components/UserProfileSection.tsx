@@ -8,22 +8,27 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { UserProfile } from '@/types';
 import { api } from '@/lib/api';
-import { Edit, Calendar, Mail, Award, Target, Zap, User } from 'lucide-react';
-import { useState } from 'react';
+import { Edit, Calendar, Mail, Award, Target, Zap, User, Camera, Loader2 } from 'lucide-react';
+import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from './ui/alert';
 
+const MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 interface UserProfileSectionProps {
   profile: UserProfile | null;
   onProfileUpdate: (profile: UserProfile) => void;
-  onMemberUpdate?: (updates: { nickname: string; bio?: string }) => void;
+  onMemberUpdate?: (updates: { nickname?: string; bio?: string; profileUrl?: string }) => void;
 }
 
 export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }: UserProfileSectionProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingProfileImage, setIsUploadingProfileImage] = useState(false);
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
   const [editForm, setEditForm] = useState({
     nickname: profile?.nickname || '',
     bio: profile?.bio || '',
@@ -74,6 +79,50 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
     });
     setError('');
     setIsEditing(false);
+  };
+
+  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      toast.error('JPEG, PNG, WebP 형식만 업로드 가능합니다.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_PROFILE_IMAGE_SIZE) {
+      toast.error('파일 크기는 5MB 이하여야 합니다.');
+      e.target.value = '';
+      return;
+    }
+
+    setIsUploadingProfileImage(true);
+    try {
+      const { profileUrl } = await api.uploadProfileImage(file);
+      const updatedProfile = await api.updateUserProfile({ profileUrl }) as UserProfile;
+      onProfileUpdate(updatedProfile);
+      if (onMemberUpdate) {
+        onMemberUpdate({ profileUrl: updatedProfile.profileUrl });
+      }
+      toast.success('프로필 사진이 변경되었습니다.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '프로필 사진 변경에 실패했습니다.');
+    } finally {
+      setIsUploadingProfileImage(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleAvatarClick = () => {
+    if (isUploadingProfileImage) return;
+    profileImageInputRef.current?.click();
+  };
+
+  const handleAvatarKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleAvatarClick();
+    }
   };
 
   if (!profile) {
@@ -167,13 +216,44 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
         <CardContent>
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
             {/* 아바타 */}
-            <div className="flex-shrink-0">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.profileUrl} alt={profile.nickname} />
-                <AvatarFallback className="text-lg">
-                  {profile.nickname.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+            <div className="flex-shrink-0 relative group">
+              <input
+                ref={profileImageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                id="profile-image-upload"
+                aria-label="프로필 사진 변경"
+                onChange={handleProfileImageChange}
+                disabled={isUploadingProfileImage}
+              />
+              <label
+                htmlFor="profile-image-upload"
+                className="block cursor-pointer outline-none"
+                tabIndex={0}
+                role="button"
+                aria-label="프로필 사진 변경"
+                onKeyDown={handleAvatarKeyDown}
+              >
+                <div className="relative rounded-full">
+                  <Avatar className="h-24 w-24 ring-2 ring-transparent group-hover:ring-muted transition-shadow">
+                    <AvatarImage src={profile.profileUrl} alt={profile.nickname} />
+                    <AvatarFallback className="text-lg">
+                      {profile.nickname.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  {isUploadingProfileImage && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/80">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
+                    </div>
+                  )}
+                  {!isUploadingProfileImage && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="h-8 w-8 text-white" aria-hidden />
+                    </div>
+                  )}
+                </div>
+              </label>
             </div>
 
             {/* 프로필 정보 */}

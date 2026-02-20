@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Settings, LogOut, BarChart3, Menu, X, UserCircle, Clock, Warehouse, Dumbbell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
@@ -64,6 +64,7 @@ export const Header = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-9 w-9">
+                      <AvatarImage src={member?.profileUrl} alt={member?.nickname} />
                       <AvatarFallback>
                         {member?.nickname?.slice(0,2)?.toUpperCase() || 'U'}
                       </AvatarFallback>
@@ -135,6 +136,7 @@ export const Header = () => {
             {/* 사용자 정보 */}
             <div className="flex items-center space-x-3 pb-3 border-b">
               <Avatar className="h-10 w-10">
+                <AvatarImage src={member?.profileUrl} alt={member?.nickname} />
                 <AvatarFallback>
                   {member?.nickname?.slice(0,2)?.toUpperCase() || 'U'}
                 </AvatarFallback>
