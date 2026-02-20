@@ -149,8 +149,8 @@ export const RegisterPage = () => {
       return false;
     }
 
-    if (nickname.length < 2 || nickname.length > 10) {
-      setError('닉네임은 2-10자 사이여야 합니다.');
+    if (nickname.length < 2 || nickname.length > 5) {
+      setError('닉네임은 2-5자 사이여야 합니다.');
       return false;
     }
 
@@ -356,9 +356,9 @@ export const RegisterPage = () => {
               <Input
                 id="nickname"
                 type="text"
-                placeholder="닉네임 (2-10자)"
+                placeholder="닉네임 (2-5자)"
                 minLength={2}
-                maxLength={10}
+                maxLength={5}
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value.replace(/\s/g, ''))}
                 onKeyDown={(e) => {

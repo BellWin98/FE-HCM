@@ -9,13 +9,23 @@ import MemberStatus from "./MemberStatus";
 import { RoomCodeSection } from "./RoomCodeSection";
 import ChatRoom from "./ChatRoom";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "./ui/carousel";
-import { Dialog, DialogContent } from "./ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { WorkoutFeedSection } from "./WorkoutFeedSection";
+import { WorkoutFeedItem, PageResponse } from "@/types";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRegenerateEntryCode, isRegeneratingEntryCode }) => {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [zoomImageUrls, setZoomImageUrls] = useState<string[] | null>(null);
     const [zoomImageIndex, setZoomImageIndex] = useState<number>(0);
     const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+    const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
+    const [selectedMemberNickname, setSelectedMemberNickname] = useState<string>('');
+    const [memberFeed, setMemberFeed] = useState<WorkoutFeedItem[]>([]);
+    const [isLoadingMemberFeed, setIsLoadingMemberFeed] = useState(false);
+    const [isMemberFeedDialogOpen, setIsMemberFeedDialogOpen] = useState(false);
     
     // 순위용 정렬된 멤버 목록 (원본 배열은 변경하지 않음)
     const sortedMembersByWorkouts = [...currentWorkoutRoom.workoutRoomMembers]
@@ -206,6 +216,30 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
       );
     };
   
+    const handleMemberProfileClick = async (memberId: number, nickname: string) => {
+      setSelectedMemberId(memberId);
+      setSelectedMemberNickname(nickname);
+      setIsMemberFeedDialogOpen(true);
+      setIsLoadingMemberFeed(true);
+      
+      try {
+        const response = await api.getMemberWorkoutFeed(memberId, 0, 20);
+        const feedArray = Array.isArray(response) 
+          ? response 
+          : (response as PageResponse<WorkoutFeedItem>)?.content || [];
+        setMemberFeed(feedArray);
+      } catch (error) {
+        toast.error('운동 피드를 불러오는데 실패했습니다.');
+        setIsMemberFeedDialogOpen(false);
+      } finally {
+        setIsLoadingMemberFeed(false);
+      }
+    };
+
+    const handleMemberFeedUpdate = (updatedFeed: WorkoutFeedItem[]) => {
+      setMemberFeed(updatedFeed);
+    };
+
     const isOwner = currentWorkoutRoom.workoutRoomInfo?.ownerNickname === currentMember?.nickname;
     const entryCode = currentWorkoutRoom.workoutRoomInfo?.entryCode;
 
@@ -226,7 +260,11 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
             </CardContent>
           </Card>
         )}
-        <MemberStatus currentWorkoutRoom={currentWorkoutRoom} today={today} />
+        <MemberStatus
+          currentWorkoutRoom={currentWorkoutRoom}
+          today={today}
+          onMemberProfileClick={handleMemberProfileClick}
+        />
         <Card>
           <CardHeader>
             <CardTitle className="text-xl font-bold">📅 월별 운동 현황</CardTitle>
@@ -295,6 +333,22 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
                       }`}>
                         {index + 1}
                       </div>
+                      <Avatar 
+                        className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
+                        onClick={() => handleMemberProfileClick(member.memberId, member.nickname)}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`${member.nickname}님 프로필 보기`}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleMemberProfileClick(member.memberId, member.nickname);
+                          }
+                        }}
+                      >
+                        <AvatarImage src={member.profileUrl} alt={member.nickname} />
+                        <AvatarFallback>{member.nickname[0]}</AvatarFallback>
+                      </Avatar>
                       <div>
                         <p className={`font-medium ${
                           member.nickname === currentMember?.nickname 
@@ -370,6 +424,27 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
                   </div>
                 )}
               </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* 상대방 운동 피드 다이얼로그 */}
+        <Dialog open={isMemberFeedDialogOpen} onOpenChange={setIsMemberFeedDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedMemberNickname}님 운동 피드</DialogTitle>
+            </DialogHeader>
+            {isLoadingMemberFeed ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : (
+              <WorkoutFeedSection
+                feed={memberFeed}
+                onFeedUpdate={handleMemberFeedUpdate}
+                initialIsLastPage={false}
+                memberId={selectedMemberId || undefined}
+              />
             )}
           </DialogContent>
         </Dialog>

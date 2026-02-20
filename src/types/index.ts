@@ -38,7 +38,8 @@ export interface WorkoutRoomDetail {
 }
 
 export interface RoomMember {
-  id: number;
+  id: number; // workoutRoomMemberId
+  memberId: number; // 실제 멤버 ID (Member 테이블의 ID)
   nickname: string;
   profileUrl: string;
   totalWorkouts: number;
@@ -255,6 +256,16 @@ export interface WorkoutFeedItem {
   isLiked: boolean;
   createdAt: string;
   roomName?: string;
+}
+
+export interface WorkoutComment {
+  id: number;
+  workoutId: number;
+  memberId: number;
+  nickname: string;
+  profileUrl?: string;
+  content: string;
+  createdAt: string;
 }
 
 export interface WorkoutStats {

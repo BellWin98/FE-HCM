@@ -2,29 +2,38 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { WorkoutFeedItem, PageResponse } from '@/types';
+import { WorkoutFeedItem, PageResponse, WorkoutComment } from '@/types';
 import { api } from '@/lib/api';
-import { Activity, Heart, MessageCircle, Calendar, Clock, MapPin } from 'lucide-react';
+import { Activity, Heart, MessageCircle, Calendar, Clock, MapPin, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface WorkoutFeedSectionProps {
   feed: WorkoutFeedItem[];
   onFeedUpdate: (feed: WorkoutFeedItem[]) => void;
   initialIsLastPage?: boolean;
+  memberId?: number; // 타 유저 피드 조회 시 사용
 }
 
-export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = false }: WorkoutFeedSectionProps) => {
+export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = false, memberId }: WorkoutFeedSectionProps) => {
+  const { member } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(!initialIsLastPage);
   const [zoomImageUrls, setZoomImageUrls] = useState<string[] | null>(null);
   const [zoomImageIndex, setZoomImageIndex] = useState<number>(0);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [expandedComments, setExpandedComments] = useState<Record<number, boolean>>({});
+  const [comments, setComments] = useState<Record<number, WorkoutComment[]>>({});
+  const [commentLoading, setCommentLoading] = useState<Record<number, boolean>>({});
+  const [commentContent, setCommentContent] = useState<Record<number, string>>({});
+  const [submittingComment, setSubmittingComment] = useState<Record<number, boolean>>({});
 
   // feed가 배열이 아닐 경우 빈 배열로 처리
   const safeFeed = Array.isArray(feed) ? feed : [];
@@ -69,12 +78,88 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
     }
   };
 
+  const handleToggleComments = async (workoutId: number) => {
+    const isExpanded = expandedComments[workoutId];
+    
+    if (!isExpanded && !comments[workoutId]) {
+      // 댓글 목록 로드
+      setCommentLoading(prev => ({ ...prev, [workoutId]: true }));
+      try {
+        const commentList = await api.getWorkoutComments(workoutId) as WorkoutComment[];
+        setComments(prev => ({ ...prev, [workoutId]: commentList }));
+      } catch (error) {
+        toast.error('댓글을 불러오는데 실패했습니다.');
+      } finally {
+        setCommentLoading(prev => ({ ...prev, [workoutId]: false }));
+      }
+    }
+    
+    setExpandedComments(prev => ({ ...prev, [workoutId]: !isExpanded }));
+  };
+
+  const handleSubmitComment = async (workoutId: number) => {
+    const content = commentContent[workoutId]?.trim();
+    if (!content) {
+      toast.error('댓글 내용을 입력해주세요.');
+      return;
+    }
+
+    setSubmittingComment(prev => ({ ...prev, [workoutId]: true }));
+    try {
+      await api.createWorkoutComment(workoutId, content);
+      
+      // 댓글 목록 재조회
+      const commentList = await api.getWorkoutComments(workoutId) as WorkoutComment[];
+      setComments(prev => ({ ...prev, [workoutId]: commentList }));
+      
+      // 피드 업데이트 (댓글 수 증가)
+      const updatedFeed = safeFeed.map(item =>
+        item.id === workoutId
+          ? { ...item, comments: item.comments + 1 }
+          : item
+      );
+      onFeedUpdate(updatedFeed);
+      
+      // 입력 필드 초기화
+      setCommentContent(prev => ({ ...prev, [workoutId]: '' }));
+      toast.success('댓글이 작성되었습니다.');
+    } catch (error) {
+      toast.error('댓글 작성에 실패했습니다.');
+    } finally {
+      setSubmittingComment(prev => ({ ...prev, [workoutId]: false }));
+    }
+  };
+
+  const handleDeleteComment = async (workoutId: number, commentId: number) => {
+    try {
+      await api.deleteWorkoutComment(commentId);
+      
+      // 댓글 목록 재조회
+      const commentList = await api.getWorkoutComments(workoutId) as WorkoutComment[];
+      setComments(prev => ({ ...prev, [workoutId]: commentList }));
+      
+      // 피드 업데이트 (댓글 수 감소)
+      const updatedFeed = safeFeed.map(item =>
+        item.id === workoutId
+          ? { ...item, comments: Math.max(0, item.comments - 1) }
+          : item
+      );
+      onFeedUpdate(updatedFeed);
+      
+      toast.success('댓글이 삭제되었습니다.');
+    } catch (error) {
+      toast.error('댓글 삭제에 실패했습니다.');
+    }
+  };
+
   const loadMore = async () => {
     if (isLoading || !hasMore) return;
     
     setIsLoading(true);
     try {
-      const response = await api.getUserWorkoutFeed(page + 1, 20);
+      const response = memberId 
+        ? await api.getMemberWorkoutFeed(memberId, page + 1, 20)
+        : await api.getUserWorkoutFeed(page + 1, 20);
       // API 응답이 페이징된 경우 content 필드에서 배열 추출
       const newFeed = Array.isArray(response) 
         ? response 
@@ -214,7 +299,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
                         </div>                      
 
                       {/* 액션 버튼 */}
-                      {/* <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex items-center justify-between pt-3 border-t mt-3">
                         <div className="flex items-center space-x-4">
                           <Button
                             variant="ghost"
@@ -223,11 +308,19 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
                             className={`flex items-center space-x-1 ${
                               item.isLiked ? 'text-red-500' : 'text-muted-foreground'
                             }`}
+                            aria-label={item.isLiked ? '좋아요 취소' : '좋아요'}
                           >
                             <Heart className={`h-4 w-4 ${item.isLiked ? 'fill-current' : ''}`} />
                             <span>{item.likes}</span>
                           </Button>
-                          <Button variant="ghost" size="sm" className="flex items-center space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="flex items-center space-x-1"
+                            onClick={() => handleToggleComments(item.id)}
+                            aria-label="댓글"
+                            aria-expanded={expandedComments[item.id] || false}
+                          >
                             <MessageCircle className="h-4 w-4" />
                             <span>{item.comments}</span>
                           </Button>
@@ -235,7 +328,80 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
                         <div className="text-xs text-muted-foreground">
                           {format(new Date(item.createdAt), 'MM/dd HH:mm', { locale: ko })}
                         </div>
-                      </div> */}
+                      </div>
+
+                      {/* 댓글 영역 */}
+                      {expandedComments[item.id] && (
+                        <div className="pt-3 border-t mt-3 space-y-3">
+                          {/* 댓글 목록 */}
+                          {commentLoading[item.id] ? (
+                            <div className="text-center py-4 text-sm text-muted-foreground">
+                              댓글을 불러오는 중...
+                            </div>
+                          ) : comments[item.id] && comments[item.id].length > 0 ? (
+                            <div className="space-y-3">
+                              {comments[item.id].map((comment) => (
+                                <div key={comment.id} className="flex items-start gap-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={comment.profileUrl} alt={comment.nickname} />
+                                    <AvatarFallback>{comment.nickname[0]}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-medium text-sm">{comment.nickname}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {format(new Date(comment.createdAt), 'MM/dd HH:mm', { locale: ko })}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-700 break-words">{comment.content}</p>
+                                  </div>
+                                  {member?.id === comment.memberId && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0"
+                                      onClick={() => handleDeleteComment(item.id, comment.id)}
+                                      aria-label="댓글 삭제"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-4 text-sm text-muted-foreground">
+                              아직 댓글이 없습니다.
+                            </div>
+                          )}
+
+                          {/* 댓글 작성 폼 */}
+                          <div className="space-y-2">
+                            <Textarea
+                              placeholder="댓글을 입력하세요..."
+                              value={commentContent[item.id] || ''}
+                              onChange={(e) =>
+                                setCommentContent(prev => ({ ...prev, [item.id]: e.target.value }))
+                              }
+                              className="min-h-[80px] resize-none"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                  handleSubmitComment(item.id);
+                                }
+                              }}
+                            />
+                            <div className="flex justify-end">
+                              <Button
+                                size="sm"
+                                onClick={() => handleSubmitComment(item.id)}
+                                disabled={submittingComment[item.id] || !commentContent[item.id]?.trim()}
+                              >
+                                {submittingComment[item.id] ? '작성 중...' : '댓글 작성'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

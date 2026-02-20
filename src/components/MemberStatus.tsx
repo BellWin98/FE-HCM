@@ -1,7 +1,8 @@
-import { RestInfo, RoomMember } from "@/types";
+import type { RestInfo, RoomMember, WorkoutRoomDetail } from "@/types";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CheckCircle2, Circle, Pause } from "lucide-react";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { format } from 'date-fns';
@@ -9,7 +10,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { startOfDay, endOfDay } from 'date-fns';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "./ui/carousel";
 
-export const MemberStatus = ({ currentWorkoutRoom, today }) => {
+type MemberStatusProps = {
+  currentWorkoutRoom: WorkoutRoomDetail;
+  today: string;
+  onMemberProfileClick?: (memberId: number, nickname: string) => void;
+};
+
+export const MemberStatus = ({ currentWorkoutRoom, today, onMemberProfileClick }: MemberStatusProps) => {
     const weeklyGoal = currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts;
     const [zoomImageUrls, setZoomImageUrls] = useState<string[] | null>(null);
     const [zoomImageIndex, setZoomImageIndex] = useState<number>(0);
@@ -48,7 +55,6 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-xl font-bold">🔥 이번주 운동 현황</CardTitle>
-                {/* <CardDescription>주간 현황</CardDescription> */}
               </div>
             </div>
           </CardHeader>
@@ -66,6 +72,26 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
               return (
                 <div key={member.id} className={`flex items-center justify-between p-3 rounded-md ${isRestToday ? 'bg-blue-50 border-2 border-blue-200' : 'bg-slate-50'}`}>
                   <div className="flex items-center gap-3">
+                    <Avatar
+                      className={`h-8 w-8 shrink-0 ${onMemberProfileClick ? "cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all" : ""}`}
+                      onClick={onMemberProfileClick ? () => onMemberProfileClick(member.memberId, member.nickname) : undefined}
+                      tabIndex={onMemberProfileClick ? 0 : undefined}
+                      role={onMemberProfileClick ? "button" : undefined}
+                      aria-label={onMemberProfileClick ? `${member.nickname}님 프로필 보기` : undefined}
+                      onKeyDown={
+                        onMemberProfileClick
+                          ? (e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                onMemberProfileClick(member.memberId, member.nickname);
+                              }
+                            }
+                          : undefined
+                      }
+                    >
+                      <AvatarImage src={member.profileUrl} alt={member.nickname} />
+                      <AvatarFallback className="text-xs">{member.nickname[0]}</AvatarFallback>
+                    </Avatar>
                     <span 
                       className="font-bold text-sm"
                     >
