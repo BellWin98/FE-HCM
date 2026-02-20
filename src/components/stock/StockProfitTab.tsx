@@ -378,7 +378,7 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
                       <div className="space-y-2 pl-2">
                         {trades.map((t, i) => (
                           <div
-                            key={`${t.stockCode}-${i}`}
+                            key={`${t.stockCode}-${t.tradeType}-${i}`}
                             className={cn(
                               'flex items-center justify-between p-3 rounded-lg min-h-[56px]',
                               cardBg,
@@ -492,7 +492,7 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
                       <div className="space-y-2 pl-2">
                         {trades.map((t, i) => (
                           <div
-                            key={`${t.stockCode}-${i}`}
+                            key={`${t.stockCode}-${t.tradeType}-${i}`}
                             className={cn(
                               'flex items-center justify-between p-3 rounded-lg min-h-[56px]',
                               cardBg,
@@ -605,7 +605,7 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
                       <div className="space-y-2 pl-2">
                         {trades.map((t, i) => (
                           <div
-                            key={`${t.stockCode}-${i}`}
+                            key={`${t.stockCode}-${t.tradeType}-${i}`}
                             className={cn(
                               'flex items-center justify-between p-3 rounded-lg min-h-[56px]',
                               cardBg,
