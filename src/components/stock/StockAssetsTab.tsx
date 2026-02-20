@@ -14,6 +14,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { api } from '@/lib/api';
 import StockChart from '@/components/StockChart';
 import StockHoldingListItem from './StockHoldingListItem';
+import StockTradingHistoryDialog from './StockTradingHistoryDialog';
 import { cn } from '@/lib/utils';
 
 const formatDateLocal = (date: Date) => {
@@ -58,6 +59,7 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
   const [displayMode, setDisplayMode] = useState<DisplayMode>('marketValue');
   const [sortOption, setSortOption] = useState<SortOption>('marketValueDesc');
   const [tradesSummary, setTradesSummary] = useState<TradingProfitLossSummary | null>(null);
+  const [isTradingHistoryOpen, setIsTradingHistoryOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -236,6 +238,14 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
           <ChevronRight className="h-5 w-5" />
         </Button>
         <Button
+          variant={dark ? 'secondary' : 'default'}
+          className="w-full min-h-[48px] justify-between"
+          onClick={() => setIsTradingHistoryOpen(true)}
+        >
+          <span>주문내역</span>
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+        <Button
           variant="outline"
           className="w-full min-h-[44px]"
           onClick={onRefresh}
@@ -245,6 +255,14 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
           새로고침
         </Button>
       </div>
+
+      {/* 주문내역 다이얼로그 */}
+      <StockTradingHistoryDialog
+        open={isTradingHistoryOpen}
+        onOpenChange={setIsTradingHistoryOpen}
+        trades={tradesSummary?.trades ?? []}
+        dark={dark}
+      />
     </div>
   );
 };
