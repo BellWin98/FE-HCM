@@ -408,6 +408,12 @@ class ApiClient {
     return await this.request("/members/profile", { method: "PUT", data: profileData });
   }
 
+  async uploadProfileImage(file: File): Promise<{ profileUrl: string }> {
+    const formData = new FormData();
+    formData.append("image", file);
+    return this.uploadFile<{ profileUrl: string }>("/members/profile/image", formData);
+  }
+
   async getUserWorkoutFeed(page: number = 0, size: number = 20) {
       return await this.request(`/members/workout-feed?page=${page}&size=${size}`);
   }
