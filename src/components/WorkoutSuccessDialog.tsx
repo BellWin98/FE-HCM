@@ -11,6 +11,7 @@ interface WorkoutSuccessDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   totalWorkoutDays: number;
+  redirectSeconds: number;
   // onNavigate: () => void;
 }
 
@@ -18,6 +19,7 @@ export const WorkoutSuccessDialog = ({
   open,
   onOpenChange,
   totalWorkoutDays,
+  redirectSeconds,
   // onNavigate,
 }: WorkoutSuccessDialogProps) => {
   const getWorkoutMessage = (totalWorkoutDays: number) => {
@@ -91,7 +93,7 @@ export const WorkoutSuccessDialog = ({
               {workoutMessageInfo.emoji} {workoutMessageInfo.message}
             </div>            
             <div className="text-xs text-gray-400">
-              5초 후 자동으로 대시보드로 이동합니다.
+              {redirectSeconds}초 후 자동으로 대시보드로 이동합니다.
             </div>
           </DialogDescription>
         </DialogHeader>
