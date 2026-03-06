@@ -24,6 +24,7 @@ const toDateOnly = (date) => {
 }
 const today = toDateOnly(new Date());
 const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000));
+const REDIRECT_DELAY_SECONDS = 3;
 
 export const WorkoutUploadPage = () => {
   const { member } = useAuth();
@@ -44,6 +45,7 @@ export const WorkoutUploadPage = () => {
   const [totalWorkoutDays, setTotalWorkoutDays] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [workoutRoomId, setWorkoutRoomId] = useState<number | null>(null);
+  const [redirectCountdown, setRedirectCountdown] = useState(REDIRECT_DELAY_SECONDS);
 
   const processFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -239,14 +241,23 @@ export const WorkoutUploadPage = () => {
     }
   }, [currentWorkoutRoom]);  
 
-  // 성공 다이얼로그 표시 5초 후 자동으로 대시보드로 이동
+  // 성공 다이얼로그 표시 후 일정 시간 뒤 대시보드로 이동 + 카운트다운
   useEffect(() => {
     if (showSuccessDialog) {
-      const timer = setTimeout(() => {
-        navigate('/dashboard');
-      }, 5000);
+      setRedirectCountdown(REDIRECT_DELAY_SECONDS);
 
-      return () => clearTimeout(timer);
+      const countdownInterval = setInterval(() => {
+        setRedirectCountdown((prev) => Math.max(prev - 1, 1));
+      }, 1000);
+
+      const navigateTimeout = setTimeout(() => {
+        navigate('/dashboard');
+      }, REDIRECT_DELAY_SECONDS * 1000);
+
+      return () => {
+        clearInterval(countdownInterval);
+        clearTimeout(navigateTimeout);
+      };
     }
   }, [showSuccessDialog, navigate]);
 
@@ -257,6 +268,7 @@ export const WorkoutUploadPage = () => {
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
           totalWorkoutDays={totalWorkoutDays}
+          redirectSeconds={redirectCountdown}
         />
         <Card>
           <CardHeader>
