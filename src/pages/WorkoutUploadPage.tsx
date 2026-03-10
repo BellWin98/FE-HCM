@@ -12,7 +12,7 @@ import { WorkoutSuccessDialog } from '@/components/WorkoutSuccessDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { WORKOUT_TYPES, WorkoutType } from '@/types';
+import { WORKOUT_TYPES, WorkoutResponse, WorkoutType } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload, X } from 'lucide-react';
@@ -197,13 +197,13 @@ export const WorkoutUploadPage = () => {
         duration: parseInt(duration)
       };
 
-      await api.uploadWorkout(workoutData, selectedImages);
+      const data = await api.uploadWorkout(workoutData, selectedImages) as WorkoutResponse;
 
       // 날짜가 오늘인지 확인 (타임스탬프 비교)
       const isTodayParams = today.getTime() === toDateOnly(workoutDate).getTime();
 
       // 날짜에 따라 메시지 분기 처리
-      const dateText = isTodayParams ? "오늘" : format(workoutDate, 'yyyy-MM-dd'); 
+      const dateText = isTodayParams ? "오늘" : format(workoutDate, 'yyyy-MM-dd');
 
       if (member.role == 'ADMIN') {
         api.notifyRoomMembersForAdmin({
@@ -223,7 +223,7 @@ export const WorkoutUploadPage = () => {
           console.warn('운동 업로드 알림 전송 실패', notifyErr);
         });
       }
-      setTotalWorkoutDays(member.totalWorkoutDays + 1);
+      setTotalWorkoutDays(data.memberTotalWorkoutDays);
       // 성공 다이얼로그 표시
       setShowSuccessDialog(true);
     } catch (err) {
@@ -236,7 +236,6 @@ export const WorkoutUploadPage = () => {
 
   useEffect(() => {
     if (currentWorkoutRoom) {
-      console.log("전달받은 방 정보:", currentWorkoutRoom);
       setWorkoutRoomId(currentWorkoutRoom.workoutRoomInfo.id);
     }
   }, [currentWorkoutRoom]);  
