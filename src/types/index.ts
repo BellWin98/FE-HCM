@@ -59,6 +59,14 @@ export interface WorkoutRecord {
   createdAt: string;
 }
 
+export interface WorkoutResponse {
+  workoutDate: string;
+  workoutTypes: string[]; // 여러 운동 종류 (서버에서 항상 배열로 반환)
+  duration: number; // minutes
+  imageUrls: string[]; // 여러 이미지 URL (서버에서 항상 배열로 반환)
+  memberTotalWorkoutDays: number;
+}
+
 export const WORKOUT_TYPES = [
   '헬스(가슴)', 
   '헬스(등)', 
