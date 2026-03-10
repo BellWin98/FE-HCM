@@ -17,7 +17,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const toDateOnly = (date) => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -29,10 +29,6 @@ const REDIRECT_DELAY_SECONDS = 3;
 export const WorkoutUploadPage = () => {
   const { member } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const currentWorkoutRoom = location.state?.currentWorkoutRoom;
-
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [workoutDate, setWorkoutDate] = useState<Date>(new Date());
@@ -44,7 +40,6 @@ export const WorkoutUploadPage = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [totalWorkoutDays, setTotalWorkoutDays] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [workoutRoomId, setWorkoutRoomId] = useState<number | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(REDIRECT_DELAY_SECONDS);
 
   const processFiles = async (files: FileList | File[]) => {
@@ -205,24 +200,14 @@ export const WorkoutUploadPage = () => {
       // 날짜에 따라 메시지 분기 처리
       const dateText = isTodayParams ? "오늘" : format(workoutDate, 'yyyy-MM-dd');
 
-      if (member.role == 'ADMIN') {
-        api.notifyRoomMembersForAdmin({
-          title: `${member.nickname}님이 ${dateText} 운동을 인증했어요!`,
-          body: `운동시간: ${duration}분`,
-          type: "WORKOUT",
-        }).catch((notifyErr) => {
-          console.warn('운동 업로드 알림 전송 실패', notifyErr);
-        });
-      } else if (workoutRoomId) {
-        // 포맷 함수가 없다면 `${workoutDate.getMonth() + 1}월 ${workoutDate.getDate()}일` 사용
-        api.notifyRoomMembers(workoutRoomId, {
-          title: `${member.nickname}님이 ${dateText} 운동을 인증했어요!`,
-          body: `운동시간: ${duration}분`,
-          type: "WORKOUT",
-        }).catch((notifyErr) => {
-          console.warn('운동 업로드 알림 전송 실패', notifyErr);
-        });
-      }
+      api.notifyAllRoomMembers({
+        title: `${member.nickname}님이 ${dateText} 운동을 인증했어요!`,
+        body: `운동시간: ${duration}분`,
+        type: "WORKOUT",
+      }).catch((notifyErr) => {
+        console.warn('운동 업로드 알림 전송 실패', notifyErr);
+      });
+
       setTotalWorkoutDays(data.memberTotalWorkoutDays);
       // 성공 다이얼로그 표시
       setShowSuccessDialog(true);
@@ -233,12 +218,6 @@ export const WorkoutUploadPage = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (currentWorkoutRoom) {
-      setWorkoutRoomId(currentWorkoutRoom.workoutRoomInfo.id);
-    }
-  }, [currentWorkoutRoom]);  
 
   // 성공 다이얼로그 표시 후 일정 시간 뒤 대시보드로 이동 + 카운트다운
   useEffect(() => {

@@ -1,3 +1,4 @@
+import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { format } from 'date-fns';
 import { useState } from 'react';
@@ -9,6 +10,7 @@ today.setHours(0, 0, 0, 0);
 export const useRestDay = () => {
   const navigate = useNavigate();
 
+  const { member } = useAuth();
   const [showRestDialog, setShowRestDialog] = useState(false);
   const [restReason, setRestReason] = useState('');
   const [restStartDate, setRestStartDate] = useState<Date | undefined>(new Date());
@@ -51,17 +53,28 @@ export const useRestDay = () => {
     }
 
     setIsRegisteringRest(true);
+    const fmRestStartDate = format(restStartDate, 'yyyy-MM-dd');
+    const fmRestEndDate = format(restEndDate, 'yyyy-MM-dd');
+    
     try {
       await api.registerRestDay({
         reason: restReason,
-        startDate: format(restStartDate, 'yyyy-MM-dd'),
-        endDate: format(restEndDate, 'yyyy-MM-dd')
+        startDate: fmRestStartDate,
+        endDate: fmRestEndDate
       });
 
       setShowRestDialog(false);
       setRestReason('');
       setRestStartDate(new Date());
       setRestEndDate(new Date());
+
+      api.notifyAllRoomMembers({
+        title: `${member.nickname}님이 휴식일을 등록했어요!`,
+        body: `${fmRestStartDate} ~ ${fmRestEndDate}`,
+        type: "REST",
+      }).catch((notifyErr) => {
+        console.warn('휴식 알림 전송 실패', notifyErr);
+      });
 
       navigate('/dashboard');
     } catch (err) {
