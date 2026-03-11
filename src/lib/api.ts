@@ -179,13 +179,6 @@ class ApiClient {
     });
   }
 
-  async joinWorkoutRoomByEntryCode(workoutRoomId: number, entryCode: string) {
-    return this.request(`/workout/rooms/join/${workoutRoomId}`, {
-      method: "POST",
-      params: { entryCode },
-    });
-  }
-
   async joinWorkoutRoomByCode(entryCode: string) {
     return this.request("/workout/rooms/join", {
       method: "POST",
@@ -199,16 +192,8 @@ class ApiClient {
     });
   }
 
-  async getCurrentWorkoutRoom() {
-    return this.request("/workout/rooms/current");
-  }
-
   async getAvailableWorkoutRooms() {
     return this.request("/workout/rooms");
-  }
-
-  async isMemberInWorkoutRoom() {
-    return this.request("/workout/rooms/validate");
   }
 
   async getMyJoinedWorkoutRooms() {
@@ -217,14 +202,6 @@ class ApiClient {
 
   async getWorkoutRoomDetail(roomId: number) {
     return this.request(`/workout/rooms/joined/${roomId}`);
-  }
-
-  async searchUsers(nickname: string) {
-    return this.request(`/rooms/search-users`, { params: { nickname } });
-  }
-
-  async leaveRoom() {
-    return this.request("/rooms/leave", { method: "DELETE" });
   }
 
   // Workout APIs
@@ -249,14 +226,6 @@ class ApiClient {
     return this.uploadFile("/workouts", formData);
   }
 
-  async getMyWorkouts() {
-    return this.request("/workouts/my");
-  }
-
-  async deleteWorkout(workoutId: number) {
-    return this.request(`/workouts/${workoutId}`, { method: "DELETE" });
-  }
-
   // Rest APIs
   async registerRestDay(restData: { reason: string; startDate: string; endDate: string }) {
     return this.request("/rest", { method: "POST", data: restData });
@@ -276,18 +245,6 @@ class ApiClient {
   // Stock APIs
   async getStockPortfolio() {
     return this.request("/stock/portfolio");
-  }
-
-  async getStockPrice(stockCode: string) {
-    return this.request(`/stock/price/${stockCode}`);
-  }
-
-  async getStockInfo(stockCode: string) {
-    return this.request(`/stock/info/${stockCode}`);
-  }
-
-  async refreshStockData() {
-    return this.request("/stock/refresh", { method: "POST" });
   }
 
   async getTradingProfitLoss(period: { startDate: string; endDate: string; periodType: string }) {
@@ -337,30 +294,6 @@ class ApiClient {
 
   async getPenaltyRecords(roomId: number) {
     return this.request(`/penalty/rooms/${roomId}/records`);
-  }
-
-  async payPenalty(
-    penaltyRecordId: number,
-    paymentData: { amount: number; paymentMethod: string; paymentDate: string; notes?: string },
-    proofImage?: File
-  ) {
-    if (proofImage) {
-      const formData = new FormData();
-      formData.append("amount", paymentData.amount.toString());
-      formData.append("paymentMethod", paymentData.paymentMethod);
-      formData.append("paymentDate", paymentData.paymentDate);
-      if (paymentData.notes) {
-        formData.append("notes", paymentData.notes);
-      }
-      formData.append("proofImage", proofImage);
-
-      return this.uploadFile(`/penalty/records/${penaltyRecordId}/payment`, formData);
-    } else {
-      return this.request(`/penalty/records/${penaltyRecordId}/payment`, {
-        method: "POST",
-        data: paymentData,
-      });
-    }
   }
 
   async getPenaltyPayments(penaltyRecordId: number) {
@@ -418,24 +351,8 @@ class ApiClient {
       return await this.request(`/members/workout-feed?page=${page}&size=${size}`);
   }
 
-  async getUserWorkoutStats() {
-    return await this.request("/members/workout-stats");
-  }
-
-  async getUserSettings() {
-    return await this.request("/members/settings");
-  }
-
   async updateUserSettings(settings: UserSettings) {
     return await this.request("/members/settings", { method: "PUT", data: settings });
-  }
-
-  async likeWorkout(workoutId: number) {
-    return await this.request(`/workouts/${workoutId}/like`, { method: "POST" });
-  }
-
-  async unlikeWorkout(workoutId: number) {
-    return await this.request(`/workouts/${workoutId}/like`, { method: "DELETE" });
   }
 
   // ─── Admin APIs (contract-first; backend endpoints TBD) ─────────────────────
