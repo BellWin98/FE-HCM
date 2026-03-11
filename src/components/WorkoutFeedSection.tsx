@@ -45,30 +45,6 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
     };
   }, [carouselApi]);
 
-  const handleLike = async (workoutId: number, isLiked: boolean) => {
-    try {
-      if (isLiked) {
-        await api.unlikeWorkout(workoutId);
-      } else {
-        await api.likeWorkout(workoutId);
-      }
-      
-      // 피드 업데이트
-      const updatedFeed = safeFeed.map(item =>
-        item.id === workoutId
-          ? {
-              ...item,
-              isLiked: !isLiked,
-              likes: isLiked ? item.likes - 1 : item.likes + 1
-            }
-          : item
-      );
-      onFeedUpdate(updatedFeed);
-    } catch (error) {
-      toast.error('좋아요 처리에 실패했습니다.');
-    }
-  };
-
   const loadMore = async () => {
     if (isLoading || !hasMore) return;
     
