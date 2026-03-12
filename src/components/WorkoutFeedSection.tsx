@@ -133,7 +133,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="flex items-center space-x-2">
             <Activity className="h-5 w-5" />
-            <span>운동 인증 피드</span>
+            <span>피드</span>
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
