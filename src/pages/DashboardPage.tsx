@@ -195,7 +195,7 @@ export const DashboardPage = () => {
           subtitle={
             isMemberInWorkoutRoom
               ? `안녕하세요 ${member?.nickname ?? '사용자'}님!`
-              : '새로운 운동방에 참여하고 건강한 습관을 만들어보세요!'
+              : '운동방을 개설하거나, 초대코드로 입장하세요!'
           }
           isMemberInWorkoutRoom={isMemberInWorkoutRoom}
           isLoadingAvailableRooms={false}
