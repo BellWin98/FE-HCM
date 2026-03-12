@@ -181,7 +181,7 @@ export const DashboardPage = () => {
       | null
       | undefined;
 
-    if (!state) {
+    if (!state || (!state.openAvailableRoomsOnLoad && !state.openJoinedRoomsOnLoad)) {
       return;
     }
 
@@ -193,7 +193,9 @@ export const DashboardPage = () => {
     if (state.openJoinedRoomsOnLoad && joinedRooms.length > 1) {
       setShowJoinedRoomsDialog(true);
     }
-  }, [location.state, joinedRooms]);
+    // state를 한 번 사용한 뒤 history의 state를 비워 재진입/새로고침 시 다이얼로그가 반복해서 열리지 않도록 처리
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state, joinedRooms, navigate, location.pathname]);
 
   if (isLoading || !availableWorkoutRooms) {
     return (
