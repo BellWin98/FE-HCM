@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Calendar } from "./ui/calendar";
 import MemberStatus from "./MemberStatus";
 import { RoomCodeSection } from "./RoomCodeSection";
-import ChatRoom from "./ChatRoom";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "./ui/carousel";
 import { Dialog, DialogContent } from "./ui/dialog";
 
