@@ -14,7 +14,11 @@ When I ask to "ship it", "deploy feature", or "start github workflow" regarding 
    - **Server**: `user-github`
    - **Tool**: `issue_write`
    - **Arguments**:
+<<<<<<< feature/issue-92
      - `method` (string): 'create' - creates a new issue.
+=======
+     - `method` (string): **create**
+>>>>>>> dev
      - `owner` (string): repository owner
      - `repo` (string): repository name
      - `title` (string): concise summary of the feature or fix **(Korean only)**
