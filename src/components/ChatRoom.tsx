@@ -1,16 +1,20 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import { ChatMessage } from '@/types';
+import { ChatMessage, RoomMember } from '@/types';
 import { Client, IMessage } from '@stomp/stompjs';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import SockJS from "sockjs-client";
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Loader2, X } from 'lucide-react';
+import { Calendar, Loader2, Target, Award, X } from 'lucide-react';
 import { ensureFcmToken } from '@/lib/firebase';
 import { Textarea } from './ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Dialog, DialogContent } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Badge } from './ui/badge';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080';
 const SCROLL_BOTTOM_THRESHOLD_PX = 60;
@@ -22,7 +26,10 @@ type ChatRoomProps = {
     workoutRoomInfo?: {
       id?: number;
       name?: string;
-    };
+      ownerNickname?: string;
+      minWeeklyWorkouts?: number;
+    } | null;
+    workoutRoomMembers?: RoomMember[];
   };
 };
 
@@ -32,15 +39,19 @@ type ChatMessageWithDisplay = ChatMessage & {
   isFirstOfGroup?: boolean;
   showAvatar?: boolean;
   showNickname?: boolean;
+   profileUrl?: string;
+   memberInfo?: RoomMember;
 };
 
 type ChatMessageItemProps = {
   msg: ChatMessageWithDisplay;
   isMine: boolean;
   onImageClick?: (url: string) => void;
+  onMemberProfileClick?: (member: RoomMember) => void;
+  onMemberProfileKeyDown?: (e: React.KeyboardEvent, member: RoomMember) => void;
 };
 
-const ChatMessageItem = memo(({ msg, isMine, onImageClick }: ChatMessageItemProps) => {
+const ChatMessageItem = memo(({ msg, isMine, onImageClick, onMemberProfileClick, onMemberProfileKeyDown }: ChatMessageItemProps) => {
   const isFirstOfGroup = msg.isFirstOfGroup ?? true;
 
   const handleImageKeyDown = useCallback(
@@ -76,12 +87,23 @@ const ChatMessageItem = memo(({ msg, isMine, onImageClick }: ChatMessageItemProp
     <div
       className={`flex min-w-0 w-full ${isMine ? 'justify-end' : 'justify-start'} ${isFirstOfGroup ? 'mt-2' : 'mt-0.5'}`}
     >
-      {/* 상대 메시지일 때만 아바타/닉네임 영역 */}
       {!isMine && (
         <div className="mr-1.5 flex shrink-0 flex-col items-center">
           {msg.showAvatar ? (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
-              {msg.sender?.charAt(0) ?? '?'}
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label={`${msg.sender} 프로필 보기`}
+              className="flex items-center justify-center cursor-pointer hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-full"
+              onClick={() => msg.memberInfo && onMemberProfileClick?.(msg.memberInfo)}
+              onKeyDown={(e) => msg.memberInfo && onMemberProfileKeyDown?.(e, msg.memberInfo)}
+            >
+              <Avatar className="h-8 w-8 shrink-0">
+                <AvatarImage src={msg.profileUrl ?? msg.memberInfo?.profileUrl} alt={msg.sender} />
+                <AvatarFallback className="text-xs">
+                  {msg.sender?.slice(0, 2).toUpperCase() ?? '?'}
+                </AvatarFallback>
+              </Avatar>
             </div>
           ) : (
             <div className="h-8 w-8" />
@@ -146,6 +168,7 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
   const [hasMore, setHasMore] = useState(true); // 더 불러올 메시지가 있는지
   const [nextCursor, setNextCursor] = useState<number | null>(null); // 다음 페이지 커서
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
+  const [selectedMember, setSelectedMember] = useState<RoomMember | null>(null);
 
   const clientRef = useRef<Client | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null); // 스크롤 이벤트 감지용
@@ -229,8 +252,21 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
     isUserNearBottomRef.current = distanceFromBottom < SCROLL_BOTTOM_THRESHOLD_PX;
   }, []);
 
+  const handleMemberProfileClick = useCallback((member: RoomMember) => {
+    setSelectedMember(member);
+  }, []);
+
+  const handleMemberProfileKeyDown = useCallback((e: React.KeyboardEvent, member: RoomMember) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setSelectedMember(member);
+    }
+  }, []);
+
   const decorateMessagesForKakaoStyle = useCallback(
     (rawMessages: ChatMessageWithDisplay[]): ChatMessageWithDisplay[] => {
+      const workoutRoomMembers = currentWorkoutRoom.workoutRoomMembers ?? [];
+
       return rawMessages.map((msg, index, arr) => {
         const prev = arr[index - 1];
         const currentDateLabel = formatDateLabel(msg.timestamp);
@@ -244,6 +280,8 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
           isFirstOfGroup = true;
         }
 
+        const memberInfo = workoutRoomMembers.find((m) => m.nickname === msg.sender);
+
         return {
           ...msg,
           displayTime: msg.displayTime ?? formatTimestamp(msg.timestamp),
@@ -251,10 +289,12 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
           isFirstOfGroup,
           showAvatar: !isDifferentDate && !msg.type?.includes('SYSTEM') && !isFirstOfGroup ? false : true,
           showNickname: isFirstOfGroup,
+          profileUrl: memberInfo?.profileUrl ?? msg.profileUrl,
+          memberInfo: memberInfo ?? msg.memberInfo,
         };
       });
     },
-    [formatDateLabel, formatTimestamp],
+    [currentWorkoutRoom.workoutRoomMembers, formatDateLabel, formatTimestamp],
   );
 
   // 스크롤 시 이전 대화 기록 불러오기
@@ -546,6 +586,78 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
           )}
         </DialogContent>
       </Dialog>
+      <Dialog
+        open={!!selectedMember}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedMember(null);
+          }
+        }}
+      >
+        <DialogContent
+          className="max-w-md max-h-[90vh] overflow-y-auto"
+          aria-labelledby="member-profile-title"
+          aria-describedby="member-profile-description"
+        >
+          {selectedMember && (
+            <>
+              <DialogHeader>
+                <DialogTitle id="member-profile-title">멤버 프로필</DialogTitle>
+              </DialogHeader>
+              <div id="member-profile-description" className="space-y-4">
+                <div className="flex flex-col items-center gap-3 pb-4 border-b">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={selectedMember.profileUrl} alt={selectedMember.nickname} />
+                    <AvatarFallback className="text-xl">
+                      {selectedMember.nickname.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-center">
+                    <h2 className="text-xl font-bold flex items-center justify-center gap-1">
+                      {selectedMember.nickname}
+                      {selectedMember.nickname === currentWorkoutRoom.workoutRoomInfo?.ownerNickname && (
+                        <Badge variant="secondary" className="text-xs">방장</Badge>
+                      )}
+                    </h2>
+                    <div className="flex items-center justify-center gap-1 mt-1 text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span>
+                        가입일: {format(new Date(selectedMember.joinedAt), 'yyyy년 MM월 dd일', { locale: ko })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="flex items-center gap-2 rounded-lg border p-3">
+                    <Target className="h-4 w-4 text-blue-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground">총 운동 일수</p>
+                      <p className="text-lg font-bold">{selectedMember.totalWorkouts}일</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg border p-3">
+                    <Award className="h-4 w-4 text-orange-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground">이번 주 달성</p>
+                      <p className="text-lg font-bold">
+                        {selectedMember.weeklyWorkouts} / {currentWorkoutRoom.workoutRoomInfo?.minWeeklyWorkouts ?? 0}회
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg border p-3">
+                    <span className="text-red-500 shrink-0" aria-hidden>💰</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground">누적 벌금</p>
+                      <p className="text-lg font-bold">{selectedMember.totalPenalty.toLocaleString()}원</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
       <Card className="mt-6 flex min-w-0 flex-col h-[60vh] sm:h-[400px]">
       <CardHeader className="flex shrink-0 flex-row items-center justify-between py-2 sm:py-3">
         <CardTitle className="text-base sm:text-xl font-bold flex items-center gap-2">
@@ -593,6 +705,8 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
                   msg={msg}
                   isMine={isMine}
                   onImageClick={(url) => url && setEnlargedImageUrl(url)}
+                  onMemberProfileClick={msg.memberInfo ? handleMemberProfileClick : undefined}
+                  onMemberProfileKeyDown={msg.memberInfo ? handleMemberProfileKeyDown : undefined}
                 />
               </React.Fragment>
             );
