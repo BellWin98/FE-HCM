@@ -8,10 +8,10 @@ import {
   PageResponse,
   PenaltyPayment,
   PenaltyRecord,
-  UserSettings,
   WorkoutFeedItem,
   WorkoutRoom,
   WorkoutRoomDetail,
+  type WorkoutFeedPeriod,
 } from "@/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
@@ -354,15 +354,19 @@ class ApiClient {
 
   async getUserWorkoutFeed(
     page: number = 0,
-    size: number = 20
+    size: number = 20,
+    period?: WorkoutFeedPeriod
   ): Promise<PageResponse<WorkoutFeedItem>> {
+    const searchParams = new URLSearchParams();
+    searchParams.set("page", String(page));
+    searchParams.set("size", String(size));
+    if (period && period !== "ALL") {
+      searchParams.set("periodType", period);
+    }
+    const qs = searchParams.toString();
     return this.request<PageResponse<WorkoutFeedItem>>(
-      `/members/workout-feed?page=${page}&size=${size}`
+      `/members/workout-feed?${qs}`
     );
-  }
-
-  async updateUserSettings(settings: UserSettings) {
-    return await this.request("/members/settings", { method: "PUT", data: settings });
   }
 
   // ─── Admin APIs (contract-first; backend endpoints TBD) ─────────────────────

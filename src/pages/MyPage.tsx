@@ -1,17 +1,15 @@
 import { Layout } from '@/components/layout/Layout';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserProfileSection } from '@/components/UserProfileSection';
 import { WorkoutFeedSection } from '@/components/WorkoutFeedSection';
-import { WorkoutStatsSection } from '@/components/WorkoutStatsSection';
-import { UserSettingsSection } from '@/components/UserSettingsSection';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserProfile, WorkoutStats, WorkoutFeedItem, UserSettings } from '@/types';
-import { api } from '@/lib/api';
-import { User, Activity, Settings, Trophy, Calendar, Target, Zap } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { api } from '@/lib/api';
+import { type UserProfile, type WorkoutFeedItem } from '@/types';
+import { Activity, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export const MyPage = () => {
   const { member, updateMember } = useAuth();
@@ -20,9 +18,7 @@ export const MyPage = () => {
   
   // 상태 관리
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [workoutStats, setWorkoutStats] = useState<WorkoutStats | null>(null);
   const [workoutFeed, setWorkoutFeed] = useState<WorkoutFeedItem[]>([]);
-  const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLastPage, setIsLastPage] = useState(false);
@@ -39,21 +35,17 @@ export const MyPage = () => {
         // 병렬로 데이터 로딩
         const [profile, feed] = await Promise.all([
           api.getUserProfile(),
-          api.getUserWorkoutFeed(0, 20),
-          // api.getUserWorkoutStats(),
-          // api.getUserSettings(),
+          api.getUserWorkoutFeed(0, 20, 'ALL'),
         ]);
-        
-        setUserProfile(profile as UserProfile);
-        // setWorkoutStats(stats as WorkoutStats);
-        // API 응답이 페이징된 경우 content 필드에서 배열 추출
         const feedArray = Array.isArray(feed) ? feed : feed.content || [];
+
+        setUserProfile(profile as UserProfile);
         setWorkoutFeed(feedArray);
+
         if (!Array.isArray(feed) && feed.last !== undefined) {
           setIsLastPage(feed.last);  
         }
         
-        // setUserSettings(settings as UserSettings);
       } catch (err) {
         console.error('Failed to load user data:', err);
         setError('데이터를 불러오는데 실패했습니다.');
@@ -116,7 +108,7 @@ export const MyPage = () => {
         {/* 모바일에서는 탭, 데스크톱에서는 사이드바 */}
         {isMobile ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="profile" className="flex items-center space-x-1">
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">프로필</span>
@@ -124,14 +116,6 @@ export const MyPage = () => {
               <TabsTrigger value="feed" className="flex items-center space-x-1">
                 <Activity className="h-4 w-4" />
                 <span className="hidden sm:inline">피드</span>
-              </TabsTrigger>
-              <TabsTrigger value="stats" className="flex items-center space-x-1">
-                <Trophy className="h-4 w-4" />
-                <span className="hidden sm:inline">통계</span>
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center space-x-1">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">설정</span>
               </TabsTrigger>
             </TabsList>
 
@@ -148,17 +132,6 @@ export const MyPage = () => {
                 feed={workoutFeed}
                 onFeedUpdate={setWorkoutFeed}
                 initialIsLastPage={isLastPage}
-              />
-            </TabsContent>
-
-            <TabsContent value="stats" className="space-y-6">
-              <WorkoutStatsSection stats={workoutStats} />
-            </TabsContent>
-
-            <TabsContent value="settings" className="space-y-6">
-              <UserSettingsSection 
-                settings={userSettings}
-                onSettingsUpdate={setUserSettings}
               />
             </TabsContent>
           </Tabs>
@@ -200,32 +173,6 @@ export const MyPage = () => {
                       <span>운동 피드</span>
                     </div>
                   </button>
-                  <button
-                    onClick={() => setActiveTab('stats')}
-                    className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
-                      activeTab === 'stats' 
-                        ? 'bg-blue-100 text-blue-700' 
-                        : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <Trophy className="h-4 w-4" />
-                      <span>통계</span>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('settings')}
-                    className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
-                      activeTab === 'settings' 
-                        ? 'bg-blue-100 text-blue-700' 
-                        : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <Settings className="h-4 w-4" />
-                      <span>설정</span>
-                    </div>
-                  </button>
                 </CardContent>
               </Card>
             </div>
@@ -244,15 +191,6 @@ export const MyPage = () => {
                   feed={workoutFeed}
                   onFeedUpdate={setWorkoutFeed}
                   initialIsLastPage={isLastPage}
-                />
-              )}
-              {activeTab === 'stats' && (
-                <WorkoutStatsSection stats={workoutStats} />
-              )}
-              {activeTab === 'settings' && (
-                <UserSettingsSection 
-                  settings={userSettings}
-                  onSettingsUpdate={setUserSettings}
                 />
               )}
             </div>
