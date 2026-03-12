@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Copy, RefreshCw } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
+import { Copy, RefreshCw } from 'lucide-react';
 
 interface RoomCodeSectionProps {
   entryCode: string;
@@ -29,7 +28,6 @@ export const RoomCodeSection = ({
 
   return (
     <div className="space-y-2">
-      <Label>운동방 코드</Label>
       <div className="flex gap-2 items-center">
         <Input
           value={entryCode || '로딩 중...'}
@@ -60,9 +58,7 @@ export const RoomCodeSection = ({
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        {isOwner
-          ? '친구들에게 공유할 입장 코드입니다. 코드 변경 시 이전 코드는 사용할 수 없습니다.'
-          : '친구들과 공유할 입장 코드입니다. 복사하여 공유하세요.'}
+        다른 사람들과 공유할 입장 코드입니다. 복사하여 공유하세요.
       </p>
     </div>
   );
