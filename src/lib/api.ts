@@ -9,6 +9,7 @@ import {
   PenaltyPayment,
   PenaltyRecord,
   UserSettings,
+  WorkoutFeedItem,
   WorkoutRoom,
   WorkoutRoomDetail,
 } from "@/types";
@@ -351,8 +352,13 @@ class ApiClient {
     return this.uploadFile<{ profileUrl: string }>("/members/profile/image", formData);
   }
 
-  async getUserWorkoutFeed(page: number = 0, size: number = 20) {
-      return await this.request(`/members/workout-feed?page=${page}&size=${size}`);
+  async getUserWorkoutFeed(
+    page: number = 0,
+    size: number = 20
+  ): Promise<PageResponse<WorkoutFeedItem>> {
+    return this.request<PageResponse<WorkoutFeedItem>>(
+      `/members/workout-feed?page=${page}&size=${size}`
+    );
   }
 
   async updateUserSettings(settings: UserSettings) {
