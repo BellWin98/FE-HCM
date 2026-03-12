@@ -62,9 +62,9 @@ export const WorkoutUploadPage = () => {
         return;
       }
 
-      // 파일 크기 체크 (10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        errors.push(`${file.name}의 크기는 10MB 이하여야 합니다.`);
+      // 파일 크기 체크 (20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        errors.push(`${file.name}의 크기는 20MB 이하여야 합니다.`);
         return;
       }
 
@@ -340,7 +340,7 @@ export const WorkoutUploadPage = () => {
                           또는 파일을 드래그해서 업로드하세요
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
-                          JPEG, PNG, WebP (최대 10MB, 최대 3장까지 선택 가능)
+                          JPEG, PNG, WebP (최대 20MB, 최대 3장까지 선택 가능)
                         </p>
                       </div>
                     </div>
