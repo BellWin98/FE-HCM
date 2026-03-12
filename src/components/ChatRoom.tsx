@@ -628,6 +628,15 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
                   </div>
                 </div>
 
+                {selectedMember.bio && (
+                  <div className="rounded-lg border bg-muted/50 p-3">
+                    <p className="text-sm font-semibold mb-1">소개글</p>
+                    <p className="text-sm whitespace-pre-line break-words text-muted-foreground">
+                      {selectedMember.bio}
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="flex items-center gap-2 rounded-lg border p-3">
                     <Target className="h-4 w-4 text-blue-500 shrink-0" />
