@@ -208,14 +208,15 @@ export const DashboardPage = () => {
         />
 
         {/* 통계 카드 */}
-        {isMemberInWorkoutRoom && currentWorkoutRoom && (
+        {/* {isMemberInWorkoutRoom && currentWorkoutRoom && (
           <StatsCards
             currentWorkoutRoom={currentWorkoutRoom}
             member={member}
             isTodayRestDay={isTodayRestDay()}
           />
-        )}
+        )} */}
 
+        
         {/* 내 활동 카드 */}
         {currentWorkoutRoom && (
           <MyActivityCard
@@ -223,7 +224,7 @@ export const DashboardPage = () => {
             onWorkoutUpload={handleWorkoutUpload}
             onRestRegister={restDay.handleRestRegister}
           />
-        )}
+        )}        
 
         {/* 탭 컨텐츠 */}
         {currentWorkoutRoom ? (
