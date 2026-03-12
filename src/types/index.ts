@@ -11,6 +11,7 @@ export interface Member {
   email: string;
   nickname: string;
   profileUrl: string;
+  bio?: string;
   totalWorkoutDays: number;
   totalPenalty: number;
   createdAt: string;
@@ -41,6 +42,7 @@ export interface RoomMember {
   id: number;
   nickname: string;
   profileUrl: string;
+  bio?: string;
   totalWorkouts: number;
   weeklyWorkouts: number;
   totalPenalty: number;
