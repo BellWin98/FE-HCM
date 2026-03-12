@@ -242,6 +242,10 @@ class ApiClient {
     return this.request(`/chat/rooms/${roomId}/read`, { method: "POST" });
   }
 
+  async uploadChatImage(roomId: number, formData: FormData): Promise<{ imageUrl: string }> {
+    return this.uploadFile<{ imageUrl: string }>(`/chat/rooms/${roomId}/images`, formData);
+  }
+
   // Stock APIs
   async getStockPortfolio() {
     return this.request("/stock/portfolio");
