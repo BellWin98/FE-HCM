@@ -186,12 +186,12 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
                     />
                   </div>
                   <div>
-                    <Label htmlFor="bio">자기소개</Label>
+                    <Label htmlFor="bio">소개글</Label>
                     <Textarea
                       id="bio"
                       value={editForm.bio}
                       onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
-                      placeholder="자기소개를 입력하세요"
+                      placeholder="소개글을 입력하세요"
                       rows={3}
                     />
                   </div>
@@ -267,9 +267,17 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
                 </div>
               </div>
 
-              {profile.bio && (
-                <p className="text-muted-foreground">{profile.bio}</p>
-              )}
+              <div className="text-sm">
+                {profile.bio ? (
+                  <p className="text-muted-foreground break-words whitespace-pre-line">
+                    {profile.bio}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    아직 등록된 소개글이 없습니다. <br/> 상단의 <span className="font-semibold">편집</span> 버튼을 눌러 소개글을 작성해 보세요.
+                  </p>
+                )}
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center space-x-2">
@@ -307,7 +315,7 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
             <div className="flex items-center space-x-2">
               <Zap className="h-4 w-4 text-orange-500" />
               <div>
-                <p className="text-sm font-medium">현재 스트릭</p>
+                <p className="text-sm font-medium">현재 연속 운동일</p>
                 <p className="text-2xl font-bold">{profile.currentStreak}일</p>
               </div>
             </div>
@@ -319,14 +327,14 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
             <div className="flex items-center space-x-2">
               <Award className="h-4 w-4 text-yellow-500" />
               <div>
-                <p className="text-sm font-medium">최장 스트릭</p>
+                <p className="text-sm font-medium">최장 연속 운동일</p>
                 <p className="text-2xl font-bold">{profile.longestStreak}일</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* <Card>
           <CardContent className="pt-6">
             <div className="flex items-center space-x-2">
               <span className="text-red-500">💰</span>
@@ -336,7 +344,7 @@ export const UserProfileSection = ({ profile, onProfileUpdate, onMemberUpdate }:
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

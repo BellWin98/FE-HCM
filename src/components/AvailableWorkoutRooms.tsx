@@ -28,7 +28,7 @@ export const AvailableWorkoutRooms = ({ workoutRooms, onCreateWorkoutRoom, onJoi
         <CardHeader>
           <CardTitle className="text-base">운동방에 참여하려면</CardTitle>
           <CardDescription>
-            방장으로부터 받은 입장 코드를 입력하세요. 코드로 입장 버튼을 클릭 후 코드를 입력하면 해당 운동방에 참여할 수 있습니다.
+            방장으로부터 받은 입장 코드를 입력하세요. <br/> <br/> <span className="font-semibold">코드로 입장</span> 버튼을 클릭 후 코드를 입력하면<br/>해당 운동방에 참여할 수 있습니다.
           </CardDescription>
         </CardHeader>
       </Card>
