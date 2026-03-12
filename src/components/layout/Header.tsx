@@ -1,16 +1,16 @@
-import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Settings, LogOut, BarChart3, Menu, X, UserCircle, Clock, Warehouse, Dumbbell } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { BarChart3, Dumbbell, LogOut, Menu, Plus, Settings, UserCircle, Warehouse, X } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export const Header = () => {
   const { member, logout, isAuthenticated } = useAuth();
@@ -25,8 +25,8 @@ export const Header = () => {
     setIsMobileMenuOpen(false);
   };
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
+  const handleNavigation = (path: string, state?: unknown) => {
+    navigate(path, { state });
     setIsMobileMenuOpen(false);
   };
 
@@ -86,10 +86,26 @@ export const Header = () => {
                         <span>관리자</span>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => handleNavigation('/dashboard')}>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleNavigation('/dashboard', { openJoinedRoomsOnLoad: true })
+                      }
+                    >
                       <Dumbbell className="mr-2 h-4 w-4" />
                       <span>내 운동방</span>
-                    </DropdownMenuItem>                    
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleNavigation('/rooms/create')}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      <span>새로운 방 만들기</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleNavigation('/dashboard', { openAvailableRoomsOnLoad: true })
+                      }
+                    >
+                      <Warehouse className="mr-2 h-4 w-4" />
+                      <span>모든 운동방 보기</span>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleNavigation('/mypage')}>
                       <UserCircle className="mr-2 h-4 w-4" />
                       <span>마이페이지</span>
@@ -171,16 +187,6 @@ export const Header = () => {
               </Button>
             )}
 
-            {/* 내 운동방 */}
-            <Button 
-              variant="outline" 
-              onClick={() => handleNavigation('/dashboard')}
-              className="w-full justify-start"
-            >
-              <Dumbbell className="h-4 w-4 mr-2" />
-              <span>내 운동방</span>
-            </Button>            
-
             {/* 마이페이지 */}
             <Button 
               variant="outline" 
@@ -189,6 +195,36 @@ export const Header = () => {
             >
               <UserCircle className="h-4 w-4 mr-2" />
               <span>마이페이지</span>
+            </Button>
+
+            {/* 내 운동방 */}
+            <Button
+              variant="outline"
+              onClick={() => handleNavigation('/dashboard', { openJoinedRoomsOnLoad: true })}
+              className="w-full justify-start"
+            >
+              <Dumbbell className="h-4 w-4 mr-2" />
+              <span>내 운동방</span>
+            </Button>
+
+            {/* 방 만들기 */}
+            <Button
+              variant="outline"
+              onClick={() => handleNavigation('/rooms/create')}
+              className="w-full justify-start"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              <span>운동방 생성</span>
+            </Button>
+
+            {/* 모든 운동방 보기 */}
+            <Button
+              variant="outline"
+              onClick={() => handleNavigation('/dashboard', { openAvailableRoomsOnLoad: true })}
+              className="w-full justify-start"
+            >
+              <Warehouse className="h-4 w-4 mr-2" />
+              <span>모든 운동방 보기</span>
             </Button>
 
             {/* 로그아웃 */}

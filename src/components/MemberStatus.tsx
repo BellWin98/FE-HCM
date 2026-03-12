@@ -64,7 +64,6 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-xl font-bold">🔥 이번주 운동 현황</CardTitle>
-                {/* <CardDescription>주간 현황</CardDescription> */}
               </div>
             </div>
           </CardHeader>
@@ -206,11 +205,29 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
                         <span className="text-sm font-medium">휴식일</span>
                       </div>
                     ) : (
-                      Array.from({ length: weeklyGoal }).map((_, i) => (
-                        i < member.weeklyWorkouts
-                          ? <CheckCircle2 key={i} className="w-5 h-5 text-green-500" /> 
-                          : <Circle key={i} className="w-5 h-5 text-gray-300" />
-                      ))
+                      <Popover>
+                        <PopoverTrigger
+                          className="inline-flex items-center gap-1 rounded-full border bg-white px-3 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                          aria-label={`${member.nickname}의 이번주 목표 보기`}
+                        >
+                          <span className="truncate max-w-[120px]">
+                            상세
+                          </span>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64 max-w-xs space-y-3">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1">
+                              {Array.from({ length: weeklyGoal }).map((_, i) =>
+                                i < member.weeklyWorkouts ? (
+                                  <CheckCircle2 key={i} className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <Circle key={i} className="h-4 w-4 text-gray-300" />
+                                ),
+                              )}
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     )}
                   </div>
                 </div>

@@ -2,29 +2,27 @@ import AvailableWorkoutRooms from '@/components/AvailableWorkoutRooms';
 import ChatRoom from '@/components/ChatRoom';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MyActivityCard } from '@/components/dashboard/MyActivityCard';
-import { StatsCards } from '@/components/dashboard/StatsCards';
 import { AvailableRoomsDialog } from '@/components/dialogs/AvailableRoomsDialog';
-import { RoomCodeDialog } from '@/components/dialogs/RoomCodeDialog';
+import { JoinedRoomsDialog } from '@/components/dialogs/JoinedRoomsDialog';
 import { RestDayDialog } from '@/components/dialogs/RestDayDialog';
+import { RoomCodeDialog } from '@/components/dialogs/RoomCodeDialog';
 import { Layout } from '@/components/layout/Layout';
 import MyWorkoutRoom from '@/components/MyWorkoutRoom';
 import { PenaltyAccountManager } from '@/components/PenaltyAccountManager';
 import PenaltyOverview from '@/components/PenaltyOverview';
+import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useRestDay } from '@/hooks/useRestDay';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
-import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
-import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
+import { WorkoutRoomDetail } from '@/types';
 import { initializeApp } from 'firebase/app';
-import { onMessage } from 'firebase/messaging';
-import { getToken } from 'firebase/messaging';
-import { getMessaging } from 'firebase/messaging';
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 
 const firebaseConfig = {
@@ -48,6 +46,7 @@ today.setHours(0, 0, 0, 0);
 export const DashboardPage = () => {
   const { member } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 커스텀 훅 사용
   const {
@@ -105,6 +104,7 @@ export const DashboardPage = () => {
   const [showAvailableRoomsDialog, setShowAvailableRoomsDialog] = useState(false);
   const [joinedRoomIds, setJoinedRoomIds] = useState<number[]>([]);
   const [isRegeneratingEntryCode, setIsRegeneratingEntryCode] = useState(false);
+  const [showJoinedRoomsDialog, setShowJoinedRoomsDialog] = useState(false);
 
   // 오늘이 휴식일인지 확인하는 함수
   const isTodayRestDay = () => {
@@ -170,6 +170,30 @@ export const DashboardPage = () => {
   const handleAvailableRoomsDialogClose = () => {
     setShowAvailableRoomsDialog(false);
   };
+
+  // Header에서 전달한 location state 기반 다이얼로그/방 선택 제어
+  useEffect(() => {
+    const state = location.state as
+      | {
+          openAvailableRoomsOnLoad?: boolean;
+          openJoinedRoomsOnLoad?: boolean;
+        }
+      | null
+      | undefined;
+
+    if (!state) {
+      return;
+    }
+
+    if (state.openAvailableRoomsOnLoad) {
+      setJoinedRoomIds(joinedRooms.map((r) => r.id));
+      setShowAvailableRoomsDialog(true);
+    }
+
+    if (state.openJoinedRoomsOnLoad && joinedRooms.length > 1) {
+      setShowJoinedRoomsDialog(true);
+    }
+  }, [location.state, joinedRooms]);
 
   if (isLoading || !availableWorkoutRooms) {
     return (
@@ -310,6 +334,15 @@ export const DashboardPage = () => {
           joinedRoomIds={joinedRoomIds}
           onJoinByCode={roomJoin.openRoomCodeDialog}
           onClose={handleAvailableRoomsDialogClose}
+        />
+
+        {/* 참여 중인 운동방 선택 다이얼로그 */}
+        <JoinedRoomsDialog
+          open={showJoinedRoomsDialog}
+          onOpenChange={setShowJoinedRoomsDialog}
+          rooms={joinedRooms}
+          currentRoomId={currentWorkoutRoom?.workoutRoomInfo?.id}
+          onSelectRoom={handleSelectRoom}
         />
       </div>
     </Layout>
