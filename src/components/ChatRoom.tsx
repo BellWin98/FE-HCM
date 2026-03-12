@@ -150,6 +150,7 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
   const clientRef = useRef<Client | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null); // 스크롤 이벤트 감지용
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const isUserNearBottomRef = useRef(true);
   const isMobile = useIsMobile();
   const roomId = currentWorkoutRoom.workoutRoomInfo?.id;
@@ -411,6 +412,9 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
       },
     });
     setInput('');
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
     setTimeout(() => api.updateLastRead(roomId), 500); // 서버 반영 시간 고려 약간의 딜레이
 
     if (roomId) {
@@ -509,6 +513,7 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
       }).catch((notifyErr) => {
         console.warn('채팅 알림 전송 실패', notifyErr);
       });
+      setTimeout(() => textareaRef.current?.focus(), 0);
     } catch (err) {
       const message = err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.';
       alert(message);
@@ -622,6 +627,7 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
                 type="button"
                 size="sm"
                 onClick={handleSubmit}
+                onPointerDown={(e) => e.preventDefault()}
                 disabled={!isConnected || isUploadingImage}
                 className="shrink-0"
                 aria-label="이미지 전송"
@@ -654,6 +660,7 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
           </label>
           <div className="flex min-w-0 flex-1 items-center rounded-2xl border border-input bg-background px-3 py-2">
             <Textarea
+              ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -665,6 +672,7 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
           <Button
             type="button"
             onClick={handleSubmit}
+            onPointerDown={(e) => e.preventDefault()}
             disabled={!isConnected || (file ? false : !input.trim()) || isUploadingImage}
             className="h-9 shrink-0 px-4 text-sm font-medium disabled:opacity-50"
             variant={file || input.trim() ? 'default' : 'secondary'}
