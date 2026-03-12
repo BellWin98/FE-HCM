@@ -83,6 +83,9 @@ export const WORKOUT_TYPES = [
 ] as const;
 export type WorkoutType = typeof WORKOUT_TYPES[number];
 
+// 운동 피드 기간 타입
+export type WorkoutFeedPeriod = 'ALL' | 'WEEK' | 'MONTH';
+
 export interface PenaltyRecord {
   id: number;
   workoutRoomMemberId: string;
@@ -263,31 +266,6 @@ export interface WorkoutFeedItem {
   isLiked: boolean;
   createdAt: string;
   roomName?: string;
-}
-
-export interface WorkoutStats {
-  totalWorkouts: number;
-  currentStreak: number;
-  longestStreak: number;
-  weeklyGoal: number;
-  weeklyProgress: number;
-  monthlyWorkouts: number;
-  favoriteWorkoutType: WorkoutType;
-  totalDuration: number; // 총 운동 시간 (분)
-}
-
-export interface UserSettings {
-  notifications: {
-    workoutReminder: boolean;
-    penaltyAlert: boolean;
-    roomUpdates: boolean;
-    weeklyReport: boolean;
-  };
-  privacy: {
-    showProfile: boolean;
-    showWorkouts: boolean;
-    showStats: boolean;
-  };
 }
 
 // Admin API types (contract-first; backend endpoints TBD)

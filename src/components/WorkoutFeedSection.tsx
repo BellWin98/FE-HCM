@@ -2,10 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { WorkoutFeedItem, PageResponse } from '@/types';
+import { type WorkoutFeedItem, type PageResponse, type WorkoutFeedPeriod } from '@/types';
 import { api } from '@/lib/api';
-import { Activity, Heart, MessageCircle, Calendar, Clock, MapPin } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Activity, Calendar, Clock } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -22,12 +22,18 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(!initialIsLastPage);
+  const [selectedPeriod, setSelectedPeriod] = useState<WorkoutFeedPeriod>('ALL');
   const [zoomImageUrls, setZoomImageUrls] = useState<string[] | null>(null);
   const [zoomImageIndex, setZoomImageIndex] = useState<number>(0);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
 
   // feed가 배열이 아닐 경우 빈 배열로 처리
-  const safeFeed = Array.isArray(feed) ? feed : [];
+  const safeFeed = useMemo<WorkoutFeedItem[]>(() => {
+    if (!Array.isArray(feed)) {
+      return [];
+    }
+    return feed;
+  }, [feed]);
 
   // 캐러셀 인덱스 추적
   useEffect(() => {
@@ -45,27 +51,61 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
     };
   }, [carouselApi]);
 
-  const loadMore = async () => {
-    if (isLoading || !hasMore) return;
-    
+  const loadMore = useCallback(async () => {
+    if (isLoading || !hasMore) {
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await api.getUserWorkoutFeed(page + 1, 20);
-      // API 응답이 페이징된 경우 content 필드에서 배열 추출
-      const newFeed = Array.isArray(response) 
-        ? response 
+      const nextPage = page + 1;
+      const response = await api.getUserWorkoutFeed(nextPage, 20, selectedPeriod);
+      const newFeed = Array.isArray(response)
+        ? response
         : (response as PageResponse<WorkoutFeedItem>)?.content || [];
+
       if (newFeed.length === 0) {
         setHasMore(false);
-      } else {
-        onFeedUpdate([...safeFeed, ...newFeed]);
-        setPage(page + 1);
-        if (!Array.isArray(response) && (response as PageResponse<WorkoutFeedItem>)?.last) {
-          setHasMore(false);
-        }
+        return;
+      }
+
+      onFeedUpdate([...safeFeed, ...newFeed]);
+      setPage(nextPage);
+
+      if (!Array.isArray(response) && (response as PageResponse<WorkoutFeedItem>)?.last) {
+        setHasMore(false);
       }
     } catch (error) {
       toast.error('피드를 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [hasMore, isLoading, onFeedUpdate, page, safeFeed, selectedPeriod]);
+
+  const handleChangePeriod = async (period: WorkoutFeedPeriod) => {
+    if (period === selectedPeriod) {
+      return;
+    }
+
+    setSelectedPeriod(period);
+    setPage(0);
+    setHasMore(true);
+    setIsLoading(true);
+
+    try {
+      const response = await api.getUserWorkoutFeed(0, 20, period);
+      const newFeed = Array.isArray(response)
+        ? response
+        : (response as PageResponse<WorkoutFeedItem>)?.content || [];
+
+      onFeedUpdate(newFeed);
+
+      if (newFeed.length === 0 || (!Array.isArray(response) && (response as PageResponse<WorkoutFeedItem>)?.last)) {
+        setHasMore(false);
+      }
+    } catch (error) {
+      toast.error('피드를 불러오는데 실패했습니다.');
+      setHasMore(false);
     } finally {
       setIsLoading(false);
     }
@@ -90,11 +130,40 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="flex items-center space-x-2">
             <Activity className="h-5 w-5" />
             <span>운동 인증 피드</span>
           </CardTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant={selectedPeriod === 'ALL' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleChangePeriod('ALL')}
+              disabled={isLoading && selectedPeriod === 'ALL'}
+            >
+              전체
+            </Button>
+            <Button
+              type="button"
+              variant={selectedPeriod === 'WEEK' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleChangePeriod('WEEK')}
+              disabled={isLoading && selectedPeriod === 'WEEK'}
+            >
+              이번 주
+            </Button>
+            <Button
+              type="button"
+              variant={selectedPeriod === 'MONTH' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleChangePeriod('MONTH')}
+              disabled={isLoading && selectedPeriod === 'MONTH'}
+            >
+              이번 달
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {safeFeed.length === 0 ? (
@@ -160,14 +229,6 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
                           <p className="text-sm text-muted-foreground">{item.description}</p>
                         )}
 
-                        {/* 운동방 정보 */}
-                        {/* {item.roomName && (
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            <span>{item.roomName}</span>
-                          </div>
-                        )} */}
-
                         {/* 날짜 */}
                         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
@@ -187,31 +248,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
                             <Clock className="h-3 w-3 mr-1" />
                             {item.duration}분
                           </Badge>
-                        </div>                      
-
-                      {/* 액션 버튼 */}
-                      {/* <div className="flex items-center justify-between pt-2 border-t">
-                        <div className="flex items-center space-x-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleLike(item.id, item.isLiked)}
-                            className={`flex items-center space-x-1 ${
-                              item.isLiked ? 'text-red-500' : 'text-muted-foreground'
-                            }`}
-                          >
-                            <Heart className={`h-4 w-4 ${item.isLiked ? 'fill-current' : ''}`} />
-                            <span>{item.likes}</span>
-                          </Button>
-                          <Button variant="ghost" size="sm" className="flex items-center space-x-1">
-                            <MessageCircle className="h-4 w-4" />
-                            <span>{item.comments}</span>
-                          </Button>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {format(new Date(item.createdAt), 'MM/dd HH:mm', { locale: ko })}
-                        </div>
-                      </div> */}
                     </div>
                   </CardContent>
                 </Card>
