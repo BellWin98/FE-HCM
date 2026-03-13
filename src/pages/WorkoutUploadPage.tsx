@@ -252,7 +252,7 @@ export const WorkoutUploadPage = () => {
           <CardHeader>
             <CardTitle>운동 인증 사진 업로드</CardTitle>
             <CardDescription>
-              오늘의 운동을 인증해보세요! <br/> 사진과 함께 운동 정보를 입력해주세요.
+              사진과 함께 운동 정보를 입력해주세요.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -339,8 +339,9 @@ export const WorkoutUploadPage = () => {
                         <p className="text-sm text-gray-500">
                           또는 파일을 드래그해서 업로드하세요
                         </p>
+                        <br/>
                         <p className="text-xs text-gray-400 mt-1">
-                          JPEG, PNG, WebP (최대 20MB, 최대 3장까지 선택 가능)
+                          JPEG, PNG, WebP <br/>(최대 20MB, 최대 3장까지 선택 가능)
                         </p>
                       </div>
                     </div>
