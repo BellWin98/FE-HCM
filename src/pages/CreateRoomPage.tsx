@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { api } from '@/lib/api';
 import { formatDateToYmd, getTodayYmd, validateWorkoutRoomRules } from '@/lib/workoutRoomRules';
 
+type CreateRoomLocationState = { hasReachedRoomLimit?: boolean; joinedRoomCount?: number; isAdmin?: boolean } | undefined;
+
 export const CreateRoomPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = location.state as CreateRoomLocationState;
   const [roomName, setRoomName] = useState('');
   const [entryCode, setEntryCode] = useState('');
   const [minWeeklyWorkouts, setMinWeeklyWorkouts] = useState('3');
@@ -85,6 +89,11 @@ export const CreateRoomPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (locationState?.hasReachedRoomLimit) {
+      setError('일반 회원은 최대 3개의 운동방에만 참여할 수 있습니다.');
+      return;
+    }
 
     if (!validateForm()) {
       return;

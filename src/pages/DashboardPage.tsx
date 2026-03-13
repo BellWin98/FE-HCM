@@ -62,6 +62,10 @@ export const DashboardPage = () => {
   const roomJoin = useRoomJoin();
   const restDay = useRestDay();
 
+  const isAdmin = member?.role === 'ADMIN';
+  const joinedRoomCount = joinedRooms.length;
+  const hasReachedRoomLimit = !isAdmin && joinedRoomCount >= 3;
+
   // FCM 토큰 발급 (로그인 + 운동방 참여 시)
   useEffect(() => {
     if (member && isMemberInWorkoutRoom) {
@@ -131,7 +135,21 @@ export const DashboardPage = () => {
     });
   };
 
-  const handleCreateWorkoutRoom = () => navigate('/rooms/create');
+  const handleCreateWorkoutRoom = () => {
+    if (hasReachedRoomLimit) {
+      toast('일반 회원은 최대 3개의 운동방에만 참여할 수 있습니다.');
+      return;
+    }
+    navigate('/rooms/create', { state: { hasReachedRoomLimit, joinedRoomCount, isAdmin } });
+  };
+
+  const handleOpenRoomCodeDialog = () => {
+    if (hasReachedRoomLimit) {
+      toast('일반 회원은 최대 3개의 운동방에만 참여할 수 있습니다.');
+      return;
+    }
+    roomJoin.openRoomCodeDialog();
+  };
 
   const handleShowAvailableRooms = () => {
     setJoinedRoomIds(joinedRooms.map((r) => r.id));
@@ -205,6 +223,7 @@ export const DashboardPage = () => {
           onNavigateToMyRooms={() => navigate('/rooms/joined')}
           onSelectRoom={handleSelectRoom}
           onCreateWorkoutRoom={handleCreateWorkoutRoom}
+          hasReachedRoomLimit={hasReachedRoomLimit}
         />
 
         {/* 통계 카드 */}
@@ -267,7 +286,7 @@ export const DashboardPage = () => {
           <AvailableWorkoutRooms
             workoutRooms={availableWorkoutRooms}
             onCreateWorkoutRoom={handleCreateWorkoutRoom}
-            onJoinByCode={roomJoin.openRoomCodeDialog}
+            onJoinByCode={handleOpenRoomCodeDialog}
           />
         )}
 
@@ -306,9 +325,9 @@ export const DashboardPage = () => {
           onOpenChange={setShowAvailableRoomsDialog}
           rooms={availableWorkoutRooms}
           isLoading={false}
-          isAdmin={member?.role === 'ADMIN'}
+          isAdmin={isAdmin}
           joinedRoomIds={joinedRoomIds}
-          onJoinByCode={roomJoin.openRoomCodeDialog}
+          onJoinByCode={handleOpenRoomCodeDialog}
           onClose={handleAvailableRoomsDialogClose}
         />
       </div>

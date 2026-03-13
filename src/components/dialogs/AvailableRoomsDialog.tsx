@@ -27,6 +27,8 @@ export const AvailableRoomsDialog = ({
   onJoinByCode,
   onClose,
 }: AvailableRoomsDialogProps) => {
+  const hasReachedRoomLimit = !isAdmin && joinedRoomIds.length >= 3;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -78,11 +80,17 @@ export const AvailableRoomsDialog = ({
                       </div>
                     </div>
                   </CardContent>
-                  <div className="p-4 pt-0">
+                  <div className="p-4 pt-0 space-y-1">
                     {joinedRoomIds.includes(workoutRoom.id) ? (
                       <Button className="w-full" variant="outline" disabled>
                         참여중
                       </Button>
+                    ) : hasReachedRoomLimit ? (
+                      <>
+                        <Button className="w-full" variant="outline" disabled>
+                          최대 3개의 운동방에만 참여할 수 있습니다
+                        </Button>
+                      </>
                     ) : (
                       <Button className="w-full" onClick={onJoinByCode}>
                         코드로 입장
