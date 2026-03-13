@@ -122,13 +122,24 @@ export interface AuthContextType {
   updateMember: (updates: Partial<Member>) => void;
 }
 
+export type ChatMessageType = 'TEXT' | 'IMAGE' | 'READ_STATUS' | 'SYSTEM';
+
+export const isChatContentType = (type: ChatMessageType | string): boolean => {
+  return type === 'TEXT' || type === 'IMAGE';
+};
+
+export const isSystemChatType = (type: ChatMessageType | string): boolean => {
+  return type === 'READ_STATUS' || type === 'SYSTEM';
+};
+
 export interface ChatMessage {
   id: string;
   sender: string;
   content: string;
   timestamp: string;
-  type: 'TEXT' | 'IMAGE';
+  type: ChatMessageType;
   imageUrl?: string;
+  unreadCount?: number;
   // readBy: string[];
 }
 
