@@ -1,6 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import { ChatMessage, RoomMember } from '@/types';
+import { ChatMessage, RoomMember, isChatContentType, isSystemChatType } from '@/types';
 import { Client, IMessage } from '@stomp/stompjs';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import SockJS from "sockjs-client";
@@ -18,7 +18,7 @@ import { ko } from 'date-fns/locale';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080';
 const SCROLL_BOTTOM_THRESHOLD_PX = 60;
-const MAX_CHAT_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_CHAT_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 type ChatRoomProps = {
@@ -39,8 +39,8 @@ type ChatMessageWithDisplay = ChatMessage & {
   isFirstOfGroup?: boolean;
   showAvatar?: boolean;
   showNickname?: boolean;
-   profileUrl?: string;
-   memberInfo?: RoomMember;
+  profileUrl?: string;
+  memberInfo?: RoomMember;
 };
 
 type ChatMessageItemProps = {
@@ -53,6 +53,7 @@ type ChatMessageItemProps = {
 
 const ChatMessageItem = memo(({ msg, isMine, onImageClick, onMemberProfileClick, onMemberProfileKeyDown }: ChatMessageItemProps) => {
   const isFirstOfGroup = msg.isFirstOfGroup ?? true;
+  const unreadCount = Number(msg.unreadCount ?? 0);
 
   const handleImageKeyDown = useCallback(
     (e: React.KeyboardEvent, url: string) => {
@@ -128,6 +129,11 @@ const ChatMessageItem = memo(({ msg, isMine, onImageClick, onMemberProfileClick,
               <span className="shrink-0 pb-0.5 text-[10px] text-muted-foreground">
                 {msg.displayTime}
               </span>
+              {unreadCount > 0 && (
+                <span className="ml-0.5 shrink-0 pb-0.5 text-[10px] text-primary">
+                  {unreadCount}
+                </span>
+              )}
             </>
           )}
 
@@ -136,6 +142,11 @@ const ChatMessageItem = memo(({ msg, isMine, onImageClick, onMemberProfileClick,
               <span className="shrink-0 pb-0.5 text-[10px] text-muted-foreground">
                 {msg.displayTime}
               </span>
+              {unreadCount > 0 && (
+                <span className="ml-0.5 shrink-0 pb-0.5 text-[10px] text-primary">
+                  {unreadCount}
+                </span>
+              )}
               {msg.type === 'IMAGE' ? (
                 renderImage(msg.imageUrl)
               ) : (
@@ -359,15 +370,43 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
     const onMessageReceived = (message: IMessage) => {
       try {
         const body = JSON.parse(message.body) as ChatMessageWithDisplay;
-        const mappedBody: ChatMessageWithDisplay = {
-          ...body,
-          displayTime: formatTimestamp(body.timestamp),
-          displayDate: formatDateLabel(body.timestamp),
-        };
-        setMessages((prev) => decorateMessagesForKakaoStyle([...prev, mappedBody]));
 
-        // 새로운 메시지를 받으면 '읽음' 처리
-        api.updateLastRead(roomId);
+        // 시스템/읽음 상태 전용 메시지 타입이면 별도 처리
+        if (isSystemChatType(body.type)) {
+          // READ_STATUS 인 경우, 기존 메시지들의 unreadCount만 갱신
+          if (body.type === 'READ_STATUS') {
+            const updated = (body as unknown as { updatedMessages?: { messageId: string; unreadCount: number }[] }).updatedMessages;
+            if (updated && Array.isArray(updated)) {
+              setMessages((prev) =>
+                prev.map((msg) => {
+                  const found = updated.find((u) => String(u.messageId) === String(msg.id));
+                  if (!found) {
+                    return msg;
+                  }
+                  return {
+                    ...msg,
+                    unreadCount: found.unreadCount,
+                  };
+                }),
+              );
+            }
+          }
+          // SYSTEM/READ_STATUS 등은 말풍선으로 렌더링하지 않음
+          return;
+        }
+
+        // 일반 채팅 메시지(TEXT, IMAGE 등)
+        if (isChatContentType(body.type)) {
+          const mappedBody: ChatMessageWithDisplay = {
+            ...body,
+            displayTime: formatTimestamp(body.timestamp),
+            displayDate: formatDateLabel(body.timestamp),
+          };
+          setMessages((prev) => decorateMessagesForKakaoStyle([...prev, mappedBody]));
+
+          // 새로운 메시지를 받으면 '읽음' 처리
+          api.updateLastRead(roomId);
+        }
       } catch (e) {
         // ignore
       }
@@ -509,7 +548,7 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
       return;
     }
     if (selectedFile.size > MAX_CHAT_IMAGE_SIZE_BYTES) {
-      setFileError('이미지 크기는 5MB 이하여야 합니다.');
+      setFileError('이미지 크기는 10MB 이하여야 합니다.');
       setFile(null);
       if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
       setImagePreviewUrl(null);
@@ -696,9 +735,11 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
               이전 대화가 더 이상 없습니다.
             </div>
           )}
-          {messages.map((msg, index) => {
+          {messages
+            .filter((msg) => !isSystemChatType(msg.type))
+            .map((msg, index, filtered) => {
             const isMine = msg.sender === member.nickname;
-            const prev = messages[index - 1];
+            const prev = filtered[index - 1];
             const showDateDivider = !prev || prev.displayDate !== msg.displayDate;
 
             return (
