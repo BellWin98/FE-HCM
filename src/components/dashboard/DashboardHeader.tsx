@@ -20,6 +20,7 @@ interface DashboardHeaderProps {
   onNavigateToMyRooms: () => void;
   onSelectRoom?: (roomId: number) => void;
   onCreateWorkoutRoom?: () => void;
+  hasReachedRoomLimit?: boolean;
 }
 
 export const DashboardHeader = ({
@@ -33,6 +34,7 @@ export const DashboardHeader = ({
   onNavigateToMyRooms,
   onSelectRoom,
   onCreateWorkoutRoom,
+  hasReachedRoomLimit = false,
 }: DashboardHeaderProps) => {
   return (
     <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-6">
@@ -50,6 +52,8 @@ export const DashboardHeader = ({
                 variant="outline"
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-sm px-3 py-2"
                 onClick={onCreateWorkoutRoom}
+                disabled={hasReachedRoomLimit}
+                title={hasReachedRoomLimit ? '일반 회원은 최대 3개의 운동방에만 참여할 수 있습니다.' : undefined}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 <span className="truncate">방 만들기</span>
