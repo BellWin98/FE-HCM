@@ -1,8 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
+import { formatDateToYmd, getTodayYmd } from '@/lib/workoutRoomRules';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { CalendarIcon } from 'lucide-react';
 import { PenaltyPayment, PenaltyRecord, RoomMember } from '@/types';
 
 interface PenaltyOverviewProps {
@@ -12,15 +21,25 @@ interface PenaltyOverviewProps {
 }
 
 type WeekKey = string; // yyyy-MM-dd~yyyy-MM-dd
+type PeriodType = 'year' | 'month' | 'week' | 'custom';
+
+const getDefaultCustomRange = (): { start: string; end: string } => {
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  return { start: formatDateToYmd(first), end: getTodayYmd() };
+};
 
 export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMembers, currentUserId }) => {
   const [records, setRecords] = useState<PenaltyRecord[]>([]);
   const [paymentsMap, setPaymentsMap] = useState<Record<number, PenaltyPayment[]>>({});
   const [isLoading, setIsLoading] = useState(true);
 
+  const [periodType, setPeriodType] = useState<PeriodType>('week');
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>(''); // 01~12
   const [selectedWeek, setSelectedWeek] = useState<WeekKey | ''>('');
+  const [customStartDate, setCustomStartDate] = useState<string>(() => getDefaultCustomRange().start);
+  const [customEndDate, setCustomEndDate] = useState<string>(() => getDefaultCustomRange().end);
   const [memberFilter, setMemberFilter] = useState<string>('ALL'); // ALL | ME | userId
 
   useEffect(() => {
@@ -113,17 +132,32 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
   }, [selectedYear, selectedMonth, weekOptions, selectedWeek]);
 
   const filtered = useMemo(() => {
-    const [s, e] = selectedWeek ? selectedWeek.split('~') : ['', ''];
-    return records.filter(r => {
-      const byYear = selectedYear ? r.weekStartDate.startsWith(selectedYear) : true;
-      const byMonth = selectedMonth ? r.weekStartDate.substring(5, 7) === selectedMonth : true;
-      const byWeek = selectedWeek ? r.weekStartDate.startsWith(s) && r.weekEndDate.startsWith(e) : true;
-      if (!(byYear && byMonth && byWeek)) return false;
+    return records.filter((r) => {
+      let byPeriod = true;
+      if (periodType === 'year') {
+        byPeriod = selectedYear ? r.weekStartDate.startsWith(selectedYear) : true;
+      } else if (periodType === 'month') {
+        const byYear = selectedYear ? r.weekStartDate.startsWith(selectedYear) : true;
+        const byMonth = selectedMonth ? r.weekStartDate.substring(5, 7) === selectedMonth : true;
+        byPeriod = byYear && byMonth;
+      } else if (periodType === 'week') {
+        const [s, e] = selectedWeek ? selectedWeek.split('~') : ['', ''];
+        const byYear = selectedYear ? r.weekStartDate.startsWith(selectedYear) : true;
+        const byMonth = selectedMonth ? r.weekStartDate.substring(5, 7) === selectedMonth : true;
+        const byWeek = selectedWeek ? r.weekStartDate.startsWith(s) && r.weekEndDate.startsWith(e) : true;
+        byPeriod = byYear && byMonth && byWeek;
+      } else {
+        // custom: 주 단위 기간이 사용자 지정 기간과 겹치는 레코드
+        const rStart = r.weekStartDate.substring(0, 10);
+        const rEnd = r.weekEndDate.substring(0, 10);
+        byPeriod = rStart <= customEndDate && rEnd >= customStartDate;
+      }
+      if (!byPeriod) return false;
       if (memberFilter === 'ALL') return true;
       if (memberFilter === 'ME') return String(r.workoutRoomMemberId) === String(currentUserId);
       return String(r.workoutRoomMemberId) === String(memberFilter);
     });
-  }, [records, selectedYear, selectedMonth, selectedWeek, memberFilter, currentUserId]);
+  }, [records, periodType, selectedYear, selectedMonth, selectedWeek, customStartDate, customEndDate, memberFilter, currentUserId]);
 
   const memberMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -143,57 +177,146 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
     return { penalty, paid, remain };
   }, [filtered, calcPaid]);
 
+  const handleCustomStartSelect = (date: Date | undefined) => {
+    if (!date) return;
+    const ymd = formatDateToYmd(date);
+    setCustomStartDate(ymd);
+    if (ymd > customEndDate) setCustomEndDate(ymd);
+  };
+
+  const handleCustomEndSelect = (date: Date | undefined) => {
+    if (!date) return;
+    setCustomEndDate(formatDateToYmd(date));
+  };
+
+  const customStartDateObj = useMemo(() => {
+    if (!customStartDate) return undefined;
+    const [y, m, d] = customStartDate.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }, [customStartDate]);
+
+  const customEndDateObj = useMemo(() => {
+    if (!customEndDate) return undefined;
+    const [y, m, d] = customEndDate.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }, [customEndDate]);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="space-y-3">
           <div className="text-base sm:text-xl font-bold">벌금 현황</div>
+
+          <Tabs value={periodType} onValueChange={(v) => setPeriodType(v as PeriodType)} aria-label="조회 기간 타입">
+            <TabsList className="grid w-full grid-cols-4 h-10">
+              <TabsTrigger value="year" className="text-xs sm:text-sm">연도별</TabsTrigger>
+              <TabsTrigger value="month" className="text-xs sm:text-sm">월간</TabsTrigger>
+              <TabsTrigger value="week" className="text-xs sm:text-sm">주간</TabsTrigger>
+              <TabsTrigger value="custom" className="text-xs sm:text-sm">기간 지정</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
-            <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedMonth(''); setSelectedWeek(''); }}>
-              <SelectTrigger className="w-full sm:w-36 h-10 text-sm" aria-label="연도 선택">
-                <SelectValue placeholder="연도" />
-              </SelectTrigger>
-              <SelectContent>
-                {yearOptions.map(y => (
-                  <SelectItem key={y} value={y}>{y}년</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {periodType === 'custom' ? (
+              <>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full sm:w-40 justify-start text-left font-normal h-10 text-sm',
+                        !customStartDate && 'text-muted-foreground'
+                      )}
+                      aria-label="조회 시작일 선택"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                      {customStartDate ? format(customStartDateObj!, 'PPP', { locale: ko }) : '시작일'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customStartDateObj}
+                      onSelect={handleCustomStartSelect}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full sm:w-40 justify-start text-left font-normal h-10 text-sm',
+                        !customEndDate && 'text-muted-foreground'
+                      )}
+                      aria-label="조회 종료일 선택"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                      {customEndDate ? format(customEndDateObj!, 'PPP', { locale: ko }) : '종료일'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customEndDateObj}
+                      onSelect={handleCustomEndSelect}
+                      disabled={(date) => {
+                        const ymd = formatDateToYmd(date);
+                        return ymd < customStartDate;
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </>
+            ) : (
+              <>
+                <Select
+                  value={selectedYear}
+                  onValueChange={(v) => {
+                    setSelectedYear(v);
+                    setSelectedMonth('');
+                    setSelectedWeek('');
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-36 h-10 text-sm" aria-label="연도 선택">
+                    <SelectValue placeholder="연도" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {yearOptions.map((y) => (
+                      <SelectItem key={y} value={y}>{y}년</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-            <Select value={selectedMonth} onValueChange={(v) => { setSelectedMonth(v); setSelectedWeek(''); }}>
-              <SelectTrigger className="w-full sm:w-32 h-10 text-sm" aria-label="월 선택">
-                <SelectValue placeholder="월" />
-              </SelectTrigger>
-              <SelectContent>
-                {monthOptions.map(m => (
-                  <SelectItem key={m} value={m}>{Number(m)}월</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                {(periodType === 'month' || periodType === 'week') && (
+                  <Select value={selectedMonth} onValueChange={(v) => { setSelectedMonth(v); setSelectedWeek(''); }}>
+                    <SelectTrigger className="w-full sm:w-32 h-10 text-sm" aria-label="월 선택">
+                      <SelectValue placeholder="월" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {monthOptions.map((m) => (
+                        <SelectItem key={m} value={m}>{Number(m)}월</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
 
-            <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-              <SelectTrigger className="w-full sm:flex-1 h-10 text-sm" aria-label="주차 선택" disabled={!selectedMonth}>
-                <SelectValue placeholder="주차" />
-              </SelectTrigger>
-              <SelectContent>
-                {weekOptions.map(week => (
-                  <SelectItem key={week} value={week}>{week}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* <Select value={memberFilter} onValueChange={setMemberFilter}>
-              <SelectTrigger className="w-full sm:w-44 h-10 text-sm" aria-label="멤버 필터">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">전체 멤버</SelectItem>
-                <SelectItem value="ME">나</SelectItem>
-                {roomMembers.map(m => (
-                  <SelectItem key={m.id} value={String(m.id)}>{m.nickname}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select> */}
+                {periodType === 'week' && (
+                  <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                    <SelectTrigger className="w-full sm:flex-1 h-10 text-sm" aria-label="주차 선택" disabled={!selectedMonth}>
+                      <SelectValue placeholder="주차" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {weekOptions.map((week) => (
+                        <SelectItem key={week} value={week}>{week}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </>
+            )}
           </div>
         </CardTitle>
       </CardHeader>
