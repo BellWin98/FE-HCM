@@ -5,7 +5,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
 import { formatDateToYmd, getTodayYmd } from '@/lib/workoutRoomRules';
 import { cn } from '@/lib/utils';
@@ -30,8 +29,10 @@ const getDefaultCustomRange = (): { start: string; end: string } => {
 };
 
 export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMembers, currentUserId }) => {
+  const [optionRecords, setOptionRecords] = useState<PenaltyRecord[]>([]);
   const [records, setRecords] = useState<PenaltyRecord[]>([]);
   const [paymentsMap, setPaymentsMap] = useState<Record<number, PenaltyPayment[]>>({});
+  const [isLoadingOptions, setIsLoadingOptions] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
   const [periodType, setPeriodType] = useState<PeriodType>('week');
@@ -42,14 +43,54 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
   const [customEndDate, setCustomEndDate] = useState<string>(() => getDefaultCustomRange().end);
   const [memberFilter, setMemberFilter] = useState<string>('ALL'); // ALL | ME | userId
 
+  // 서버에 넘길 기간: 선택에 따라 startDate/endDate 계산
+  const requestRange = useMemo((): { startDate: string; endDate: string } | null => {
+    if (periodType === 'year' && selectedYear) {
+      return { startDate: `${selectedYear}-01-01`, endDate: `${selectedYear}-12-31` };
+    }
+    if (periodType === 'month' && selectedYear && selectedMonth) {
+      const y = Number(selectedYear);
+      const m = Number(selectedMonth);
+      const lastDay = new Date(y, m, 0).getDate();
+      return {
+        startDate: `${selectedYear}-${selectedMonth}-01`,
+        endDate: `${selectedYear}-${selectedMonth}-${String(lastDay).padStart(2, '0')}`,
+      };
+    }
+    if (periodType === 'week' && selectedWeek) {
+      const [s, e] = selectedWeek.split('~');
+      if (s && e) return { startDate: s, endDate: e };
+    }
+    if (periodType === 'custom' && customStartDate && customEndDate) {
+      return { startDate: customStartDate, endDate: customEndDate };
+    }
+    return null;
+  }, [periodType, selectedYear, selectedMonth, selectedWeek, customStartDate, customEndDate]);
+
+  // 옵션용 전체 조회 (연/월/주 드롭다운용)
+  useEffect(() => {
+    const load = async () => {
+      setIsLoadingOptions(true);
+      try {
+        const recs = await api.getPenaltyRecords(roomId) as PenaltyRecord[];
+        setOptionRecords(recs);
+      } finally {
+        setIsLoadingOptions(false);
+      }
+    };
+    load();
+  }, [roomId]);
+
+  // 기간별 목록 조회 (서버에 startDate/endDate 전달)
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
       try {
-        const recs = await api.getPenaltyRecords(roomId) as PenaltyRecord[];
+        const recs = (requestRange
+          ? await api.getPenaltyRecords(roomId, requestRange)
+          : await api.getPenaltyRecords(roomId)) as PenaltyRecord[];
         setRecords(recs);
 
-        // Load payments for all records in parallel
         const entries: Array<[number, PenaltyPayment[]]> = await Promise.all(
           recs.map(async (r) => {
             try {
@@ -68,15 +109,15 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
       }
     };
     load();
-  }, [roomId]);
+  }, [roomId, requestRange]);
 
-  // 년/월/주 옵션 계산
+  // 년/월/주 옵션 계산 (optionRecords 기준)
   const { yearOptions, monthOptions, weekOptions } = useMemo(() => {
     const yearSet = new Set<string>();
     const monthSetByYear = new Map<string, Set<string>>();
     const weeksByYearMonth = new Map<string, Set<WeekKey>>();
 
-    for (const r of records) {
+    for (const r of optionRecords) {
       const start = new Date(r.weekStartDate);
       const y = String(start.getFullYear());
       const m = String(start.getMonth() + 1).padStart(2, '0');
@@ -102,7 +143,7 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
       : [];
 
     return { yearOptions: years, monthOptions: months, weekOptions: weeks };
-  }, [records, selectedYear, selectedMonth]);
+  }, [optionRecords, selectedYear, selectedMonth]);
 
   // 초기/연쇄 선택값 세팅
   useEffect(() => {
@@ -131,33 +172,14 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
     }
   }, [selectedYear, selectedMonth, weekOptions, selectedWeek]);
 
+  // 서버가 이미 기간으로 필터링한 records에 멤버 필터만 적용
   const filtered = useMemo(() => {
     return records.filter((r) => {
-      let byPeriod = true;
-      if (periodType === 'year') {
-        byPeriod = selectedYear ? r.weekStartDate.startsWith(selectedYear) : true;
-      } else if (periodType === 'month') {
-        const byYear = selectedYear ? r.weekStartDate.startsWith(selectedYear) : true;
-        const byMonth = selectedMonth ? r.weekStartDate.substring(5, 7) === selectedMonth : true;
-        byPeriod = byYear && byMonth;
-      } else if (periodType === 'week') {
-        const [s, e] = selectedWeek ? selectedWeek.split('~') : ['', ''];
-        const byYear = selectedYear ? r.weekStartDate.startsWith(selectedYear) : true;
-        const byMonth = selectedMonth ? r.weekStartDate.substring(5, 7) === selectedMonth : true;
-        const byWeek = selectedWeek ? r.weekStartDate.startsWith(s) && r.weekEndDate.startsWith(e) : true;
-        byPeriod = byYear && byMonth && byWeek;
-      } else {
-        // custom: 주 단위 기간이 사용자 지정 기간과 겹치는 레코드
-        const rStart = r.weekStartDate.substring(0, 10);
-        const rEnd = r.weekEndDate.substring(0, 10);
-        byPeriod = rStart <= customEndDate && rEnd >= customStartDate;
-      }
-      if (!byPeriod) return false;
       if (memberFilter === 'ALL') return true;
       if (memberFilter === 'ME') return String(r.workoutRoomMemberId) === String(currentUserId);
       return String(r.workoutRoomMemberId) === String(memberFilter);
     });
-  }, [records, periodType, selectedYear, selectedMonth, selectedWeek, customStartDate, customEndDate, memberFilter, currentUserId]);
+  }, [records, memberFilter, currentUserId]);
 
   const memberMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -176,6 +198,26 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
     const remain = Math.max(0, penalty - paid);
     return { penalty, paid, remain };
   }, [filtered, calcPaid]);
+
+  // 멤버별 그룹: workoutRoomMemberId 기준으로 묶고, 닉네임 순 정렬
+  const groupedByMember = useMemo(() => {
+    const map = new Map<string, PenaltyRecord[]>();
+    for (const r of filtered) {
+      const key = String(r.workoutRoomMemberId);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(r);
+    }
+    const result: Array<{ memberId: string; nickname: string; records: PenaltyRecord[] }> = [];
+    for (const [memberId, recs] of map) {
+      const nickname = memberMap.get(memberId) ?? `회원 ${memberId}`;
+      const sorted = [...recs].sort(
+        (a, b) => new Date(b.weekStartDate).getTime() - new Date(a.weekStartDate).getTime()
+      );
+      result.push({ memberId, nickname, records: sorted });
+    }
+    result.sort((a, b) => a.nickname.localeCompare(b.nickname, 'ko'));
+    return result;
+  }, [filtered, memberMap]);
 
   const handleCustomStartSelect = (date: Date | undefined) => {
     if (!date) return;
@@ -280,7 +322,7 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
                     setSelectedWeek('');
                   }}
                 >
-                  <SelectTrigger className="w-full sm:w-36 h-10 text-sm" aria-label="연도 선택">
+                  <SelectTrigger className="w-full sm:w-36 h-10 text-sm" aria-label="연도 선택" disabled={isLoadingOptions}>
                     <SelectValue placeholder="연도" />
                   </SelectTrigger>
                   <SelectContent>
@@ -292,7 +334,7 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
 
                 {(periodType === 'month' || periodType === 'week') && (
                   <Select value={selectedMonth} onValueChange={(v) => { setSelectedMonth(v); setSelectedWeek(''); }}>
-                    <SelectTrigger className="w-full sm:w-32 h-10 text-sm" aria-label="월 선택">
+                    <SelectTrigger className="w-full sm:w-32 h-10 text-sm" aria-label="월 선택" disabled={isLoadingOptions}>
                       <SelectValue placeholder="월" />
                     </SelectTrigger>
                     <SelectContent>
@@ -343,57 +385,56 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
             <div className="h-20 bg-gray-100 rounded animate-pulse" />
             <div className="h-20 bg-gray-100 rounded animate-pulse" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : groupedByMember.length === 0 ? (
           <div className="text-center py-8 text-gray-500">벌금 내역이 없습니다.</div>
         ) : (
-          <div className="space-y-2 sm:space-y-3">
-            {filtered
-              .sort((a, b) => Number(a.workoutRoomMemberId) - Number(b.workoutRoomMemberId))
-              .map(r => {
-                const paid = calcPaid(r.id);
-                const remain = Math.max(0, r.penaltyAmount - paid);
-                const nickname = memberMap.get(String(r.workoutRoomMemberId)) || `회원 ${r.workoutRoomMemberId}`;
-                const status: { text: string; variant: 'default' | 'secondary' | 'destructive' } =
-                  r.penaltyAmount === 0
-                    ? { text: '벌금 없음', variant: 'secondary' }
-                    : paid >= r.penaltyAmount
-                    ? { text: '납부완료', variant: 'default' }
-                    : paid > 0
-                    ? { text: '부분납부', variant: 'secondary' }
-                    : { text: '미납부', variant: 'destructive' };
-
-                return (
-                  <button key={r.id} className="w-full text-left border rounded-lg p-3 sm:p-4 active:opacity-90">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-0.5 sm:space-y-1">
-                        <div className="font-medium text-sm sm:text-base truncate max-w-[70vw] sm:max-w-none">{nickname}</div>
-                        <div className="text-xs sm:text-sm text-gray-500">
-                          {r.weekStartDate.substring(0, 10)} ~ {r.weekEndDate.substring(0, 10)}
-                        </div>
-                        <div className="text-xs sm:text-sm text-gray-500">
-                          목표 {r.requiredWorkouts}회 / 실제 {r.actualWorkouts}회
-                        </div>
-                      </div>
-                      {/* <Badge variant={status.variant}>{status.text}</Badge> */}
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-3 sm:gap-4 mt-3">
-                      <div>
-                        <div className="text-[11px] sm:text-xs text-gray-500">벌금</div>
-                        <div className="text-sm sm:text-base font-semibold">{r.penaltyAmount.toLocaleString()}원</div>
-                      </div>
-                      {/* <div>
-                        <div className="text-[11px] sm:text-xs text-gray-500">납부합계</div>
-                        <div className="text-sm sm:text-base font-semibold">{paid.toLocaleString()}원</div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] sm:text-xs text-gray-500">잔여</div>
-                        <div className={`text-sm sm:text-base font-semibold ${remain > 0 ? 'text-red-600' : ''}`}>{remain.toLocaleString()}원</div>
-                      </div> */}
-                    </div>
-                  </button>
-                );
-              })}
+          <div className="space-y-6">
+            {groupedByMember.map(({ memberId, nickname, records }) => {
+              const memberPenaltySum = records.reduce((s, r) => s + r.penaltyAmount, 0);
+              return (
+                <section
+                  key={memberId}
+                  className="rounded-lg border bg-gray-50/50 p-3 sm:p-4 space-y-2 sm:space-y-3"
+                  aria-label={`${nickname} 벌금 내역`}
+                >
+                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-200">
+                    <h3 className="font-semibold text-sm sm:text-base truncate max-w-[70vw] sm:max-w-none">
+                      {nickname}
+                    </h3>
+                    <span className="text-xs sm:text-sm text-gray-600 shrink-0">
+                      기간 내 합계 <strong>{memberPenaltySum.toLocaleString()}원</strong>
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {records.map((r) => (
+                        <button
+                          key={r.id}
+                          className="w-full text-left border rounded-lg p-3 sm:p-4 bg-white active:opacity-90"
+                          type="button"
+                          aria-label={`${r.weekStartDate.substring(0, 10)} ~ ${r.weekEndDate.substring(0, 10)} 주차 벌금 ${r.penaltyAmount.toLocaleString()}원`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-0.5 sm:space-y-1">
+                              <div className="text-xs sm:text-sm text-gray-500">
+                                {r.weekStartDate.substring(0, 10)} ~ {r.weekEndDate.substring(0, 10)}
+                              </div>
+                              <div className="text-xs sm:text-sm text-gray-500">
+                                목표 {r.requiredWorkouts}회 / 실제 {r.actualWorkouts}회
+                              </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 gap-3 sm:gap-4 mt-3">
+                            <div>
+                              <div className="text-[11px] sm:text-xs text-gray-500">벌금</div>
+                              <div className="text-sm sm:text-base font-semibold">{r.penaltyAmount.toLocaleString()}원</div>
+                            </div>
+                          </div>
+                        </button>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         )}
       </CardContent>
