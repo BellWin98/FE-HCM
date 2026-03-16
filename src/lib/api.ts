@@ -297,8 +297,14 @@ class ApiClient {
     return this.request(`/penalty/rooms/${roomId}/account`, { method: "DELETE" });
   }
 
-  async getPenaltyRecords(roomId: number) {
-    return this.request(`/penalty/rooms/${roomId}/records`);
+  async getPenaltyRecords(
+    roomId: number,
+    params?: { startDate?: string; endDate?: string }
+  ) {
+    const query = params?.startDate != null && params?.endDate != null
+      ? { startDate: params.startDate, endDate: params.endDate }
+      : undefined;
+    return this.request(`/penalty/rooms/${roomId}/records`, query ? { params: query } : {});
   }
 
   async getPenaltyPayments(penaltyRecordId: number) {
