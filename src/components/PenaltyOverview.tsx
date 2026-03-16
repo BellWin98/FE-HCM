@@ -173,12 +173,13 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
   }, [selectedYear, selectedMonth, weekOptions, selectedWeek]);
 
   // 서버가 이미 기간으로 필터링한 records에
-  // 연도/월(weekStartDate 기준) + 멤버 필터를 적용
+  // 연도/월/기간 지정(weekStartDate 기준) + 멤버 필터를 적용
   const filtered = useMemo(() => {
     return records.filter((r) => {
       const start = new Date(r.weekStartDate);
       const startYear = String(start.getFullYear());
       const startMonth = String(start.getMonth() + 1).padStart(2, '0');
+      const startYmd = r.weekStartDate.substring(0, 10);
 
       if (periodType === 'year' && selectedYear) {
         if (startYear !== selectedYear) return false;
@@ -188,11 +189,15 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
         if (startYear !== selectedYear || startMonth !== selectedMonth) return false;
       }
 
+      if (periodType === 'custom' && customStartDate && customEndDate) {
+        if (startYmd < customStartDate || startYmd > customEndDate) return false;
+      }
+
       if (memberFilter === 'ALL') return true;
       if (memberFilter === 'ME') return String(r.workoutRoomMemberId) === String(currentUserId);
       return String(r.workoutRoomMemberId) === String(memberFilter);
     });
-  }, [records, memberFilter, currentUserId, periodType, selectedYear, selectedMonth]);
+  }, [records, memberFilter, currentUserId, periodType, selectedYear, selectedMonth, customStartDate, customEndDate]);
 
   const memberMap = useMemo(() => {
     const map = new Map<string, string>();
