@@ -264,7 +264,7 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
 
           <Tabs value={periodType} onValueChange={(v) => setPeriodType(v as PeriodType)} aria-label="조회 기간 타입">
             <TabsList className="grid w-full grid-cols-4 h-10">
-              <TabsTrigger value="year" className="text-xs sm:text-sm">연도별</TabsTrigger>
+              <TabsTrigger value="year" className="text-xs sm:text-sm">연간</TabsTrigger>
               <TabsTrigger value="month" className="text-xs sm:text-sm">월간</TabsTrigger>
               <TabsTrigger value="week" className="text-xs sm:text-sm">주간</TabsTrigger>
               <TabsTrigger value="custom" className="text-xs sm:text-sm">기간 지정</TabsTrigger>
