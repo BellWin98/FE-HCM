@@ -314,26 +314,21 @@ export const WelcomePage = () => {
         <section className="container mx-auto px-4 pt-12 pb-16 sm:pt-20 sm:pb-24">
           <FadeInSection>
             <div className="grid items-center gap-10 lg:grid-cols-[1.2fr_minmax(0,1fr)] lg:gap-14">
-              <div>
-                <p className="mb-5 inline-flex items-center gap-2 rounded-full bg-indigo-100 px-4 py-1.5 text-xs font-medium text-indigo-700 sm:text-sm">
-                  <span className="inline-flex h-1.5 w-1.5 rounded-full bg-indigo-500" />
+              <div className="flex flex-col">
+                <p className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-indigo-200/60 bg-indigo-50 px-4 py-2 text-xs font-medium text-indigo-700 shadow-sm sm:text-sm">
+                  <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500 ring-2 ring-indigo-200" />
                   의지가 아닌, 시스템으로 운동 습관을 만들어 드릴게요
                 </p>
-                <h1 className="mb-5 text-3xl font-black leading-tight tracking-tight text-slate-900 sm:text-5xl sm:leading-tight lg:text-6xl">
-                  운동 가기 싫어도 걱정마세요
+                <h1 className="mb-6 max-w-2xl text-3xl font-black leading-[1.15] tracking-tight text-slate-900 sm:text-5xl sm:leading-[1.12] lg:text-6xl">
+                  헬창마을은 <br /><br />벌금 관리형
                   <br />
                   <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                    벌금 걸면 해결될 거에요
+                    운동 인증 플랫폼입니다.
                   </span>
-                  <br /><br />
-                    저희가 벌금 관리 도와줄테니
                   <br />
-                  <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                   편하게 운동하세요:)
-                  </span>
                 </h1>
-                <p className="mb-8 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
-                  운동 인증 횟수 채우면 벌금 안나와요ㅎㅎ<br/>
+                <p className="mb-10 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+                  벌금 관리는 신경쓰지 마세요 <br /> 운동에만 집중할 수 있게 도와드릴게요
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                   <Button
@@ -342,10 +337,10 @@ export const WelcomePage = () => {
                     className="rounded-xl bg-indigo-600 px-10 py-6 text-base font-semibold text-white shadow-xl shadow-indigo-500/40 transition-transform duration-150 hover:scale-[1.02] hover:bg-indigo-700 sm:text-lg"
                     aria-label="헬창마을 무료로 시작하고 운동방 만들기"
                   >
-                    가입하러 가기
+                    운동 인증 하러가기
                   </Button>
-                  <div className="text-xs leading-relaxed text-slate-500 sm:text-sm">
-                    <p>구글/카카오 계정으로 1초 만에 가입할 수 있어요.</p>
+                  <div className="text-center text-xs leading-relaxed text-slate-500 sm:text-sm">
+                    <p>간편 로그인으로 누구나 1초 만에 가입할 수 있어요.</p>
                   </div>
                 </div>
               </div>
@@ -441,7 +436,7 @@ export const WelcomePage = () => {
                     <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
                       운동 인증샷을 올리면, 그 날의 인증이 바로 반영돼요.
                       <br />
-                      멤버들과 서로의 인증샷을 확인하고, 자극을 주고받아요.
+                      서로의 운동 인증샷을 확인하고, 자극을 주고 받아보세요.
                     </p>
                   </div>
                   <div>
@@ -474,11 +469,11 @@ export const WelcomePage = () => {
                       <span className="text-sm font-medium text-amber-600">벌금 관리</span>
                     </div>
                     <h3 className="mb-3 text-2xl font-bold text-slate-900">
-                      연간, 월간, 주간 벌금을 한눈에 확인해요
+                      기간별로 벌금을 한눈에 확인해요
                     </h3>
                     <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
-                      매주 월요일 자정에 자동으로 벌금을 집계하고,
-                      주간 운동 횟수를 초기화해요.
+                      매주 월요일 자정에 자동으로 벌금을 집계돼고, <br />
+                      주간 운동 횟수를 초기화돼요.
                     </p>
                   </div>
                 </div>
