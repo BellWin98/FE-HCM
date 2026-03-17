@@ -11,6 +11,8 @@ import MyWorkoutRoom from '@/components/MyWorkoutRoom';
 import { PenaltyAccountManager } from '@/components/PenaltyAccountManager';
 import PenaltyOverview from '@/components/PenaltyOverview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useRestDay } from '@/hooks/useRestDay';
@@ -318,6 +320,25 @@ export const DashboardPage = () => {
           error={restDay.error}
           today={restDay.today}
         />
+
+        {/* 휴식일 등록 성공 다이얼로그 */}
+        <Dialog open={restDay.showRestSuccessDialog} onOpenChange={(open) => !open && restDay.handleRestSuccessDialogClose()}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>휴식일이 등록되었어요!</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                휴식일이 등록되었어요! 휴식일에도 운동 인증은 계속 할 수 있어요.
+              </p>
+              <div className="flex justify-end">
+                <Button onClick={restDay.handleRestSuccessDialogClose}>
+                  대시보드로 이동
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* 모든 운동방 보기 다이얼로그 */}
         <AvailableRoomsDialog

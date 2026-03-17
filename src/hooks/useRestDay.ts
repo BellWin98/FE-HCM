@@ -15,6 +15,7 @@ export const useRestDay = () => {
   const [restReason, setRestReason] = useState('');
   const [restStartDate, setRestStartDate] = useState<Date | undefined>(new Date());
   const [restEndDate, setRestEndDate] = useState<Date | undefined>(new Date());
+  const [showRestSuccessDialog, setShowRestSuccessDialog] = useState(false);
   const [isRegisteringRest, setIsRegisteringRest] = useState(false);
   const [error, setError] = useState('');
 
@@ -76,12 +77,17 @@ export const useRestDay = () => {
         console.warn('휴식 알림 전송 실패', notifyErr);
       });
 
-      navigate('/dashboard');
+      setShowRestSuccessDialog(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : '휴식일을 등록할 수 없습니다.');
     } finally {
       setIsRegisteringRest(false);
     }
+  };
+
+  const handleRestSuccessDialogClose = () => {
+    setShowRestSuccessDialog(false);
+    navigate('/dashboard');
   };
 
   const handleRestDialogClose = () => {
@@ -93,6 +99,7 @@ export const useRestDay = () => {
   return {
     showRestDialog,
     setShowRestDialog,
+    showRestSuccessDialog,
     restReason,
     setRestReason,
     restStartDate,
@@ -105,5 +112,6 @@ export const useRestDay = () => {
     handleRestRegister,
     handleRestSubmit,
     handleRestDialogClose,
+    handleRestSuccessDialogClose,
   };
 };
