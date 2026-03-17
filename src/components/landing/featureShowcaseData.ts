@@ -57,7 +57,7 @@ export const FEATURE_SHOWCASE_ITEMS: FeatureShowcaseItemConfig[] = [
     iconColorClassName: 'text-amber-600',
     title: '기간별로 벌금을 한눈에 확인해요',
     description:
-      '매주 월요일 자정에 자동으로 벌금이 집계돼고,\n주간 운동 횟수가 초기화돼요.',
+      '매주 월요일 자정에 자동으로 벌금이 집계되고,\n주간 운동 횟수가 초기화돼요.',
     mediaSrc: '/images/features/penalty.gif',
     mediaAlt: '벌금 자동 집계 화면',
     placeholderBg: 'bg-gradient-to-br from-amber-500 to-orange-600',
