@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { RequireRole } from '@/components/RequireRole';
+import { PwaUpdateBanner } from '@/components/common/PwaUpdateBanner';
+import { usePwaUpdater } from '@/hooks/usePwaUpdater';
 import Index from './pages/Index';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -103,17 +105,22 @@ const AppRoutes = () => (
   </Routes>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const { needRefresh, handleUpdate, dismiss } = usePwaUpdater();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <AuthProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AuthProvider>
+        <PwaUpdateBanner visible={needRefresh} onUpdate={handleUpdate} onClose={dismiss} />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
