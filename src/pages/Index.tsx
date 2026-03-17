@@ -1,21 +1,17 @@
-import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
 import {
-  Users,
-  Camera,
   Banknote,
-  MessageCircle,
-  CalendarCheck,
-  Bell,
   BarChart3,
-  Zap,
+  Camera,
   CheckCircle2,
-  type LucideIcon,
+  MessageCircle,
+  Users,
+  Zap,
+  type LucideIcon
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 /** 이미지/GIF 표시 컴포넌트 - src 없거나 로드 실패 시 아이콘 placeholder */
 const FeatureMedia = ({
@@ -36,7 +32,7 @@ const FeatureMedia = ({
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-xl border border-slate-200/80 bg-slate-100 shadow-lg"
+      className="relative w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 shadow-sm"
       style={{ aspectRatio }}
     >
       {showPlaceholder ? (
@@ -58,8 +54,8 @@ const FeatureMedia = ({
   );
 };
 
-const useInView = (options?: IntersectionObserverInit) => {
-  const ref = useRef<HTMLDivElement | null>(null);
+const useInView = <T extends HTMLElement = HTMLElement>(options?: IntersectionObserverInit) => {
+  const ref = useRef<T | null>(null);
   const [isInView, setIsInView] = useState(false);
 
   useEffect(() => {
@@ -90,7 +86,7 @@ const useInView = (options?: IntersectionObserverInit) => {
 };
 
 const FadeInSection = ({ children }: { children: React.ReactNode }) => {
-  const { ref, isInView } = useInView();
+  const { ref, isInView } = useInView<HTMLDivElement>();
 
   return (
     <div
@@ -122,6 +118,12 @@ const useHeroReveal = (enabled = true) => {
 const HERO_REVEAL_DURATION = 3000;
 const HERO_REVEAL_STAGGER = 600;
 
+/** 상세 기능 쇼케이스: 뷰포트 아래 280px까지 확장해 스크롤 덜 내려도 먼저 노출 */
+const FEATURES_IN_VIEW_OPTIONS: IntersectionObserverInit = {
+  rootMargin: '0px 0px 280px 0px',
+  threshold: 0,
+};
+
 const HeroRevealItem = ({
   children,
   delay = 0,
@@ -148,17 +150,11 @@ const HeroSection = ({ navigate }: { navigate: (path: string) => void }) => {
   const revealed = useHeroReveal();
 
   return (
-    <section className="container mx-auto px-4 pt-12 pb-16 sm:pt-20 sm:pb-24">
+    <section className="container mx-auto max-w-6xl px-4 pt-16 pb-20 sm:pt-24 sm:pb-28">
       <div className="grid items-center gap-10 lg:grid-cols-[1.2fr_minmax(0,1fr)] lg:gap-14">
         <div className="flex flex-col">
-          <HeroRevealItem delay={0} revealed={revealed}>
-            <p className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-indigo-200/60 bg-indigo-50 px-4 py-2 text-xs font-medium text-indigo-700 shadow-sm sm:text-sm">
-              <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500 ring-2 ring-indigo-200" />
-              의지가 아닌, 시스템으로 운동 습관을 만들어 드릴게요
-            </p>
-          </HeroRevealItem>
           <HeroRevealItem delay={HERO_REVEAL_STAGGER} revealed={revealed}>
-            <h1 className="mb-6 max-w-2xl text-3xl font-black leading-[1.15] tracking-tight text-slate-900 sm:text-5xl sm:leading-[1.12] lg:text-6xl">
+            <h1 className="mb-6 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl sm:leading-tight lg:text-6xl">
               헬창마을은 <br /><br />벌금 관리형
               <br />
               <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
@@ -177,7 +173,7 @@ const HeroSection = ({ navigate }: { navigate: (path: string) => void }) => {
               <Button
                 size="lg"
                 onClick={() => navigate('/login')}
-                className="rounded-xl bg-indigo-600 px-10 py-6 text-base font-semibold text-white shadow-xl shadow-indigo-500/40 transition-transform duration-150 hover:scale-[1.02] hover:bg-indigo-700 sm:text-lg"
+                className="rounded-full bg-indigo-600 px-10 py-6 text-base font-semibold text-white shadow-lg shadow-indigo-500/30 transition-transform duration-150 hover:scale-[1.02] hover:bg-indigo-700 sm:text-lg"
                 aria-label="헬창마을 무료로 시작하고 운동방 만들기"
               >
                 운동 인증 하러가기
@@ -192,7 +188,7 @@ const HeroSection = ({ navigate }: { navigate: (path: string) => void }) => {
         <HeroRevealItem delay={HERO_REVEAL_STAGGER * 4} revealed={revealed}>
           <div className="relative">
             <div className="pointer-events-none absolute -inset-x-6 -top-6 -bottom-10 rounded-[2rem] bg-gradient-to-br from-indigo-500/10 via-violet-500/5 to-amber-500/10 blur-3xl" />
-            <div className="relative rounded-2xl border border-slate-200/80 bg-white/80 p-3 shadow-2xl shadow-slate-900/10 backdrop-blur">
+            <div className="relative rounded-3xl border border-slate-200/80 bg-white/80 p-3 shadow-lg shadow-slate-900/5 backdrop-blur">
               <FeatureMedia
                 src="/images/demo/main.gif"
                 alt="헬창마을 서비스 데모 화면"
@@ -242,21 +238,21 @@ const SocialProofStats = () => {
 
   return (
     <div className="grid w-full max-w-xl grid-cols-3 gap-3 text-center text-xs sm:text-sm">
-      <div className="rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-2">
+      <div className="rounded-2xl border border-slate-200/80 bg-slate-50 px-3 py-2.5">
         <p className="text-sm font-semibold text-slate-900">
           {stat1.toLocaleString()}
           회+
         </p>
         <p className="mt-0.5 text-[10px] text-slate-500 sm:text-xs">총 운동 인증 횟수</p>
       </div>
-      <div className="rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-2">
+      <div className="rounded-2xl border border-slate-200/80 bg-slate-50 px-3 py-2.5">
         <p className="text-sm font-semibold text-slate-900">
           {stat2.toLocaleString()}
           개
         </p>
         <p className="mt-0.5 text-[10px] text-slate-500 sm:text-xs">현재 운영 중인 방</p>
       </div>
-      <div className="rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-2">
+      <div className="rounded-2xl border border-slate-200/80 bg-slate-50 px-3 py-2.5">
         <p className="text-sm font-semibold text-slate-900">{stat3}%</p>
         <p className="mt-0.5 text-[10px] text-slate-500 sm:text-xs">벌금 완납률</p>
       </div>
@@ -272,12 +268,6 @@ const FAQ = () => {
   };
 
   const items = [
-    // {
-    //   id: 'account',
-    //   question: '회원가입을 꼭 해야 하나요?',
-    //   answer:
-    //     '초기에는 간편 로그인을 중심으로 제공할 예정입니다. 별도의 복잡한 회원가입 절차 없이, 자주 사용하는 계정 하나만으로 바로 시작할 수 있도록 설계하고 있습니다.',
-    // },
     {
       id: 'penalty-rule',
       question: '벌금 금액과 규칙은 누가 정하나요?',
@@ -290,24 +280,12 @@ const FAQ = () => {
       answer:
         '헬창마을은 결제/송금 기능을 제공하지 않아요. 서비스 안에서 미인증 횟수와 예상 벌금만 투명하게 계산해 주고, 실제 정산은 계좌이체나 송금 앱 등 방에서 정한 방식으로 직접 진행해 주세요.',
     },
-    // {
-    //   id: 'quit',
-    //   question: '중간에 힘들어서 그만두고 싶으면 어떻게 하나요?',
-    //   answer:
-    //     '언제든지 방을 나갈 수 있습니다. 다만 이미 발생한 벌금이 있다면, 방 규칙에 따라 정산한 뒤 나가는 것을 추천드립니다.',
-    // },
     {
       id: 'photo',
       question: '운동 인증 사진은 꼭 얼굴이 나와야 하나요?',
       answer:
         '얼굴이 반드시 나올 필요는 없습니다. 운동기구가 나온 사진이나, 어플(타임스탬프) 등으로 인증할 수 있어요.',
     },
-    // {
-    //   id: 'device',
-    //   question: '모바일에서만 사용 가능한가요?',
-    //   answer:
-    //     '현재는 모바일 화면에 최적화되어 있지만, PC 웹 브라우저에서도 이용하실 수 있도록 점진적으로 개선할 예정입니다.',
-    // },
   ];
 
   return (
@@ -317,7 +295,7 @@ const FAQ = () => {
         return (
           <div
             key={item.id}
-            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm shadow-slate-200/60"
+            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95"
           >
             <button
               type="button"
@@ -330,7 +308,7 @@ const FAQ = () => {
                 {item.question}
               </span>
               <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 text-xs font-semibold text-slate-600 transition-transform ${
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 transition-transform ${
                   isOpen ? 'rotate-45' : ''
                 }`}
                 aria-hidden="true"
@@ -357,9 +335,42 @@ const FAQ = () => {
   );
 };
 
+/** 모바일 고정 CTA - 마운트 시 HeroRevealItem 스태거 */
+const MobileCTABar = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
+  const revealed = useHeroReveal();
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:hidden">
+      <div className="mx-auto flex max-w-md items-center justify-between gap-3">
+        <HeroRevealItem delay={0} revealed={revealed}>
+          <div className="text-xs leading-snug text-slate-600">
+            <p className="font-semibold text-slate-900">지금 바로 운동 인증하러 가볼까요?</p>
+            <p>간편 로그인으로 1초 만에 가입해보세요!</p>
+          </div>
+        </HeroRevealItem>
+        <HeroRevealItem delay={HERO_REVEAL_STAGGER} revealed={revealed}>
+          <Button
+            size="sm"
+            className="min-w-[110px] rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-indigo-500/25 hover:bg-indigo-700"
+            onClick={() => onNavigate('/login')}
+            aria-label="헬창마을 시작하기"
+          >
+            GO! GO!
+          </Button>
+        </HeroRevealItem>
+      </div>
+    </div>
+  );
+};
+
 export const WelcomePage = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const socialProofInView = useInView();
+  const featuresInView = useInView(FEATURES_IN_VIEW_OPTIONS);
+  const pricingInView = useInView();
+  const faqInView = useInView();
+  const footerInView = useInView();
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
@@ -368,34 +379,19 @@ export const WelcomePage = () => {
   return (
     <div className="relative min-h-screen min-h-[100dvh] bg-gradient-to-br from-slate-50 via-white to-indigo-50 overflow-x-hidden pb-safe">
       {/* 모바일 고정 CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/90 px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden">
-        <div className="mx-auto flex max-w-md items-center justify-between gap-3">
-          <div className="text-xs leading-snug text-slate-600">
-            <p className="font-semibold text-slate-900">지금 바로 운동 인증하러 가볼까요?</p>
-            <p>간편 로그인으로 1초 만에 가입해보세요!</p>
-          </div>
-          <Button
-            size="sm"
-            className="min-w-[110px] rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-indigo-500/40 hover:bg-indigo-700"
-            onClick={() => navigate('/login')}
-            aria-label="헬창마을 시작하기"
-          >
-            GO! GO!
-          </Button>
-        </div>
-      </div>
+      <MobileCTABar onNavigate={navigate} />
 
       {/* 헤더 */}
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto max-w-6xl px-4 py-5">
           <div className="flex items-center justify-between">
             <button
               type="button"
-              className="flex items-center space-x-2 rounded-lg px-1 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white"
+              className="flex items-center space-x-2 rounded-2xl px-1 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white"
               onClick={() => navigate('/')}
               aria-label="헬창마을 랜딩페이지로 이동"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-500/30">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-md shadow-indigo-500/20">
                 <span className="text-sm font-bold text-white">HCM</span>
               </div>
               <span className="text-xl font-bold text-slate-900">헬창마을</span>
@@ -418,37 +414,43 @@ export const WelcomePage = () => {
         <HeroSection navigate={navigate} />
 
         {/* Social Proof Bar */}
-        <section className="border-y border-slate-200 bg-white/80 py-4">
-          <div className="container mx-auto px-4">
-            <FadeInSection>
-              <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+        <section ref={socialProofInView.ref} className="border-y border-slate-200 bg-white/80 py-6">
+          <div className="container mx-auto max-w-6xl px-4">
+            <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+              <HeroRevealItem delay={0} revealed={socialProofInView.isInView}>
                 <div className="flex items-center gap-2 text-xs font-medium text-slate-700 sm:text-sm">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                   <span>현재 13명의 유저가 꾸준히 운동을 인증하고 있어요!</span>
                 </div>
+              </HeroRevealItem>
+              <HeroRevealItem delay={HERO_REVEAL_STAGGER} revealed={socialProofInView.isInView}>
                 <SocialProofStats />
-              </div>
-            </FadeInSection>
+              </HeroRevealItem>
+            </div>
           </div>
         </section>
 
         {/* 상세 기능 쇼케이스 - 기존 기능 레이아웃 활용 */}
-        <section className="py-16 sm:py-20">
-          <div className="container mx-auto px-4">
-            <FadeInSection>
+        <section ref={featuresInView.ref} className="py-20 sm:py-28">
+          <div className="container mx-auto max-w-6xl px-4">
+            <HeroRevealItem delay={200} revealed={featuresInView.isInView}>
               <h2 className="text-center text-2xl font-bold text-slate-900 sm:text-3xl">
-              왜 꼭 헬창마을이어야 할까요?
+                왜 꼭 헬창마을이어야 할까요?
               </h2>
-              <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-slate-600 sm:text-base">
+            </HeroRevealItem>
+            <HeroRevealItem delay={HERO_REVEAL_STAGGER} revealed={featuresInView.isInView}>
+              <p className="mx-auto mt-5 max-w-2xl text-center text-sm text-slate-600 sm:text-base">
                 기능이 아니라, 오로지 사용성과 편의성에 집중했어요.
                 <br /><br />
                 대시보드, 운동 인증, 벌금 집계, 인증 캘린더, 채팅방까지.
                 <br /><br />
                 헬창마을 안에서 전부 해결되도록 설계했어요.
               </p>
-              <div className="mx-auto mt-14 max-w-5xl space-y-20">
+            </HeroRevealItem>
+            <div className="mx-auto mt-16 max-w-5xl space-y-24">
+              <HeroRevealItem delay={HERO_REVEAL_STAGGER * 2} revealed={featuresInView.isInView}>
                 {/* 1. 운동방 - 이미지 좌측 */}
-                <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+                <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
                   <div className="order-2 lg:order-1">
                     <FeatureMedia
                       src="/images/features/dashboard.gif"
@@ -475,9 +477,11 @@ export const WelcomePage = () => {
                     </p>
                   </div>
                 </div>
+              </HeroRevealItem>
 
+              <HeroRevealItem delay={HERO_REVEAL_STAGGER * 3} revealed={featuresInView.isInView}>
                 {/* 2. 운동 인증 - 이미지 우측 */}
-                <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+                <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
                   <div>
                     <div className="mb-4 flex items-center gap-2">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
@@ -504,9 +508,11 @@ export const WelcomePage = () => {
                     />
                   </div>
                 </div>
+              </HeroRevealItem>
 
+              <HeroRevealItem delay={HERO_REVEAL_STAGGER * 4} revealed={featuresInView.isInView}>
                 {/* 3. 벌금 관리 - 이미지 좌측 */}
-                <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+                <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
                   <div className="order-2 lg:order-1">
                     <FeatureMedia
                       src="/images/features/penalty.gif"
@@ -532,9 +538,11 @@ export const WelcomePage = () => {
                     </p>
                   </div>
                 </div>
+              </HeroRevealItem>
 
+              <HeroRevealItem delay={HERO_REVEAL_STAGGER * 5} revealed={featuresInView.isInView}>
                 {/* 4. 방 채팅 - 이미지 우측 */}
-                <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+                <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
                   <div>
                     <div className="mb-4 flex items-center gap-2">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100">
@@ -561,8 +569,8 @@ export const WelcomePage = () => {
                     />
                   </div>
                 </div>
-              </div>
-            </FadeInSection>
+              </HeroRevealItem>
+            </div>
           </div>
         </section>
 
@@ -631,28 +639,30 @@ export const WelcomePage = () => {
         </section> */}
 
         {/* 요금/정책 섹션 */}
-        <section className="py-16 sm:py-20">
-          <div className="container mx-auto px-4">
-            <FadeInSection>
-              <div className="mx-auto max-w-3xl text-center">
-                <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-3 py-1 text-[11px] font-semibold text-white">
-                  <Zap className="h-3 w-3" />
+        <section ref={pricingInView.ref} className="py-20 sm:py-28">
+          <div className="container mx-auto max-w-6xl px-4">
+            <div className="mx-auto max-w-3xl text-center">
+              <HeroRevealItem delay={0} revealed={pricingInView.isInView}>
+                <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">
+                  <Zap className="h-3.5 w-3.5" />
                   지금은 베타 기간, 전 기능 무료
                 </p>
+              </HeroRevealItem>
+              <HeroRevealItem delay={HERO_REVEAL_STAGGER} revealed={pricingInView.isInView}>
                 <p className="mt-3 text-sm text-slate-600 sm:text-base">
                   헬창마을은 아직 베타 서비스 단계이기 때문에,
                   <br />
                   플랫폼 이용료 없이 모든 기능을 무료로 사용하실 수 있어요.
                 </p>
-              </div>
-            </FadeInSection>
+              </HeroRevealItem>
+            </div>
           </div>
         </section>
 
         {/* FAQ 섹션 */}
-        <section className="bg-slate-50/90 py-16 sm:py-20">
-          <div className="container mx-auto px-4">
-            <FadeInSection>
+        <section ref={faqInView.ref} className="bg-slate-50/90 py-20 sm:py-28">
+          <div className="container mx-auto max-w-6xl px-4">
+            <HeroRevealItem delay={0} revealed={faqInView.isInView}>
               <div className="mx-auto max-w-3xl text-center">
                 <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">자주 묻는 질문</h2>
                 <p className="mt-3 text-sm text-slate-600 sm:text-base">
@@ -661,39 +671,45 @@ export const WelcomePage = () => {
                   이 외에 궁금한 점이 있다면 언제든지 문의해 주세요.
                 </p>
               </div>
+            </HeroRevealItem>
+            <HeroRevealItem delay={HERO_REVEAL_STAGGER} revealed={faqInView.isInView}>
               <FAQ />
-            </FadeInSection>
+            </HeroRevealItem>
           </div>
         </section>
       </main>
 
       {/* 푸터 */}
-      <footer className="border-t border-slate-200 bg-slate-50/80 py-8">
-        <div className="container mx-auto px-4 text-center text-xs text-slate-500 sm:text-sm">
-          <p>© 2026 HCM. All rights reserved.</p>
-          <div className="mt-3 flex flex-wrap justify-center gap-3">
-            <button
-              type="button"
-              className="text-xs text-slate-500 underline-offset-4 hover:text-slate-700 hover:underline"
-              aria-label="개인정보 처리방침 보기"
-            >
-              개인정보처리방침
-            </button>
-            <button
-              type="button"
-              className="text-xs text-slate-500 underline-offset-4 hover:text-slate-700 hover:underline"
-              aria-label="서비스 이용약관 보기"
-            >
-              이용약관
-            </button>
-            <button
-              type="button"
-              className="text-xs text-slate-500 underline-offset-4 hover:text-slate-700 hover:underline"
-              aria-label="헬창마을 문의 메일 보내기"
-            >
-              문의하기 bellwin98@gmail.com
-            </button>
-          </div>
+      <footer ref={footerInView.ref} className="border-t border-slate-200 bg-slate-50/80 py-10">
+        <div className="container mx-auto max-w-6xl px-4 text-center text-xs text-slate-500 sm:text-sm">
+          <HeroRevealItem delay={0} revealed={footerInView.isInView}>
+            <p>© 2026 HCM. All rights reserved.</p>
+          </HeroRevealItem>
+          <HeroRevealItem delay={HERO_REVEAL_STAGGER} revealed={footerInView.isInView}>
+            <div className="mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2">
+              <button
+                type="button"
+                className="text-xs text-slate-500 underline-offset-4 hover:text-slate-700 hover:underline"
+                aria-label="개인정보 처리방침 보기"
+              >
+                개인정보처리방침
+              </button>
+              <button
+                type="button"
+                className="text-xs text-slate-500 underline-offset-4 hover:text-slate-700 hover:underline"
+                aria-label="서비스 이용약관 보기"
+              >
+                이용약관
+              </button>
+              <button
+                type="button"
+                className="text-xs text-slate-500 underline-offset-4 hover:text-slate-700 hover:underline"
+                aria-label="헬창마을 문의 메일 보내기"
+              >
+                문의하기 bellwin98@gmail.com
+              </button>
+            </div>
+          </HeroRevealItem>
         </div>
       </footer>
     </div>
