@@ -87,7 +87,7 @@ export const useRestDay = () => {
 
   const handleRestSuccessDialogClose = () => {
     setShowRestSuccessDialog(false);
-    navigate('/dashboard');
+    navigate('/dashboard', { state: { reloadAt: Date.now() } });
   };
 
   const handleRestDialogClose = () => {
