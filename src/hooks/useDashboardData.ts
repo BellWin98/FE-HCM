@@ -5,6 +5,7 @@ import { useLocation } from 'react-router-dom';
 
 export const useDashboardData = () => {
   const location = useLocation();
+  const state = location.state as { currentWorkoutRoom?: WorkoutRoomDetail; reloadAt?: number } | null;
 
   const [isLoading, setIsLoading] = useState(false);
   const [joinedRooms, setJoinedRooms] = useState<WorkoutRoom[]>([]);
@@ -25,13 +26,24 @@ export const useDashboardData = () => {
         setAvailableWorkoutRooms(allRooms);
 
         // 라우터 state에 currentWorkoutRoom이 오면 우선 반영
-        const state = location.state as { currentWorkoutRoom?: WorkoutRoomDetail } | null;
         if (state?.currentWorkoutRoom) {
-          setCurrentWorkoutRoom(state.currentWorkoutRoom);
-          try {
-            localStorage.setItem('lastViewedWorkoutRoomId', String(state.currentWorkoutRoom.workoutRoomInfo?.id));
-          } catch {
-            // ignore: storage may be unavailable
+          // reloadAt 이 존재하면 항상 서버에서 최신 상세 정보를 다시 가져온다.
+          const roomId = state.currentWorkoutRoom.workoutRoomInfo?.id;
+          if (roomId && state.reloadAt) {
+            const detail = await api.getWorkoutRoomDetail(roomId) as WorkoutRoomDetail;
+            setCurrentWorkoutRoom(detail);
+            try {
+              localStorage.setItem('lastViewedWorkoutRoomId', String(roomId));
+            } catch {
+              // ignore: storage may be unavailable
+            }
+          } else {
+            setCurrentWorkoutRoom(state.currentWorkoutRoom);
+            try {
+              localStorage.setItem('lastViewedWorkoutRoomId', String(state.currentWorkoutRoom.workoutRoomInfo?.id));
+            } catch {
+              // ignore: storage may be unavailable
+            }
           }
         } else if (myRooms.length > 0) {
           let restored: WorkoutRoomDetail | null = null;
@@ -69,7 +81,7 @@ export const useDashboardData = () => {
     };
 
     loadDashboardStats();
-  }, [location.state]);
+  }, [state?.currentWorkoutRoom, state?.reloadAt]);
 
   return {
     isLoading,

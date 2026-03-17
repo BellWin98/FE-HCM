@@ -329,7 +329,7 @@ export const DashboardPage = () => {
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                휴식일이 등록되었어요! 휴식일에도 운동 인증은 계속 할 수 있어요.
+                휴식일에도 운동 인증은 계속 할 수 있어요.
               </p>
               <div className="flex justify-end">
                 <Button onClick={restDay.handleRestSuccessDialogClose}>
