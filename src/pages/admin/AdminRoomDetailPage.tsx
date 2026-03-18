@@ -147,7 +147,9 @@ const AdminRoomDetailPage = () => {
                         onChange={(e) => setMaxMembers(e.target.value)}
                       />
                       <p className="text-xs text-gray-500">
-                        방장 포함 최대 참여 가능한 인원수 (혼자서 운동 인증 하려면 1로 설정)
+                        방장을 포함한 최대 참여 인원
+                        <br />
+                        (혼자서 운동 인증 하려면 1로 설정)
                       </p>
                     </div>
 
