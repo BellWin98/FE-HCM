@@ -1,20 +1,14 @@
-import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import { CalendarIcon, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Checkbox } from '@/components/ui/checkbox';
 import { api } from '@/lib/api';
-import { formatDateToYmd, getTodayYmd, validateWorkoutRoomRules } from '@/lib/workoutRoomRules';
+import { validateWorkoutRoomRules } from '@/lib/workoutRoomRules';
+import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 type CreateRoomLocationState = { hasReachedRoomLimit?: boolean; joinedRoomCount?: number; isAdmin?: boolean } | undefined;
 
@@ -26,14 +20,9 @@ export const CreateRoomPage = () => {
   const [entryCode, setEntryCode] = useState('');
   const [minWeeklyWorkouts, setMinWeeklyWorkouts] = useState('3');
   const [penaltyPerMiss, setPenaltyPerMiss] = useState('5000');
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
-  const [enableEndDate, setEnableEndDate] = useState(false);
   const [maxMembers, setMaxMembers] = useState('10');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const today = getTodayYmd();
 
   const generateRandomEntryCode = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 혼동 가능 문자 제외 (0,O,1,I)
@@ -60,13 +49,9 @@ export const CreateRoomPage = () => {
     }
 
     const rulesError = validateWorkoutRoomRules({
-      startDate,
-      endDate,
-      enableEndDate,
       maxMembers,
       minWeeklyWorkouts,
       penaltyPerMiss,
-      todayYmd: today,
     });
     if (rulesError) {
       setError(rulesError);
@@ -105,8 +90,6 @@ export const CreateRoomPage = () => {
         name: roomName.trim(),
         minWeeklyWorkouts: parseInt(minWeeklyWorkouts),
         penaltyPerMiss: parseInt(penaltyPerMiss),
-        // startDate: formatDateToYmd(startDate),
-        // endDate: enableEndDate && endDate ? formatDateToYmd(endDate) : null,
         maxMembers: parseInt(maxMembers),
         entryCode: entryCode.trim(),
       };
@@ -174,98 +157,20 @@ export const CreateRoomPage = () => {
                 </div>
               </div>
 
-              {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>시작일 *</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !startDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {startDate ? (
-                          format(startDate, "PPP", { locale: ko })
-                        ) : (
-                          <span>시작일 선택</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={startDate}
-                        onSelect={setStartDate}
-                        disabled={(date) => {
-                          const formattedDate = formatDateToYmd(date);
-                          return formattedDate < today || date.getDay() !== 1;
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <p className="text-xs text-gray-500">매주 월요일만 선택 가능합니다.</p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 ">
-                    <Label className="mb-0">종료일</Label>
-                    <Checkbox id="enable-end-date" checked={enableEndDate} onCheckedChange={(checked) => {
-                      setEnableEndDate(!!checked);
-                      if (!checked) setEndDate(undefined);
-                    }} />
-                    <span className="text-xs text-gray-500">종료일 설정</span>
-                  </div>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          (!endDate || !enableEndDate) && "text-muted-foreground"
-                        )}
-                        disabled={!enableEndDate}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {endDate && enableEndDate ? (
-                          format(endDate, "PPP", { locale: ko })
-                        ) : (
-                          <span>종료일 선택</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={endDate}
-                        onSelect={setEndDate}
-                        disabled={(date) => {
-                          const formattedDate = formatDateToYmd(date);
-                          return formattedDate < today || date.getDay() !== 0;
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <p className="text-xs text-gray-500" style={{marginTop: 7}}>매주 일요일만 선택 가능합니다.</p>
-                </div>
-              </div> */}
-
               <div className="space-y-2">
                 <Label htmlFor="max-members">최대 참여 인원</Label>
                 <Input
                   id="max-members"
                   type="number"
-                  min="2"
+                  min="1"
                   max="10"
                   value={maxMembers}
                   onChange={(e) => setMaxMembers(e.target.value)}
                   className="max-w-xs"
                 />
-                <p className="text-xs text-gray-500">방장 포함 최대 참여 가능한 인원수</p>
+                <p className="text-xs text-gray-500">
+                  방장 포함 최대 참여 가능한 인원수 (혼자서 운동 인증 하기를 원하면 1로 설정)
+                </p>
               </div>
 
               <div className="space-y-2">

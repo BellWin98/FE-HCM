@@ -23,8 +23,6 @@ export interface WorkoutRoom {
   name: string;
   minWeeklyWorkouts: number;
   penaltyPerMiss: number;
-  startDate: string;
-  endDate: string | null;
   maxMembers: number;
   currentMembers: number;
   ownerNickname: string;
@@ -297,8 +295,6 @@ export interface AdminWorkoutRoomListParams {
 }
 
 export interface AdminUpdateRoomRequest {
-  startDate: string;
-  endDate?: string | null;
   maxMembers: number;
   minWeeklyWorkouts: number;
   penaltyPerMiss: number;

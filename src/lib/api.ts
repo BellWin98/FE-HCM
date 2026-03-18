@@ -453,9 +453,9 @@ class ApiClient {
 
   /**
    * PUT /admin/workout/rooms/{roomId}
-   * 운동방 규칙 수정 (기간/정원/주간목표/벌금).
+   * 운동방 규칙 수정 (정원/주간목표/벌금).
    * @param roomId - 방 ID
-   * @param body - startDate, endDate(optional), maxMembers, minWeeklyWorkouts, penaltyPerMiss
+   * @param body - maxMembers, minWeeklyWorkouts, penaltyPerMiss
    * @returns WorkoutRoom (updated)
    */
   async updateAdminWorkoutRoom(

@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { WorkoutRoom } from '@/types';
-import { format } from 'date-fns';
 import { List, Trophy, Users } from 'lucide-react';
 
 interface AvailableRoomsDialogProps {
@@ -69,10 +68,6 @@ export const AvailableRoomsDialog = ({
                         </span>
                       </div>
                       <div className="text-sm text-muted-foreground">방장: {workoutRoom.ownerNickname}</div>
-                      {/* <div className="text-sm text-muted-foreground">
-                        기간: {format(new Date(workoutRoom.startDate), 'yyyy-MM-dd')} ~{' '}
-                        {workoutRoom.endDate ? format(new Date(workoutRoom.endDate), 'yyyy-MM-dd') : ''}
-                      </div> */}
                       <div className="flex items-center gap-2">
                         <Badge variant={workoutRoom.isActive ? 'default' : 'secondary'}>
                           {workoutRoom.isActive ? '활성' : '비활성'}

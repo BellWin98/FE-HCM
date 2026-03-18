@@ -26,16 +26,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 type ActiveFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
 
-function formatDate(isoLike?: string) {
-  if (!isoLike) return '-';
-  const date = new Date(isoLike);
-  if (Number.isNaN(date.getTime())) return isoLike;
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
 function getErrorMessage(err: unknown) {
   if (err instanceof Error) return err.message;
   return '요청에 실패했습니다. 잠시 후 다시 시도해주세요.';
@@ -243,7 +233,6 @@ const AdminRoomsPage = () => {
                     const rulesText = `주 ${r.minWeeklyWorkouts ?? 0}회 · 미달 ${(
                       r.penaltyPerMiss ?? 0
                     ).toLocaleString()}원`;
-                    const periodText = `${formatDate(r.startDate)} ~ ${formatDate(r.endDate)}`;
                     const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === r.id;
 
                     return (
@@ -272,12 +261,6 @@ const AdminRoomsPage = () => {
                             <div className="tabular-nums text-sm text-foreground">{membersText}</div>
                           </div>
                           <div className="space-y-0.5">
-                            <div className="font-medium text-[11px] uppercase tracking-wide text-foreground/70">
-                              기간
-                            </div>
-                            <div className="text-sm">{periodText}</div>
-                          </div>
-                          <div className="col-span-2 space-y-0.5">
                             <div className="font-medium text-[11px] uppercase tracking-wide text-foreground/70">
                               규칙
                             </div>
@@ -316,7 +299,6 @@ const AdminRoomsPage = () => {
                           <TableHead className="w-[140px]">방장</TableHead>
                           <TableHead className="w-[110px]">상태</TableHead>
                           <TableHead className="w-[150px] text-right">인원</TableHead>
-                          <TableHead className="w-[220px]">기간</TableHead>
                           <TableHead className="w-[220px]">규칙</TableHead>
                           <TableHead className="w-[180px] text-right">작업</TableHead>
                         </TableRow>
@@ -341,9 +323,6 @@ const AdminRoomsPage = () => {
                                 <Badge variant={r.isActive ? 'default' : 'secondary'}>{activeLabel}</Badge>
                               </TableCell>
                               <TableCell className="text-right tabular-nums">{membersText}</TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {formatDate(r.startDate)} ~ {formatDate(r.endDate)}
-                              </TableCell>
                               <TableCell className="text-sm text-muted-foreground">{rulesText}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-2">
