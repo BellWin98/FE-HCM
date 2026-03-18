@@ -5,6 +5,23 @@ import { HERO_REVEAL_STAGGER } from './constants';
 
 const FAQ_ITEMS = [
   {
+    id: 'solo-use',
+    question: (
+      <>
+        혼자 운동하면서 기록을 남기고 싶은데,
+        <br />
+        꼭 여러명이서 해야하나요?
+      </>
+    ),
+    answer: (
+      <>
+        아니요! 1인용 운동방도 개설할 수 있도록 만들었어요.
+        <br /><br />
+        혼자서 운동 인증샷을 올리고 기록을 쌓아보세요:)
+      </>
+    ),
+  },
+  {
     id: 'penalty-rule',
     question: '벌금 금액과 규칙은 누가 정하나요?',
     answer: (
@@ -31,7 +48,7 @@ const FAQ_ITEMS = [
   {
     id: 'payment',
     question: '헬창마을에서 실제로 돈 거래가 이루어지나요?',
-    answer:(
+    answer: (
       <>
         헬창마을은 결제/송금 기능을 제공하지 않아요.
         <br /><br />
@@ -44,7 +61,7 @@ const FAQ_ITEMS = [
   {
     id: 'photo',
     question: '운동 인증 사진에 꼭 얼굴이 나와야 하나요?',
-    answer:(
+    answer: (
       <>
         헬창마을에서 운동 사진을 검증하지는 않아요.
         <br />
