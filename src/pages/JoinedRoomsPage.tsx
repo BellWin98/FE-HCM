@@ -6,7 +6,6 @@ import { api } from '@/lib/api';
 import { WorkoutRoom } from '@/types';
 import { Eye, List, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 const JoinedRoomsPage = () => {
@@ -83,9 +82,6 @@ const JoinedRoomsPage = () => {
                     </span>
                   </div>
                   <div className="text-sm text-muted-foreground">방장: {room.ownerNickname}</div>
-                  {/* <div className="text-sm text-muted-foreground">
-                    기간: {format(new Date(room.startDate), 'yyyy-MM-dd')} ~ {room.endDate ? format(new Date(room.endDate), 'yyyy-MM-dd') : ''}
-                  </div> */}
                   <div className="pt-1">
                     <Badge variant={room.isActive ? 'default' : 'secondary'}>{room.isActive ? '활성' : '비활성'}</Badge>
                   </div>
