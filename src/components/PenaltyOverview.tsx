@@ -5,6 +5,12 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { api } from '@/lib/api';
 import { formatDateToYmd, getTodayYmd } from '@/lib/date';
 import { cn } from '@/lib/utils';
@@ -261,6 +267,18 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
     return new Date(y, m - 1, d);
   }, [customEndDate]);
 
+  const accordionKey = useMemo(() => {
+    const rangePart = requestRange
+      ? `${requestRange.startDate}-${requestRange.endDate}`
+      : 'all';
+    return `${periodType}-${rangePart}-${memberFilter}`;
+  }, [periodType, requestRange, memberFilter]);
+
+  const defaultAccordionValue = useMemo(
+    () => (groupedByMember.length === 1 ? [groupedByMember[0].memberId] : []),
+    [groupedByMember]
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -406,25 +424,35 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
         ) : groupedByMember.length === 0 ? (
           <div className="text-center py-8 text-gray-500">벌금 내역이 없습니다.</div>
         ) : (
-          <div className="space-y-6">
+          <Accordion
+            key={accordionKey}
+            type="multiple"
+            defaultValue={defaultAccordionValue}
+            className="space-y-3"
+          >
             {groupedByMember.map(({ memberId, nickname, records }) => {
               const memberPenaltySum = records.reduce((s, r) => s + r.penaltyAmount, 0);
               return (
-                <section
+                <AccordionItem
                   key={memberId}
-                  className="rounded-lg border bg-gray-50/50 p-3 sm:p-4 space-y-2 sm:space-y-3"
-                  aria-label={`${nickname} 벌금 내역`}
+                  value={memberId}
+                  className="rounded-lg border border-b bg-gray-50/50 px-3 sm:px-4"
                 >
-                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-200">
-                    <h3 className="font-semibold text-sm sm:text-base truncate max-w-[70vw] sm:max-w-none">
+                  <AccordionTrigger
+                    className="gap-2 hover:no-underline py-3 sm:py-4 [&>svg]:ml-1"
+                    aria-label={`${nickname} 벌금 내역, 기간 내 합계 ${memberPenaltySum.toLocaleString()}원, ${records.length}건`}
+                  >
+                    <span className="font-semibold text-sm sm:text-base truncate max-w-[40vw] sm:max-w-none text-left">
                       {nickname}
-                    </h3>
-                    <span className="text-xs sm:text-sm text-gray-600 shrink-0">
-                      기간 내 합계 <strong>{memberPenaltySum.toLocaleString()}원</strong>
                     </span>
-                  </div>
-                  <div className="space-y-2">
-                    {records.map((r) => (
+                    <span className="text-xs sm:text-sm text-gray-600 shrink-0 ml-auto mr-1">
+                      기간 내 합계 <strong>{memberPenaltySum.toLocaleString()}원</strong>
+                      <span className="text-gray-400 ml-1">· {records.length}건</span>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-3 sm:pb-4 pt-0">
+                    <div className="space-y-2 border-t border-gray-200 pt-2 sm:pt-3">
+                      {records.map((r) => (
                         <button
                           key={r.id}
                           className="w-full text-left border rounded-lg p-3 sm:p-4 bg-white active:opacity-90"
@@ -448,12 +476,13 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
                             </div>
                           </div>
                         </button>
-                    ))}
-                  </div>
-                </section>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               );
             })}
-          </div>
+          </Accordion>
         )}
       </CardContent>
     </Card>
