@@ -13,6 +13,8 @@ import { validateWorkoutRoomRules } from '@/lib/workoutRoomRules';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { AdminStateBlock } from '@/components/admin/AdminStateBlock';
+import { AdminRoomMembersTab } from '@/components/admin/AdminRoomMembersTab';
+import { AdminRoomChatTab } from '@/components/admin/AdminRoomChatTab';
 
 const AdminRoomDetailPage = () => {
   const { roomId } = useParams();
@@ -28,17 +30,20 @@ const AdminRoomDetailPage = () => {
   });
 
   const room = detailQuery.data?.workoutRoomInfo ?? null;
+  const members = detailQuery.data?.workoutRoomMembers ?? [];
 
   const [initialized, setInitialized] = useState(false);
   const [maxMembers, setMaxMembers] = useState('10');
   const [minWeeklyWorkouts, setMinWeeklyWorkouts] = useState('3');
   const [penaltyPerMiss, setPenaltyPerMiss] = useState('5000');
   const [localError, setLocalError] = useState('');
+  const [activeTab, setActiveTab] = useState('settings');
 
   // When navigating between room IDs without unmount, reset initialization.
   useEffect(() => {
     setInitialized(false);
     setLocalError('');
+    setActiveTab('settings');
   }, [numericRoomId]);
 
   const hydrateFromRoom = (r: typeof room) => {
@@ -95,9 +100,9 @@ const AdminRoomDetailPage = () => {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div>
+          <div className="min-w-0 flex-1">
             <h1 className="text-xl font-bold md:text-2xl">운동방 상세</h1>
-            <p className="mt-1 text-xs text-muted-foreground md:text-sm">
+            <p className="mt-1 break-words text-xs text-muted-foreground md:text-sm">
               {Number.isFinite(numericRoomId) ? `ID: ${numericRoomId}` : '유효하지 않은 ID'}
               {room?.name ? ` · ${room.name}` : ''}
             </p>
@@ -116,13 +121,16 @@ const AdminRoomDetailPage = () => {
         ) : !room ? (
           <AdminStateBlock variant="empty" description="운동방 정보가 없습니다." />
         ) : (
-          <Tabs defaultValue="settings">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="flex w-full gap-1 sm:inline-flex">
               <TabsTrigger value="settings" className="flex-1">
-                Settings
+                설정
               </TabsTrigger>
               <TabsTrigger value="members" className="flex-1">
-                Members
+                멤버
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="flex-1">
+                채팅
               </TabsTrigger>
             </TabsList>
 
@@ -132,7 +140,7 @@ const AdminRoomDetailPage = () => {
                   <CardTitle>규칙 설정</CardTitle>
                   <CardDescription>정원 / 주간 목표 / 벌금 규칙을 수정합니다.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 p-4 sm:p-6">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="admin-max-members" className="text-xs md:text-sm">
@@ -223,7 +231,20 @@ const AdminRoomDetailPage = () => {
             </TabsContent>
 
             <TabsContent value="members" className="mt-3 md:mt-4">
-              <AdminStateBlock description="Members 탭은 추후 구현 예정입니다." />
+              <AdminRoomMembersTab
+                roomId={numericRoomId}
+                ownerNickname={room.ownerNickname}
+                minWeeklyWorkouts={room.minWeeklyWorkouts}
+                members={members}
+              />
+            </TabsContent>
+
+            <TabsContent value="chat" className="mt-3 md:mt-4">
+              <AdminRoomChatTab
+                roomId={numericRoomId}
+                members={members}
+                active={activeTab === 'chat'}
+              />
             </TabsContent>
           </Tabs>
         )}

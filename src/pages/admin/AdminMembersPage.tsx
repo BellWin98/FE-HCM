@@ -185,16 +185,16 @@ const AdminMembersPage = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">회원 관리</h1>
-            <p className="text-muted-foreground mt-1">회원 목록 검색 및 역할 변경</p>
+            <h1 className="text-xl font-bold md:text-2xl">회원 관리</h1>
+            <p className="mt-1 text-sm text-muted-foreground md:text-base">회원 목록 검색 및 역할 변경</p>
           </div>
           <Button
             variant="outline"
             onClick={() => membersQuery.refetch()}
             disabled={membersQuery.isFetching}
-            className="gap-2"
+            className="w-full gap-2 sm:w-auto"
           >
             <RefreshCcw className={cn('h-4 w-4', membersQuery.isFetching && 'animate-spin')} />
             새로고침
@@ -202,7 +202,7 @@ const AdminMembersPage = () => {
         </div>
 
         <div className="rounded-lg border bg-background p-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="relative w-full md:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -213,11 +213,10 @@ const AdminMembersPage = () => {
               />
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Role</span>
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as 'ALL' | Role)}>
-                  <SelectTrigger className="w-[160px]">
+                  <SelectTrigger className="w-full sm:w-[160px]">
                     <SelectValue placeholder="전체" />
                   </SelectTrigger>
                   <SelectContent>
@@ -230,10 +229,9 @@ const AdminMembersPage = () => {
                 </Select>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Size</span>
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <Select value={String(size)} onValueChange={(v) => setSize(Number(v))}>
-                  <SelectTrigger className="w-[120px]">
+                  <SelectTrigger className="w-full sm:w-[120px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -262,7 +260,7 @@ const AdminMembersPage = () => {
               <AdminStateBlock variant="empty" description="검색 결과가 없습니다." />
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <div className="flex flex-col items-start justify-between gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center">
                   <div>
                     페이지 <span className="text-foreground">{currentPage + 1}</span>
                     {totalPages ? (
@@ -275,77 +273,156 @@ const AdminMembersPage = () => {
                   {membersQuery.isFetching ? <div>업데이트 중...</div> : null}
                 </div>
 
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px]">ID</TableHead>
-                      <TableHead>이메일</TableHead>
-                      <TableHead>닉네임</TableHead>
-                      <TableHead className="w-[220px]">역할</TableHead>
-                      <TableHead className="w-[120px] text-right">운동일수</TableHead>
-                      <TableHead className="w-[140px] text-right">누적 벌금</TableHead>
-                      <TableHead className="w-[140px]">가입일</TableHead>
-                      <TableHead className="w-[100px] text-right">작업</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {content.map((m) => {
-                      const isMe = currentMember?.id === m.id;
-                      const isUpdatingThisRow = roleMutation.isPending && updatingMemberId === m.id;
-                      const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === m.id;
-                      return (
-                        <TableRow key={m.id}>
-                          <TableCell className="font-mono text-xs text-muted-foreground">{m.id}</TableCell>
-                          <TableCell className="truncate">{m.email}</TableCell>
-                          <TableCell className="flex items-center gap-2">
-                            <span className="truncate font-medium">{m.nickname}</span>
+                {/* 모바일: 카드 리스트 */}
+                <div className="space-y-3 md:hidden">
+                  {content.map((m) => {
+                    const isMe = currentMember?.id === m.id;
+                    const isUpdatingThisRow = roleMutation.isPending && updatingMemberId === m.id;
+                    const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === m.id;
+
+                    return (
+                      <div key={m.id} className="rounded-lg border bg-card p-4 shadow-sm">
+                        <div className="min-w-0 space-y-1">
+                          <div className="text-xs font-mono text-muted-foreground">#{m.id}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="truncate text-base font-semibold text-foreground">{m.nickname}</span>
                             {isMe ? (
                               <Badge variant="secondary" className="shrink-0">
                                 ME
                               </Badge>
                             ) : null}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Select value={m.role} onValueChange={(v) => openConfirm(m, v as Role)} disabled={isUpdatingThisRow || isDeletingThisRow}>
-                                <SelectTrigger className="w-[160px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {(Object.keys(ROLE_LABEL) as Role[]).map((r) => (
-                                    <SelectItem key={r} value={r}>
-                                      {ROLE_LABEL[r]}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {isUpdatingThisRow ? <span className="text-xs text-muted-foreground">변경 중...</span> : null}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right tabular-nums">{m.totalWorkoutDays ?? 0}</TableCell>
-                          <TableCell className="text-right tabular-nums">{(m.totalPenalty ?? 0).toLocaleString()}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{formatDate(m.createdAt)}</TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openDeleteConfirm(m)}
-                              disabled={isDeletingThisRow || isUpdatingThisRow}
-                              className="gap-1"
+                          </div>
+                          <div className="truncate text-xs text-muted-foreground">{m.email}</div>
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                          <div className="space-y-0.5">
+                            <div className="text-[11px] font-medium uppercase tracking-wide text-foreground/70">운동일수</div>
+                            <div className="tabular-nums text-sm text-foreground">{m.totalWorkoutDays ?? 0}</div>
+                          </div>
+                          <div className="space-y-0.5">
+                            <div className="text-[11px] font-medium uppercase tracking-wide text-foreground/70">누적 벌금</div>
+                            <div className="tabular-nums text-sm text-foreground">{(m.totalPenalty ?? 0).toLocaleString()}원</div>
+                          </div>
+                          <div className="col-span-2 space-y-0.5">
+                            <div className="text-[11px] font-medium uppercase tracking-wide text-foreground/70">가입일</div>
+                            <div className="text-sm text-foreground">{formatDate(m.createdAt)}</div>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={m.role}
+                              onValueChange={(v) => openConfirm(m, v as Role)}
+                              disabled={isUpdatingThisRow || isDeletingThisRow}
                             >
-                              <Trash2 className="h-3 w-3" />
-                              {isDeletingThisRow ? '삭제 중...' : '삭제'}
-                            </Button>
-                          </TableCell>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(Object.keys(ROLE_LABEL) as Role[]).map((r) => (
+                                  <SelectItem key={r} value={r}>
+                                    {ROLE_LABEL[r]}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {isUpdatingThisRow ? <span className="text-xs text-muted-foreground">변경 중...</span> : null}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openDeleteConfirm(m)}
+                            disabled={isDeletingThisRow || isUpdatingThisRow}
+                            className="w-full gap-1"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            {isDeletingThisRow ? '삭제 중...' : '삭제'}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 데스크톱: 테이블 */}
+                <div className="hidden md:block">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px]">ID</TableHead>
+                          <TableHead>이메일</TableHead>
+                          <TableHead>닉네임</TableHead>
+                          <TableHead className="w-[220px]">역할</TableHead>
+                          <TableHead className="w-[120px] text-right">운동일수</TableHead>
+                          <TableHead className="w-[140px] text-right">누적 벌금</TableHead>
+                          <TableHead className="w-[140px]">가입일</TableHead>
+                          <TableHead className="w-[100px] text-right">작업</TableHead>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {content.map((m) => {
+                          const isMe = currentMember?.id === m.id;
+                          const isUpdatingThisRow = roleMutation.isPending && updatingMemberId === m.id;
+                          const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === m.id;
+                          return (
+                            <TableRow key={m.id}>
+                              <TableCell className="font-mono text-xs text-muted-foreground">{m.id}</TableCell>
+                              <TableCell className="truncate">{m.email}</TableCell>
+                              <TableCell className="flex items-center gap-2">
+                                <span className="truncate font-medium">{m.nickname}</span>
+                                {isMe ? (
+                                  <Badge variant="secondary" className="shrink-0">
+                                    ME
+                                  </Badge>
+                                ) : null}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Select value={m.role} onValueChange={(v) => openConfirm(m, v as Role)} disabled={isUpdatingThisRow || isDeletingThisRow}>
+                                    <SelectTrigger className="w-[160px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {(Object.keys(ROLE_LABEL) as Role[]).map((r) => (
+                                        <SelectItem key={r} value={r}>
+                                          {ROLE_LABEL[r]}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  {isUpdatingThisRow ? <span className="text-xs text-muted-foreground">변경 중...</span> : null}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">{m.totalWorkoutDays ?? 0}</TableCell>
+                              <TableCell className="text-right tabular-nums">{(m.totalPenalty ?? 0).toLocaleString()}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{formatDate(m.createdAt)}</TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openDeleteConfirm(m)}
+                                  disabled={isDeletingThisRow || isUpdatingThisRow}
+                                  className="gap-1"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                  {isDeletingThisRow ? '삭제 중...' : '삭제'}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
 
                 {totalPages > 1 ? (
-                  <Pagination>
-                    <PaginationContent>
+                  <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
+                    <Pagination>
+                      <PaginationContent className="flex-nowrap">
                       <PaginationItem>
                         <PaginationPrevious
                           href="#"
@@ -390,8 +467,9 @@ const AdminMembersPage = () => {
                           className={cn(isLast && 'pointer-events-none opacity-50')}
                         />
                       </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
                 ) : null}
               </div>
             )}
@@ -405,7 +483,7 @@ const AdminMembersPage = () => {
             <AlertDialogTitle>역할을 변경할까요?</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingChange.target ? (
-                <div className="space-y-1">
+                <div className="min-w-0 space-y-1 break-words">
                   <div>
                     대상: <span className="font-medium text-foreground">{pendingChange.target.nickname}</span> ({pendingChange.target.email})
                   </div>
@@ -437,7 +515,7 @@ const AdminMembersPage = () => {
             <AlertDialogTitle>회원을 삭제할까요?</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDelete.target ? (
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2 break-words">
                   <div>
                     대상: <span className="font-medium text-foreground">{pendingDelete.target.nickname}</span> ({pendingDelete.target.email})
                   </div>
