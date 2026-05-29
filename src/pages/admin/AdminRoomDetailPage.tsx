@@ -13,6 +13,7 @@ import { validateWorkoutRoomRules } from '@/lib/workoutRoomRules';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { AdminStateBlock } from '@/components/admin/AdminStateBlock';
+import { AdminRoomMembersTab } from '@/components/admin/AdminRoomMembersTab';
 
 const AdminRoomDetailPage = () => {
   const { roomId } = useParams();
@@ -28,6 +29,7 @@ const AdminRoomDetailPage = () => {
   });
 
   const room = detailQuery.data?.workoutRoomInfo ?? null;
+  const members = detailQuery.data?.workoutRoomMembers ?? [];
 
   const [initialized, setInitialized] = useState(false);
   const [maxMembers, setMaxMembers] = useState('10');
@@ -223,7 +225,12 @@ const AdminRoomDetailPage = () => {
             </TabsContent>
 
             <TabsContent value="members" className="mt-3 md:mt-4">
-              <AdminStateBlock description="Members 탭은 추후 구현 예정입니다." />
+              <AdminRoomMembersTab
+                roomId={numericRoomId}
+                ownerNickname={room.ownerNickname}
+                minWeeklyWorkouts={room.minWeeklyWorkouts}
+                members={members}
+              />
             </TabsContent>
           </Tabs>
         )}
