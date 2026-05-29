@@ -478,6 +478,27 @@ class ApiClient {
       method: "DELETE",
     });
   }
+
+  /**
+   * GET /admin/workout/rooms/{roomId}/messages
+   * 운동방 채팅 내역 조회 (관리자 읽기 전용).
+   * @param roomId - 방 ID
+   * @param cursorId - 더 오래된 메시지 조회용 커서
+   * @param size - 페이지 크기 (기본 20)
+   */
+  async getAdminChatHistory(
+    roomId: number,
+    cursorId?: number | null,
+    size = 20
+  ): Promise<ChatHistoryResponse> {
+    const params = new URLSearchParams({ size: String(size) });
+    if (cursorId != null) {
+      params.set("cursorId", String(cursorId));
+    }
+    return this.request<ChatHistoryResponse>(
+      `/admin/workout/rooms/${roomId}/messages?${params.toString()}`
+    );
+  }
 }
 
 export const api = new ApiClient();

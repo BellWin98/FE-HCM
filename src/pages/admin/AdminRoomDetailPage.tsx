@@ -14,6 +14,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useEffect, useMemo, useState } from 'react';
 import { AdminStateBlock } from '@/components/admin/AdminStateBlock';
 import { AdminRoomMembersTab } from '@/components/admin/AdminRoomMembersTab';
+import { AdminRoomChatTab } from '@/components/admin/AdminRoomChatTab';
 
 const AdminRoomDetailPage = () => {
   const { roomId } = useParams();
@@ -36,11 +37,13 @@ const AdminRoomDetailPage = () => {
   const [minWeeklyWorkouts, setMinWeeklyWorkouts] = useState('3');
   const [penaltyPerMiss, setPenaltyPerMiss] = useState('5000');
   const [localError, setLocalError] = useState('');
+  const [activeTab, setActiveTab] = useState('settings');
 
   // When navigating between room IDs without unmount, reset initialization.
   useEffect(() => {
     setInitialized(false);
     setLocalError('');
+    setActiveTab('settings');
   }, [numericRoomId]);
 
   const hydrateFromRoom = (r: typeof room) => {
@@ -118,13 +121,16 @@ const AdminRoomDetailPage = () => {
         ) : !room ? (
           <AdminStateBlock variant="empty" description="운동방 정보가 없습니다." />
         ) : (
-          <Tabs defaultValue="settings">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="flex w-full gap-1 sm:inline-flex">
               <TabsTrigger value="settings" className="flex-1">
                 설정
               </TabsTrigger>
               <TabsTrigger value="members" className="flex-1">
                 멤버
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="flex-1">
+                채팅
               </TabsTrigger>
             </TabsList>
 
@@ -230,6 +236,14 @@ const AdminRoomDetailPage = () => {
                 ownerNickname={room.ownerNickname}
                 minWeeklyWorkouts={room.minWeeklyWorkouts}
                 members={members}
+              />
+            </TabsContent>
+
+            <TabsContent value="chat" className="mt-3 md:mt-4">
+              <AdminRoomChatTab
+                roomId={numericRoomId}
+                members={members}
+                active={activeTab === 'chat'}
               />
             </TabsContent>
           </Tabs>
