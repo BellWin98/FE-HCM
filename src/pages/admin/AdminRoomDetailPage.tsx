@@ -95,9 +95,9 @@ const AdminRoomDetailPage = () => {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div>
+          <div className="min-w-0 flex-1">
             <h1 className="text-xl font-bold md:text-2xl">운동방 상세</h1>
-            <p className="mt-1 text-xs text-muted-foreground md:text-sm">
+            <p className="mt-1 break-words text-xs text-muted-foreground md:text-sm">
               {Number.isFinite(numericRoomId) ? `ID: ${numericRoomId}` : '유효하지 않은 ID'}
               {room?.name ? ` · ${room.name}` : ''}
             </p>
@@ -119,10 +119,10 @@ const AdminRoomDetailPage = () => {
           <Tabs defaultValue="settings">
             <TabsList className="flex w-full gap-1 sm:inline-flex">
               <TabsTrigger value="settings" className="flex-1">
-                Settings
+                설정
               </TabsTrigger>
               <TabsTrigger value="members" className="flex-1">
-                Members
+                멤버
               </TabsTrigger>
             </TabsList>
 
@@ -132,7 +132,7 @@ const AdminRoomDetailPage = () => {
                   <CardTitle>규칙 설정</CardTitle>
                   <CardDescription>정원 / 주간 목표 / 벌금 규칙을 수정합니다.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 p-4 sm:p-6">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="admin-max-members" className="text-xs md:text-sm">

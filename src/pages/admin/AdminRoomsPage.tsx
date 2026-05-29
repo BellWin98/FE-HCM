@@ -167,7 +167,6 @@ const AdminRoomsPage = () => {
 
             <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                <span className="whitespace-normal text-sm text-muted-foreground">상태</span>
                 <Select value={activeFilter} onValueChange={(v) => setActiveFilter(v as ActiveFilter)}>
                   <SelectTrigger className="w-full sm:w-[160px]">
                     <SelectValue placeholder="전체" />
@@ -181,7 +180,6 @@ const AdminRoomsPage = () => {
               </div>
 
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                <span className="whitespace-normal text-sm text-muted-foreground">Size</span>
                 <Select value={String(size)} onValueChange={(v) => setSize(Number(v))}>
                   <SelectTrigger className="w-full sm:w-[120px]">
                     <SelectValue />
@@ -277,7 +275,7 @@ const AdminRoomsPage = () => {
                             size="sm"
                             onClick={() => openDeleteConfirm(r)}
                             disabled={isDeletingThisRow}
-                            className="gap-1"
+                            className="flex-1 gap-1"
                           >
                             <Trash2 className="h-3 w-3" />
                             {isDeletingThisRow ? '삭제 중...' : '삭제'}
@@ -350,8 +348,9 @@ const AdminRoomsPage = () => {
                 </div>
 
                 {totalPages > 1 ? (
-                  <Pagination>
-                    <PaginationContent>
+                  <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
+                    <Pagination>
+                      <PaginationContent className="flex-nowrap">
                       <PaginationItem>
                         <PaginationPrevious
                           href="#"
@@ -396,8 +395,9 @@ const AdminRoomsPage = () => {
                           className={cn(isLast && 'pointer-events-none opacity-50')}
                         />
                       </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
                 ) : null}
               </div>
             )}
@@ -411,7 +411,7 @@ const AdminRoomsPage = () => {
             <AlertDialogTitle>운동방을 삭제할까요?</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDelete.target ? (
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2 break-words">
                   <div>
                     대상: <span className="font-medium text-foreground">{pendingDelete.target.name}</span> (ID: {pendingDelete.target.id})
                   </div>
