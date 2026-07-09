@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { CheckCircle2, Copy, Flame, Instagram, MessageCircle } from 'lucide-react';
+import { CheckCircle2, Copy, Flame, Share2 } from 'lucide-react';
 import { useState } from 'react';
 
 const SERVICE_URL = 'https://www.bellwin.co.kr';
@@ -154,36 +154,35 @@ const createWorkoutShareImage = async ({
   const pad = 40;
   const startX = cardX + pad; // 텍스트 시작 X 좌표
   const endX = cardX + cardWidth - pad; // 우측 정렬을 위한 끝 X 좌표
-  const innerWidth = cardWidth - pad * 2;
 
-  // [상태 뱃지 : HCM (파란색)]
+  // [상태 뱃지 : HCM (파란색)] - Y좌표를 60으로 수정 (상단 여백 확보)
   context.fillStyle = '#2563EB'; // Tailwind blue-600
   context.font = '800 25px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
-  context.fillText('HCM', startX, cardY + 36);
+  context.fillText('HCM', startX, cardY + 60);
 
   // [서비스 URL : 카드 내 우측 상단 (검정색)]
   context.fillStyle = '#111827'; // Tailwind gray-900 (검정색)
   context.font = '600 25px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
   context.textAlign = 'right';
-  context.fillText('www.bellwin.co.kr', endX, cardY + 36);
+  context.fillText('www.bellwin.co.kr', endX, cardY + 60);
   context.textAlign = 'left'; // 캔버스 정렬 상태 원상 복구
 
   // [날짜 타이틀]
   context.fillStyle = '#111827';
   context.font = '800 30px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
-  context.fillText(workoutDate, startX, cardY + 84);
+  context.fillText(workoutDate, startX, cardY + 110);
 
   // [가로 구분선]
   context.beginPath();
-  context.moveTo(startX, cardY + 114);
-  context.lineTo(endX, cardY + 114);
+  context.moveTo(startX, cardY + 135);
+  context.lineTo(endX, cardY + 135);
   context.strokeStyle = '#E5E7EB';
   context.lineWidth = 1;
   context.stroke();
 
-  // [상세 정보 레이블 및 데이터]
-  const labelY1 = cardY + 154;
-  const labelY2 = cardY + 188;
+  // [상세 정보 레이블 및 데이터] - Y좌표를 175, 215로 수정 (하단 여백 일치)
+  const labelY1 = cardY + 175;
+  const labelY2 = cardY + 215;
   const valueOffsetX = 100; // '운동 종류' 라벨과 데이터 사이 간격
 
   // 라벨 (회색)
@@ -234,15 +233,18 @@ export const WorkoutSuccessDialog = ({
   workoutDuration,
   onConfirm,
 }: WorkoutSuccessDialogProps) => {
-  const [sharingPlatform, setSharingPlatform] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
+  
   const weeklyWorkoutMessage =
     remainingWeeklyWorkouts === null
       ? '이번 주 남은 운동 횟수를 불러오지 못했어요.'
       : remainingWeeklyWorkouts === 0
         ? '이번 주 운동 횟수를 모두 채웠어요!'
         : `이번 주 남은 운동 ${remainingWeeklyWorkouts}회`;
+  
   const workoutTypeText = workoutTypes.length > 0 ? workoutTypes.join(', ') : '미입력';
   const workoutDurationText = workoutDuration ? `${workoutDuration}분` : '미입력';
+  
   const shareText = [
     '운동 인증 완료!',
     `운동 날짜: ${workoutDate}`,
@@ -252,26 +254,23 @@ export const WorkoutSuccessDialog = ({
     weeklyWorkoutMessage,
     '#운동인증 #HCM',
   ].join('\n');
+  
   const shareData: ShareData = {
     title: '운동 인증 완료!',
     text: shareText,
     url: SERVICE_URL,
   };
 
-  const copyShareText = async (platform?: string) => {
+  const copyShareText = async () => {
     try {
       await navigator.clipboard.writeText(`${shareText}\n${SERVICE_URL}`);
-      toast.success(
-        platform
-          ? `${platform}에 붙여넣을 인증 문구를 복사했어요.`
-          : '인증 문구를 복사했어요.'
-      );
+      toast.success('인증 문구를 복사했어요.');
     } catch {
       toast.error('인증 문구 복사에 실패했어요.');
     }
   };
 
-  const openNativeShare = async (platform: string) => {
+  const openNativeShare = async () => {
     if (!navigator.share) return false;
 
     try {
@@ -299,33 +298,21 @@ export const WorkoutSuccessDialog = ({
         return true;
       }
 
-      toast.error(`${platform} 공유를 열지 못했어요.`);
+      toast.error('SNS 공유를 열지 못했어요.');
       return false;
     }
   };
 
-  const handleKakaoShare = async () => {
-    setSharingPlatform('카카오톡');
+  const handleSnsShare = async () => {
+    setIsSharing(true);
     try {
-      const didOpenShare = await openNativeShare('카카오톡');
+      const didOpenShare = await openNativeShare();
       if (!didOpenShare) {
-        await copyShareText('카카오톡');
+        // 네이티브 공유 미지원 또는 실패 시 클립보드 복사 폴백
+        await copyShareText();
       }
     } finally {
-      setSharingPlatform(null);
-    }
-  };
-
-  const handleInstagramShare = async () => {
-    setSharingPlatform('인스타그램');
-    try {
-      const didOpenShare = await openNativeShare('인스타그램');
-      if (didOpenShare) return;
-
-      await copyShareText('인스타그램');
-      window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
-    } finally {
-      setSharingPlatform(null);
+      setIsSharing(false);
     }
   };
 
@@ -374,29 +361,19 @@ export const WorkoutSuccessDialog = ({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-10 border-[#FEE500] bg-[#FEE500] text-[#191919] hover:bg-[#F4DC00] hover:text-[#191919]"
-              onClick={handleKakaoShare}
-              disabled={sharingPlatform !== null}
-            >
-              <MessageCircle className="mr-2 h-4 w-4" aria-hidden="true" />
-              {sharingPlatform === '카카오톡' ? '생성 중' : '카톡 공유'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-10 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700"
-              onClick={handleInstagramShare}
-              disabled={sharingPlatform !== null}
-            >
-              <Instagram className="mr-2 h-4 w-4" aria-hidden="true" />
-              {sharingPlatform === '인스타그램' ? '생성 중' : '인스타 공유'}
-            </Button>
-          </div>
-          <Button type="button" variant="ghost" className="h-9 w-full text-xs" onClick={() => copyShareText()}>
+          {/* 단일 SNS 공유 버튼으로 통합 */}
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10 w-full border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+            onClick={handleSnsShare}
+            disabled={isSharing}
+          >
+            <Share2 className="mr-2 h-4 w-4" aria-hidden="true" />
+            {isSharing ? '이미지 생성 중...' : 'SNS 공유하기'}
+          </Button>
+          
+          <Button type="button" variant="ghost" className="h-9 w-full text-xs" onClick={copyShareText}>
             <Copy className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
             인증 문구 복사
           </Button>
