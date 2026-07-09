@@ -9,9 +9,10 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: 'autoUpdate', // service worker 자동 업데이트
+      cleanupOutdatedCaches: true,
       includeAssets: ['favicon.ico', 'robots.txt', 'icons/*', 'firebase-messaging-sw.js'],
       devOptions: {
-        enabled: true,
+        enabled: false,
         suppressWarnings: true,
       },
       manifest: {

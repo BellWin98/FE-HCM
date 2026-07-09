@@ -129,9 +129,9 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
                                 if (!todayRecord?.duration) return null;
 
                                 return (
-                                  <Badge variant="outline" className="text-xs">
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    {todayRecord.duration}분
+                                  <Badge variant="outline" className="inline-flex w-fit shrink-0 items-center gap-1 whitespace-nowrap text-xs">
+                                    <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
+                                    <span>{todayRecord.duration}분</span>
                                   </Badge>
                                 );
                               })()}
@@ -399,9 +399,9 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
                                     </Badge>
                                   ))}
                                   {record.duration ? (
-                                    <Badge variant="outline" className="text-xs">
-                                      <Clock className="h-3 w-3 mr-1" />
-                                      {record.duration}분
+                                    <Badge variant="outline" className="inline-flex w-fit shrink-0 items-center gap-1 whitespace-nowrap text-xs">
+                                      <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
+                                      <span>{record.duration}분</span>
                                     </Badge>
                                   ) : null}
                                 </div>

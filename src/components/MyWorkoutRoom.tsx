@@ -114,7 +114,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
                         <PopoverContent className="max-w-md">
                           <div className="space-y-2">
                             <div className="flex flex-wrap gap-1">
-                              {record.workoutTypes && record.workoutTypes.length > 0 ? (
+                              {record?.workoutTypes && record.workoutTypes.length > 0 ? (
                                 record.workoutTypes.map((type, idx) => (
                                   <Badge key={idx} variant="secondary" className="text-xs">
                                     {type}
@@ -122,10 +122,10 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
                                 ))
                               ) : null}
                             </div>
-                            {record.duration ? (
-                              <Badge variant="outline" className="text-xs">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {record.duration}분
+                            {record?.duration ? (
+                              <Badge variant="outline" className="inline-flex w-fit shrink-0 items-center gap-1 whitespace-nowrap text-xs">
+                                <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
+                                <span>{record.duration}분</span>
                               </Badge>
                             ) : null}
                             {record?.imageUrls && record.imageUrls.length > 0 ? (
