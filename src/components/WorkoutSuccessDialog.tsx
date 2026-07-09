@@ -355,9 +355,6 @@ export const WorkoutSuccessDialog = ({
                 <span className="font-medium text-foreground">운동 시간</span> {workoutDurationText}
               </div>
             </div>
-            <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-              SNS에 운동 인증을 공유해보세요.
-            </div>
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
@@ -373,10 +370,10 @@ export const WorkoutSuccessDialog = ({
             {isSharing ? '이미지 생성 중...' : 'SNS 공유하기'}
           </Button>
           
-          <Button type="button" variant="ghost" className="h-9 w-full text-xs" onClick={copyShareText}>
+          {/* <Button type="button" variant="ghost" className="h-9 w-full text-xs" onClick={copyShareText}>
             <Copy className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
             인증 문구 복사
-          </Button>
+          </Button> */}
         </div>
         <DialogFooter className="sm:space-x-0">
           <Button type="button" className="w-full" onClick={onConfirm}>
