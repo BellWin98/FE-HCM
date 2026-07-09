@@ -2,25 +2,25 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { CheckCircle2, Flame } from 'lucide-react';
 
 interface WorkoutSuccessDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   totalWorkoutDays: number;
-  redirectSeconds: number;
-  // onNavigate: () => void;
+  onConfirm: () => void;
 }
 
 export const WorkoutSuccessDialog = ({
   open,
   onOpenChange,
   totalWorkoutDays,
-  redirectSeconds,
-  // onNavigate,
+  onConfirm,
 }: WorkoutSuccessDialogProps) => {
   const getWorkoutMessage = (totalWorkoutDays: number) => {
     // 1. 고인물 구간 (100일 이상) - 레전드 인정 + 꾸준함 독려
@@ -74,7 +74,11 @@ export const WorkoutSuccessDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xs sm:max-w-sm w-[90vw] p-4">
+      <DialogContent
+        className="max-w-xs sm:max-w-sm w-[90vw] p-4 [&>button]:hidden"
+        onPointerDownOutside={(event) => event.preventDefault()}
+        onEscapeKeyDown={(event) => event.preventDefault()}
+      >
         <DialogHeader>
           <div className="flex justify-center mb-4">
             <CheckCircle2 className="h-12 w-12 text-green-500" />
@@ -92,11 +96,13 @@ export const WorkoutSuccessDialog = ({
             <div className="text-sm text-gray-600">
               {workoutMessageInfo.emoji} {workoutMessageInfo.message}
             </div>            
-            <div className="text-xs text-gray-400">
-              {redirectSeconds}초 후 자동으로 대시보드로 이동합니다.
-            </div>
           </DialogDescription>
         </DialogHeader>
+        <DialogFooter>
+          <Button type="button" className="w-full" onClick={onConfirm}>
+            확인
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

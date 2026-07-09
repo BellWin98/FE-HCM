@@ -16,7 +16,7 @@ import { WORKOUT_TYPES, WorkoutResponse, WorkoutType } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const toDateOnly = (date) => {
@@ -24,7 +24,6 @@ const toDateOnly = (date) => {
 }
 const today = toDateOnly(new Date());
 const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000));
-const REDIRECT_DELAY_SECONDS = 3;
 
 export const WorkoutUploadPage = () => {
   const { member } = useAuth();
@@ -40,7 +39,6 @@ export const WorkoutUploadPage = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [totalWorkoutDays, setTotalWorkoutDays] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [redirectCountdown, setRedirectCountdown] = useState(REDIRECT_DELAY_SECONDS);
 
   const processFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -219,26 +217,6 @@ export const WorkoutUploadPage = () => {
     }
   };
 
-  // 성공 다이얼로그 표시 후 일정 시간 뒤 대시보드로 이동 + 카운트다운
-  useEffect(() => {
-    if (showSuccessDialog) {
-      setRedirectCountdown(REDIRECT_DELAY_SECONDS);
-
-      const countdownInterval = setInterval(() => {
-        setRedirectCountdown((prev) => Math.max(prev - 1, 1));
-      }, 1000);
-
-      const navigateTimeout = setTimeout(() => {
-        navigate('/dashboard');
-      }, REDIRECT_DELAY_SECONDS * 1000);
-
-      return () => {
-        clearInterval(countdownInterval);
-        clearTimeout(navigateTimeout);
-      };
-    }
-  }, [showSuccessDialog, navigate]);
-
   return (
     <Layout>
       <div className="max-w-2xl mx-auto">
@@ -246,7 +224,7 @@ export const WorkoutUploadPage = () => {
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
           totalWorkoutDays={totalWorkoutDays}
-          redirectSeconds={redirectCountdown}
+          onConfirm={() => navigate('/dashboard')}
         />
         <Card>
           <CardHeader>
