@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WorkoutRoomDetail } from '@/types';
-import { Camera, Dumbbell, Pause } from 'lucide-react';
+import { Camera, Clock, Dumbbell, Pause } from 'lucide-react';
 
 interface MyActivityCardProps {
   currentWorkoutRoom: WorkoutRoomDetail;
@@ -43,9 +43,10 @@ export const MyActivityCard = ({
                       </Badge>
                     ))}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    운동시간: {todayWorkoutRecord.duration}분
-                  </p>
+                  <Badge variant="outline" className="text-xs">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {todayWorkoutRecord.duration}분
+                  </Badge>
                 </div>
               </>
             ) : (
