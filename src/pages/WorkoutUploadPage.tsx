@@ -12,12 +12,12 @@ import { WorkoutSuccessDialog } from '@/components/WorkoutSuccessDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { WORKOUT_TYPES, WorkoutResponse, WorkoutType } from '@/types';
+import { WORKOUT_TYPES, WorkoutResponse, WorkoutRoomDetail, WorkoutType } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CalendarIcon, Loader2, Upload, X } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const toDateOnly = (date) => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -28,6 +28,8 @@ const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 10
 export const WorkoutUploadPage = () => {
   const { member } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const routeState = location.state as { currentWorkoutRoom?: WorkoutRoomDetail } | null;
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [workoutDate, setWorkoutDate] = useState<Date>(new Date());
@@ -38,7 +40,35 @@ export const WorkoutUploadPage = () => {
   const [error, setError] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [totalWorkoutDays, setTotalWorkoutDays] = useState(0);
+  const [remainingWeeklyWorkouts, setRemainingWeeklyWorkouts] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  const getRemainingWeeklyWorkouts = (roomDetail?: WorkoutRoomDetail | null, completedWorkoutDelta = 0) => {
+    if (!roomDetail?.workoutRoomInfo) return null;
+
+    const currentRoomMember = roomDetail.workoutRoomMembers.find(
+      (roomMember) => roomMember.nickname === member?.nickname
+    );
+
+    if (!currentRoomMember) return null;
+
+    const weeklyGoal = roomDetail.workoutRoomInfo.minWeeklyWorkouts;
+    const weeklyWorkouts = currentRoomMember.weeklyWorkouts + completedWorkoutDelta;
+
+    return Math.max(weeklyGoal - weeklyWorkouts, 0);
+  };
+
+  const getCurrentWorkoutRoomId = () => {
+    const routeRoomId = routeState?.currentWorkoutRoom?.workoutRoomInfo?.id;
+    if (routeRoomId) return routeRoomId;
+
+    try {
+      const storedRoomId = Number(localStorage.getItem('lastViewedWorkoutRoomId'));
+      return Number.isFinite(storedRoomId) && storedRoomId > 0 ? storedRoomId : null;
+    } catch {
+      return null;
+    }
+  };
 
   const processFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -207,6 +237,24 @@ export const WorkoutUploadPage = () => {
       });
 
       setTotalWorkoutDays(data.memberTotalWorkoutDays);
+
+      const currentWorkoutRoomId = getCurrentWorkoutRoomId();
+      let nextRemainingWeeklyWorkouts: number | null = null;
+
+      if (currentWorkoutRoomId) {
+        try {
+          const currentWorkoutRoom = await api.getWorkoutRoomDetail(currentWorkoutRoomId) as WorkoutRoomDetail;
+          nextRemainingWeeklyWorkouts = getRemainingWeeklyWorkouts(currentWorkoutRoom);
+        } catch (roomDetailErr) {
+          console.warn('운동방 상세 조회 실패:', roomDetailErr);
+        }
+      }
+
+      if (nextRemainingWeeklyWorkouts === null) {
+        nextRemainingWeeklyWorkouts = getRemainingWeeklyWorkouts(routeState?.currentWorkoutRoom, 1);
+      }
+
+      setRemainingWeeklyWorkouts(nextRemainingWeeklyWorkouts);
       // 성공 다이얼로그 표시
       setShowSuccessDialog(true);
     } catch (err) {
@@ -224,6 +272,7 @@ export const WorkoutUploadPage = () => {
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
           totalWorkoutDays={totalWorkoutDays}
+          remainingWeeklyWorkouts={remainingWeeklyWorkouts}
           onConfirm={() => navigate('/dashboard')}
         />
         <Card>
