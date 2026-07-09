@@ -184,7 +184,7 @@ const createWorkoutShareImage = async ({
   // [상세 정보 레이블 및 데이터]
   const labelY1 = cardY + 154;
   const labelY2 = cardY + 188;
-  const valueOffsetX = 84; // '운동 종류' 라벨과 데이터 사이 간격
+  const valueOffsetX = 100; // '운동 종류' 라벨과 데이터 사이 간격
 
   // 라벨 (회색)
   context.fillStyle = '#6B7280';
