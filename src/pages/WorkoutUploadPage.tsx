@@ -70,6 +70,10 @@ export const WorkoutUploadPage = () => {
     }
   };
 
+  const getResolvedWorkoutTypes = () => {
+    return workoutTypes.map(type => type === '기타' ? customWorkoutType : type);
+  };
+
   const processFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     const validFiles: File[] = [];
@@ -216,7 +220,7 @@ export const WorkoutUploadPage = () => {
     try {
       const workoutData = {
         workoutDate: format(workoutDate, 'yyyy-MM-dd'),
-        workoutTypes: workoutTypes.map(type => type === '기타' ? customWorkoutType : type),
+        workoutTypes: getResolvedWorkoutTypes(),
         duration: parseInt(duration)
       };
 
@@ -273,6 +277,9 @@ export const WorkoutUploadPage = () => {
           onOpenChange={setShowSuccessDialog}
           totalWorkoutDays={totalWorkoutDays}
           remainingWeeklyWorkouts={remainingWeeklyWorkouts}
+          workoutImage={selectedImages[0] ?? null}
+          workoutTypes={getResolvedWorkoutTypes()}
+          workoutDuration={duration ? parseInt(duration) : null}
           onConfirm={() => navigate('/dashboard')}
         />
         <Card>
