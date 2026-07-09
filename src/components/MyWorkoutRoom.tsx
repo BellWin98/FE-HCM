@@ -9,6 +9,7 @@ import MemberStatus from "./MemberStatus";
 import { RoomCodeSection } from "./RoomCodeSection";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "./ui/carousel";
 import { Dialog, DialogContent } from "./ui/dialog";
+import { Clock } from "lucide-react";
 
 export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRegenerateEntryCode, isRegeneratingEntryCode }) => {
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -121,6 +122,12 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
                                 ))
                               ) : null}
                             </div>
+                            {record.duration ? (
+                              <Badge variant="outline" className="text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {record.duration}분
+                              </Badge>
+                            ) : null}
                             {record?.imageUrls && record.imageUrls.length > 0 ? (
                               (() => {
                                 const imageUrls = record.imageUrls;

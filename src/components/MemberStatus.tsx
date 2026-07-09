@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { CheckCircle2, Circle, Pause, Calendar, Target, Award } from "lucide-react";
+import { CheckCircle2, Circle, Pause, Calendar, Target, Award, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -124,6 +124,17 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
                                   ));
                                 })()}
                               </div>
+                              {(() => {
+                                const todayRecord = member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'));
+                                if (!todayRecord?.duration) return null;
+
+                                return (
+                                  <Badge variant="outline" className="text-xs">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    {todayRecord.duration}분
+                                  </Badge>
+                                );
+                              })()}
                               {(() => {
                                 const todayRecord = member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'));
                                 const imageUrls = todayRecord?.imageUrls;
@@ -387,6 +398,12 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
                                       {type}
                                     </Badge>
                                   ))}
+                                  {record.duration ? (
+                                    <Badge variant="outline" className="text-xs">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {record.duration}분
+                                    </Badge>
+                                  ) : null}
                                 </div>
                               </li>
                             ))}
