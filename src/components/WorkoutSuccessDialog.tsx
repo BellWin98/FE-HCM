@@ -134,8 +134,8 @@ const createWorkoutShareImage = async ({
   const cardWidth = 500; // 기존 920의 절반
   const cardHeight = 250; // 기존 420의 약 절반
   const cardRadius = 24; // 기존 48의 절반
-  const marginX = 40; // 우측 여백
-  const marginY = 60; // 상단 여백
+  const marginX = 60; // 우측 여백
+  const marginY = 80; // 상단 여백
   
   const cardX = width - cardWidth - marginX; // 우측 정렬 위치
   const cardY = marginY;
@@ -150,8 +150,8 @@ const createWorkoutShareImage = async ({
   context.fill();
   context.restore(); // 텍스트에 그림자 들어가지 않게 리셋
 
-  // 6. 카드 내부 텍스트 렌더링 (Padding 30px)
-  const pad = 30;
+  // 6. 카드 내부 텍스트 렌더링 (Padding 40px)
+  const pad = 40;
   const startX = cardX + pad; // 텍스트 시작 X 좌표
   const endX = cardX + cardWidth - pad; // 우측 정렬을 위한 끝 X 좌표
   const innerWidth = cardWidth - pad * 2;
@@ -188,13 +188,13 @@ const createWorkoutShareImage = async ({
 
   // 라벨 (회색)
   context.fillStyle = '#6B7280';
-  context.font = '600 25px Pretendard, system-ui, -apple-system, sans-serif';
+  context.font = '600 16px Pretendard, system-ui, -apple-system, sans-serif';
   context.fillText('운동 종류', startX, labelY1);
   context.fillText('운동 시간', startX, labelY2);
 
   // 데이터 (검은색) - 텍스트 넘침 방지를 위한 maxWidth 280 적용
   context.fillStyle = '#1F2937';
-  context.font = '700 25px Pretendard, system-ui, -apple-system, sans-serif';
+  context.font = '700 16px Pretendard, system-ui, -apple-system, sans-serif';
   context.fillText(workoutTypeText, startX + valueOffsetX, labelY1, 280);
   context.fillText(workoutDurationText, startX + valueOffsetX, labelY2, 280);
 
