@@ -9,6 +9,157 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { CheckCircle2, Copy, Flame, Instagram, MessageCircle } from 'lucide-react';
+import { useState } from 'react';
+
+const SERVICE_URL = 'https://www.bellwin.co.kr';
+
+const loadImageFromFile = (file: File) => {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const imageUrl = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(imageUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(imageUrl);
+      reject(new Error('이미지를 불러오지 못했어요.'));
+    };
+    image.src = imageUrl;
+  });
+};
+
+const drawCoverImage = (
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  width: number,
+  height: number
+) => {
+  const imageRatio = image.width / image.height;
+  const canvasRatio = width / height;
+  const drawWidth = imageRatio > canvasRatio ? height * imageRatio : width;
+  const drawHeight = imageRatio > canvasRatio ? height : width / imageRatio;
+  const drawX = (width - drawWidth) / 2;
+  const drawY = (height - drawHeight) / 2;
+
+  context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+};
+
+const drawRoundedRect = (
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) => {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+};
+
+const drawWrappedText = (
+  context: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines = 2
+) => {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  words.forEach((word) => {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+    if (context.measureText(nextLine).width <= maxWidth) {
+      currentLine = nextLine;
+      return;
+    }
+
+    if (currentLine) lines.push(currentLine);
+    currentLine = word;
+  });
+
+  if (currentLine) lines.push(currentLine);
+
+  lines.slice(0, maxLines).forEach((line, index) => {
+    const lineText = index === maxLines - 1 && lines.length > maxLines ? `${line}...` : line;
+    context.fillText(lineText, x, y + index * lineHeight);
+  });
+};
+
+const createWorkoutShareImage = async ({
+  workoutImage,
+  workoutDate,
+  workoutTypeText,
+  workoutDurationText,
+}: {
+  workoutImage: File;
+  workoutDate: string;
+  workoutTypeText: string;
+  workoutDurationText: string;
+}) => {
+  const canvas = document.createElement('canvas');
+  const width = 1080;
+  const height = 1350;
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('공유 이미지를 만들 수 없어요.');
+  }
+
+  const image = await loadImageFromFile(workoutImage);
+  drawCoverImage(context, image, width, height);
+
+  context.fillStyle = 'rgba(0, 0, 0, 0.28)';
+  context.fillRect(0, 0, width, height);
+
+  context.fillStyle = 'rgba(255, 255, 255, 0.94)';
+  drawRoundedRect(context, 72, 832, 936, 390, 36);
+  context.fill();
+
+  context.fillStyle = '#16A34A';
+  context.font = '700 42px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  context.fillText('운동 인증 완료', 120, 920);
+
+  context.fillStyle = '#111827';
+  context.font = '700 64px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  context.fillText(workoutDate, 120, 1000);
+
+  context.fillStyle = '#374151';
+  context.font = '600 34px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  drawWrappedText(context, `운동 종류  ${workoutTypeText}`, 120, 1072, 840, 44);
+  context.fillText(`운동 시간  ${workoutDurationText}`, 120, 1160);
+
+  context.fillStyle = '#2563EB';
+  context.font = '700 34px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  context.fillText('www.bellwin.co.kr', 120, 1234);
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((result) => {
+      if (result) {
+        resolve(result);
+      } else {
+        reject(new Error('공유 이미지 저장에 실패했어요.'));
+      }
+    }, 'image/png');
+  });
+
+  return new File([blob], 'bellwin-workout-share.png', { type: 'image/png' });
+};
 
 interface WorkoutSuccessDialogProps {
   open: boolean;
@@ -16,6 +167,7 @@ interface WorkoutSuccessDialogProps {
   totalWorkoutDays: number;
   remainingWeeklyWorkouts: number | null;
   workoutImage?: File | null;
+  workoutDate: string;
   workoutTypes: string[];
   workoutDuration: number | null;
   onConfirm: () => void;
@@ -27,21 +179,23 @@ export const WorkoutSuccessDialog = ({
   totalWorkoutDays,
   remainingWeeklyWorkouts,
   workoutImage,
+  workoutDate,
   workoutTypes,
   workoutDuration,
   onConfirm,
 }: WorkoutSuccessDialogProps) => {
+  const [sharingPlatform, setSharingPlatform] = useState<string | null>(null);
   const weeklyWorkoutMessage =
     remainingWeeklyWorkouts === null
       ? '이번 주 남은 운동 횟수를 불러오지 못했어요.'
       : remainingWeeklyWorkouts === 0
         ? '이번 주 운동 횟수를 모두 채웠어요!'
         : `이번 주 남은 운동 ${remainingWeeklyWorkouts}회`;
-  const shareUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const workoutTypeText = workoutTypes.length > 0 ? workoutTypes.join(', ') : '미입력';
   const workoutDurationText = workoutDuration ? `${workoutDuration}분` : '미입력';
   const shareText = [
     '운동 인증 완료!',
+    `운동 날짜: ${workoutDate}`,
     `운동 종류: ${workoutTypeText}`,
     `운동 시간: ${workoutDurationText}`,
     `총 ${totalWorkoutDays}회 인증했어요.`,
@@ -51,12 +205,12 @@ export const WorkoutSuccessDialog = ({
   const shareData: ShareData = {
     title: '운동 인증 완료!',
     text: shareText,
-    url: shareUrl,
+    url: SERVICE_URL,
   };
 
   const copyShareText = async (platform?: string) => {
     try {
-      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      await navigator.clipboard.writeText(`${shareText}\n${SERVICE_URL}`);
       toast.success(
         platform
           ? `${platform}에 붙여넣을 인증 문구를 복사했어요.`
@@ -70,13 +224,24 @@ export const WorkoutSuccessDialog = ({
   const openNativeShare = async (platform: string) => {
     if (!navigator.share) return false;
 
-    const canShareWorkoutImage =
-      workoutImage && navigator.canShare?.({ files: [workoutImage] });
-    const nativeShareData: ShareData = canShareWorkoutImage
-      ? { ...shareData, files: [workoutImage] }
-      : shareData;
-
     try {
+      let capturedImage: File | null = null;
+
+      if (workoutImage) {
+        capturedImage = await createWorkoutShareImage({
+          workoutImage,
+          workoutDate,
+          workoutTypeText,
+          workoutDurationText,
+        });
+      }
+
+      const canShareCapturedImage =
+        capturedImage && navigator.canShare?.({ files: [capturedImage] });
+      const nativeShareData: ShareData = canShareCapturedImage
+        ? { ...shareData, files: [capturedImage] }
+        : shareData;
+
       await navigator.share(nativeShareData);
       return true;
     } catch (error) {
@@ -90,18 +255,28 @@ export const WorkoutSuccessDialog = ({
   };
 
   const handleKakaoShare = async () => {
-    const didOpenShare = await openNativeShare('카카오톡');
-    if (!didOpenShare) {
-      await copyShareText('카카오톡');
+    setSharingPlatform('카카오톡');
+    try {
+      const didOpenShare = await openNativeShare('카카오톡');
+      if (!didOpenShare) {
+        await copyShareText('카카오톡');
+      }
+    } finally {
+      setSharingPlatform(null);
     }
   };
 
   const handleInstagramShare = async () => {
-    const didOpenShare = await openNativeShare('인스타그램');
-    if (didOpenShare) return;
+    setSharingPlatform('인스타그램');
+    try {
+      const didOpenShare = await openNativeShare('인스타그램');
+      if (didOpenShare) return;
 
-    await copyShareText('인스타그램');
-    window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
+      await copyShareText('인스타그램');
+      window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
+    } finally {
+      setSharingPlatform(null);
+    }
   };
 
   return (
@@ -134,16 +309,22 @@ export const WorkoutSuccessDialog = ({
             </div>
             <div className="space-y-1 rounded-md border bg-muted/40 px-3 py-2 text-left text-xs leading-relaxed text-muted-foreground">
               <div>
+                <span className="font-medium text-foreground">운동 날짜</span> {workoutDate}
+              </div>
+              <div>
                 <span className="font-medium text-foreground">운동 종류</span> {workoutTypeText}
               </div>
               <div>
                 <span className="font-medium text-foreground">운동 시간</span> {workoutDurationText}
               </div>
-              {workoutImage ? (
+              {/* {workoutImage ? (
                 <div>
-                  <span className="font-medium text-foreground">공유 사진</span> 첫 번째 인증 사진
+                  <span className="font-medium text-foreground">공유 이미지</span> 첫 번째 사진에 인증 정보 캡쳐
                 </div>
               ) : null}
+              <div>
+                <span className="font-medium text-foreground">서비스 링크</span> www.bellwin.co.kr
+              </div> */}
             </div>
             <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
               SNS에 운동 인증을 공유해보세요.
@@ -157,18 +338,20 @@ export const WorkoutSuccessDialog = ({
               variant="outline"
               className="h-10 border-[#FEE500] bg-[#FEE500] text-[#191919] hover:bg-[#F4DC00] hover:text-[#191919]"
               onClick={handleKakaoShare}
+              disabled={sharingPlatform !== null}
             >
               <MessageCircle className="mr-2 h-4 w-4" aria-hidden="true" />
-              카톡 공유
+              {sharingPlatform === '카카오톡' ? '생성 중' : '카톡 공유'}
             </Button>
             <Button
               type="button"
               variant="outline"
               className="h-10 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700"
               onClick={handleInstagramShare}
+              disabled={sharingPlatform !== null}
             >
               <Instagram className="mr-2 h-4 w-4" aria-hidden="true" />
-              인스타 공유
+              {sharingPlatform === '인스타그램' ? '생성 중' : '인스타 공유'}
             </Button>
           </div>
           <Button type="button" variant="ghost" className="h-9 w-full text-xs" onClick={() => copyShareText()}>

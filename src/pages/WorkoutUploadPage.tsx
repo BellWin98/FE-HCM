@@ -278,6 +278,7 @@ export const WorkoutUploadPage = () => {
           totalWorkoutDays={totalWorkoutDays}
           remainingWeeklyWorkouts={remainingWeeklyWorkouts}
           workoutImage={selectedImages[0] ?? null}
+          workoutDate={format(workoutDate, 'yyyy.MM.dd(EEE)', { locale: ko })}
           workoutTypes={getResolvedWorkoutTypes()}
           workoutDuration={duration ? parseInt(duration) : null}
           onConfirm={() => navigate('/dashboard')}
