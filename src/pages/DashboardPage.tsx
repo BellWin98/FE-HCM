@@ -92,8 +92,9 @@ export const DashboardPage = () => {
         console.log("data: " + JSON.stringify(data));
         const senderId = data?.senderId;
         const isFromMe = senderId != null && String(member?.id) === senderId;
+        const isChatNotification = data?.type === 'CHAT';
         
-        if (isFromMe) return;
+        if (isFromMe || isChatNotification) return;
 
         const title = data?.title ?? '알림';
         const body = data?.body;
