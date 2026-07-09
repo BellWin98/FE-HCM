@@ -112,8 +112,8 @@ const createWorkoutShareImage = async ({
 }) => {
   const canvas = document.createElement('canvas');
   // 1. 캔버스 비율 9:16 (인스타그램 스토리 최적화)
-  const width = 1080;
-  const height = 1920; 
+  const width = 1440;
+  const height = 1440; 
   canvas.width = width;
   canvas.height = height;
 
@@ -131,8 +131,8 @@ const createWorkoutShareImage = async ({
   context.fillRect(0, 0, width, height);
 
   // 4. 우측 상단 카드 배치 계산 (기존 대비 절반 크기)
-  const cardWidth = 460; // 기존 920의 절반
-  const cardHeight = 220; // 기존 420의 약 절반
+  const cardWidth = 500; // 기존 920의 절반
+  const cardHeight = 250; // 기존 420의 약 절반
   const cardRadius = 24; // 기존 48의 절반
   const marginX = 40; // 우측 여백
   const marginY = 60; // 상단 여백
@@ -158,19 +158,19 @@ const createWorkoutShareImage = async ({
 
   // [상태 뱃지 : HCM (파란색)]
   context.fillStyle = '#2563EB'; // Tailwind blue-600
-  context.font = '800 20px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+  context.font = '800 25px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
   context.fillText('HCM', startX, cardY + 36);
 
   // [서비스 URL : 카드 내 우측 상단 (검정색)]
   context.fillStyle = '#111827'; // Tailwind gray-900 (검정색)
-  context.font = '600 14px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+  context.font = '600 25px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
   context.textAlign = 'right';
   context.fillText('www.bellwin.co.kr', endX, cardY + 36);
   context.textAlign = 'left'; // 캔버스 정렬 상태 원상 복구
 
   // [날짜 타이틀]
   context.fillStyle = '#111827';
-  context.font = '800 36px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+  context.font = '800 30px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
   context.fillText(workoutDate, startX, cardY + 84);
 
   // [가로 구분선]
@@ -188,13 +188,13 @@ const createWorkoutShareImage = async ({
 
   // 라벨 (회색)
   context.fillStyle = '#6B7280';
-  context.font = '600 16px Pretendard, system-ui, -apple-system, sans-serif';
+  context.font = '600 25px Pretendard, system-ui, -apple-system, sans-serif';
   context.fillText('운동 종류', startX, labelY1);
   context.fillText('운동 시간', startX, labelY2);
 
   // 데이터 (검은색) - 텍스트 넘침 방지를 위한 maxWidth 280 적용
   context.fillStyle = '#1F2937';
-  context.font = '700 16px Pretendard, system-ui, -apple-system, sans-serif';
+  context.font = '700 25px Pretendard, system-ui, -apple-system, sans-serif';
   context.fillText(workoutTypeText, startX + valueOffsetX, labelY1, 280);
   context.fillText(workoutDurationText, startX + valueOffsetX, labelY2, 280);
 
