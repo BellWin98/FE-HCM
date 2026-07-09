@@ -188,13 +188,13 @@ const createWorkoutShareImage = async ({
 
   // 라벨 (회색)
   context.fillStyle = '#6B7280';
-  context.font = '600 16px Pretendard, system-ui, -apple-system, sans-serif';
+  context.font = '600 24px Pretendard, system-ui, -apple-system, sans-serif';
   context.fillText('운동 종류', startX, labelY1);
   context.fillText('운동 시간', startX, labelY2);
 
   // 데이터 (검은색) - 텍스트 넘침 방지를 위한 maxWidth 280 적용
   context.fillStyle = '#1F2937';
-  context.font = '700 16px Pretendard, system-ui, -apple-system, sans-serif';
+  context.font = '700 24px Pretendard, system-ui, -apple-system, sans-serif';
   context.fillText(workoutTypeText, startX + valueOffsetX, labelY1, 280);
   context.fillText(workoutDurationText, startX + valueOffsetX, labelY2, 280);
 
