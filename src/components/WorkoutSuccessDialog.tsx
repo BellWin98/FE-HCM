@@ -111,8 +111,9 @@ const createWorkoutShareImage = async ({
   workoutDurationText: string;
 }) => {
   const canvas = document.createElement('canvas');
+  // 1. 캔버스 비율 9:16 (인스타그램 스토리 최적화)
   const width = 1080;
-  const height = 1350; // 인스타그램 최적 비율 (4:5)
+  const height = 1920; 
   canvas.width = width;
   canvas.height = height;
 
@@ -121,70 +122,81 @@ const createWorkoutShareImage = async ({
     throw new Error('공유 이미지를 만들 수 없어요.');
   }
 
-  // 1. 원본 사진 렌더링
+  // 2. 원본 사진 렌더링
   const image = await loadImageFromFile(workoutImage);
   drawCoverImage(context, image, width, height);
 
-  // 2. 사진 배경을 살짝 어둡게 (글자 가독성 확보)
+  // 3. 사진 배경을 살짝 어둡게 (글자 가독성 확보)
   context.fillStyle = 'rgba(0, 0, 0, 0.15)';
   context.fillRect(0, 0, width, height);
 
-  // 3. 흰색 카드 배경 + 그림자(Shadow) 적용
+  // 4. 우측 상단 카드 배치 계산 (기존 대비 절반 크기)
+  const cardWidth = 460; // 기존 920의 절반
+  const cardHeight = 220; // 기존 420의 약 절반
+  const cardRadius = 24; // 기존 48의 절반
+  const marginX = 40; // 우측 여백
+  const marginY = 60; // 상단 여백
+  
+  const cardX = width - cardWidth - marginX; // 우측 정렬 위치
+  const cardY = marginY;
+
+  // 5. 흰색 카드 배경 + 그림자 적용
   context.save();
   context.shadowColor = 'rgba(0, 0, 0, 0.2)';
-  context.shadowBlur = 40;
-  context.shadowOffsetY = 15;
+  context.shadowBlur = 20; // 그림자도 절반으로
+  context.shadowOffsetY = 8;
   context.fillStyle = 'rgba(255, 255, 255, 0.96)';
-  // X: 80, Y: 820, W: 920, H: 420, Radius: 48
-  drawRoundedRect(context, 80, 820, 920, 420, 48); 
+  drawRoundedRect(context, cardX, cardY, cardWidth, cardHeight, cardRadius); 
   context.fill();
   context.restore(); // 텍스트에 그림자 들어가지 않게 리셋
 
-  // 4. 카드 내부 텍스트 렌더링 (Padding 60px 적용 -> 좌측 여백 X: 140)
-  const padX = 140;
-  const innerWidth = width - padX * 2; // 우측 여백도 동일하게 유지
+  // 6. 카드 내부 텍스트 렌더링 (Padding 30px)
+  const pad = 30;
+  const startX = cardX + pad; // 텍스트 시작 X 좌표
+  const endX = cardX + cardWidth - pad; // 우측 정렬을 위한 끝 X 좌표
+  const innerWidth = cardWidth - pad * 2;
 
-  // [상태 뱃지]
-  context.fillStyle = '#16A34A'; // Tailwind green-600
-  context.font = '800 32px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
-  context.fillText('운동 인증 완료', padX, 910);
+  // [상태 뱃지 : HCM (파란색)]
+  context.fillStyle = '#2563EB'; // Tailwind blue-600
+  context.font = '800 20px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+  context.fillText('HCM', startX, cardY + 36);
+
+  // [서비스 URL : 카드 내 우측 상단 (검정색)]
+  context.fillStyle = '#111827'; // Tailwind gray-900 (검정색)
+  context.font = '600 14px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+  context.textAlign = 'right';
+  context.fillText('www.bellwin.co.kr', endX, cardY + 36);
+  context.textAlign = 'left'; // 캔버스 정렬 상태 원상 복구
 
   // [날짜 타이틀]
-  context.fillStyle = '#111827'; // Tailwind gray-900
-  context.font = '800 72px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
-  context.fillText(workoutDate, padX, 1000);
+  context.fillStyle = '#111827';
+  context.font = '800 36px Pretendard, system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+  context.fillText(workoutDate, startX, cardY + 84);
 
   // [가로 구분선]
   context.beginPath();
-  context.moveTo(padX, 1060);
-  context.lineTo(padX + innerWidth, 1060);
-  context.strokeStyle = '#E5E7EB'; // Tailwind gray-200
-  context.lineWidth = 2;
+  context.moveTo(startX, cardY + 114);
+  context.lineTo(endX, cardY + 114);
+  context.strokeStyle = '#E5E7EB';
+  context.lineWidth = 1;
   context.stroke();
 
   // [상세 정보 레이블 및 데이터]
-  const labelY1 = 1140;
-  const labelY2 = 1200;
-  const valueOffsetX = 160; // '운동 종류' 글씨와 실제 데이터 사이 간격
+  const labelY1 = cardY + 154;
+  const labelY2 = cardY + 188;
+  const valueOffsetX = 84; // '운동 종류' 라벨과 데이터 사이 간격
 
   // 라벨 (회색)
-  context.fillStyle = '#6B7280'; // Tailwind gray-500
-  context.font = '600 30px Pretendard, system-ui, -apple-system, sans-serif';
-  context.fillText('운동 종류', padX, labelY1);
-  context.fillText('운동 시간', padX, labelY2);
+  context.fillStyle = '#6B7280';
+  context.font = '600 16px Pretendard, system-ui, -apple-system, sans-serif';
+  context.fillText('운동 종류', startX, labelY1);
+  context.fillText('운동 시간', startX, labelY2);
 
-  // 데이터 (검은색) - 너무 길 경우 maxWidth(600)을 적용해 삐져나오지 않게 방어
-  context.fillStyle = '#1F2937'; // Tailwind gray-800
-  context.font = '700 32px Pretendard, system-ui, -apple-system, sans-serif';
-  context.fillText(workoutTypeText, padX + valueOffsetX, labelY1, 600);
-  context.fillText(workoutDurationText, padX + valueOffsetX, labelY2, 600);
-
-  // 5. 서비스 링크 (워터마크) - 흰색 카드 밖 하단 중앙
-  context.fillStyle = 'rgba(255, 255, 255, 0.9)';
-  context.font = '600 28px Pretendard, system-ui, -apple-system, sans-serif';
-  context.textAlign = 'center';
-  context.fillText('www.bellwin.co.kr', width / 2, 1310);
-  context.textAlign = 'left'; // 캔버스 상태 원복
+  // 데이터 (검은색) - 텍스트 넘침 방지를 위한 maxWidth 280 적용
+  context.fillStyle = '#1F2937';
+  context.font = '700 16px Pretendard, system-ui, -apple-system, sans-serif';
+  context.fillText(workoutTypeText, startX + valueOffsetX, labelY1, 280);
+  context.fillText(workoutDurationText, startX + valueOffsetX, labelY2, 280);
 
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((result) => {
