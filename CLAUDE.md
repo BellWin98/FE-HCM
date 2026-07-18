@@ -111,5 +111,5 @@ npm run preview   # 빌드 결과 미리보기
 
 - 브랜치명: `feature/issue-{issue_number}` 또는 `fix/issue-{issue_number}`.
 - 커밋 메시지: 한국어로 작성하고 `(#{issue_number})`로 끝맺음 (예: `feat: 채팅 이미지 업로드 기능 추가 (#42)`).
-- PR base 브랜치: `dev`가 있으면 `dev`, 없으면 `main`.
+- PR base 브랜치: `dev`를 거치지 않고 항상 `main`으로 바로 병합합니다.
 - 자세한 자동화 절차는 `.cursor/commands/github-issue-pr-command.md` 참고.
