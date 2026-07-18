@@ -300,7 +300,6 @@ const AdminRoomDetailPage = () => {
                         {room.pendingPenaltyEnabled
                           ? `부과돼요.(회당 ${room.pendingPenaltyPerMiss?.toLocaleString()}원)`
                           : '부과되지 않아요.'}
-                        으로 전환될 예정입니다.
                       </AlertDescription>
                     </Alert>
                   ) : null}
