@@ -57,27 +57,28 @@ export const PenaltyScheduleDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>벌금제도 전환 예약</DialogTitle>
+          <DialogTitle>운영 방식 바꾸기</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            현재 상태: {penaltyEnabled ? '벌금제도 사용 중' : '벌금제도 미사용'}
+            현재 이 운동방은 {penaltyEnabled ? '벌금제로 운영되고 있어요.' : '벌금없이 운영되고 있어요.'}
           </p>
 
           {hasPendingChange && (
             <Alert>
               <AlertDescription>
-                {penaltyChangeEffectiveDate} 부터 벌금제도가{' '}
-                {pendingPenaltyEnabled ? `켜짐(회당 ${pendingPenaltyPerMiss?.toLocaleString()}원)` : '꺼짐'}으로
-                전환될 예정입니다. 아래에서 다시 예약하면 이 예약은 새 예약으로 대체됩니다.
+                {penaltyChangeEffectiveDate} 부터 벌금이{' '}
+                {pendingPenaltyEnabled ? `부과돼요.(회당 ${pendingPenaltyPerMiss?.toLocaleString()}원)` : '부과되지 않아요'}
+                <br /><br />
+                아래에서 새로 예약 시 기존 예약은 무시됩니다.
               </AlertDescription>
             </Alert>
           )}
 
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div className="space-y-0.5">
-              <Label htmlFor="target-penalty-enabled">전환 후 상태</Label>
-              <p className="text-xs text-gray-500">{targetEnabled ? '벌금제도 켜짐' : '벌금제도 꺼짐'}</p>
+              <Label htmlFor="target-penalty-enabled">벌금제 사용 여부</Label>
+              <p className="text-xs text-gray-500">{targetEnabled ? '사용' : '미사용 (벌금 없이 운동방 운영)'}</p>
             </div>
             <Switch id="target-penalty-enabled" checked={targetEnabled} onCheckedChange={onTargetEnabledChange} />
           </div>
@@ -123,7 +124,8 @@ export const PenaltyScheduleDialog = ({
               </PopoverContent>
             </Popover>
             <p className="text-xs text-gray-500 p-2">
-              월요일만 선택 가능하며, 오늘로부터 최소 7일 이후여야 합니다. (가장 빠른 날짜:{' '}
+              월요일만 선택 가능하며, 오늘로부터 최소 7일 이후여야 합니다. 
+              <br />(가장 빠른 날짜:{' '}
               {format(earliestMonday, 'yyyy-MM-dd', { locale: ko })})
             </p>
           </div>

@@ -236,7 +236,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
         {currentWorkoutRoom.workoutRoomInfo && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">💰 벌금제도</CardTitle>
+              <CardTitle className="text-lg">💰 운동방 운영 방식</CardTitle>
             </CardHeader>
             <CardContent>
               <PenaltySettingsSection
