@@ -1,8 +1,8 @@
 # FE-HCM
 
-> "헬창모임" — 그룹 운동 습관 관리 앱의 **React 18 / TypeScript / Vite 프론트엔드(PWA)**입니다. shadcn/ui(Radix
-> 기반)와 TailwindCSS로 구성되어 있으며, 소규모 그룹인 "운동방"에서의 운동 인증, 실시간 채팅, 벌금 관리,
-> 주식 시세 조회, 푸시 알림 등의 화면을 제공합니다.
+> "헬창마을" — 벌금 기반 운동 인증 서비스의 **React 18 / TypeScript / Vite 프론트엔드(PWA)**입니다.
+> <br>shadcn/ui(Radix 기반)와 TailwindCSS로 구성되어 있으며,
+> <br>운동방에서의 운동 인증, 실시간 채팅, 벌금 관리, 주식 시세 조회, 푸시 알림 등의 화면을 제공합니다.
 
 백엔드 저장소는 [`BE-HCM`](../BE-HCM)이며, REST(`{ success, message, data }` 응답 포맷) + WebSocket(STOMP)으로
 연동됩니다.
