@@ -4,6 +4,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MyActivityCard } from '@/components/dashboard/MyActivityCard';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { AvailableRoomsDialog } from '@/components/dialogs/AvailableRoomsDialog';
+import { PenaltyScheduleDialog } from '@/components/dialogs/PenaltyScheduleDialog';
 import { RoomCodeDialog } from '@/components/dialogs/RoomCodeDialog';
 import { RestDayDialog } from '@/components/dialogs/RestDayDialog';
 import { Layout } from '@/components/layout/Layout';
@@ -14,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useRestDay } from '@/hooks/useRestDay';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
@@ -113,6 +115,14 @@ export const DashboardPage = () => {
   const [joinedRoomIds, setJoinedRoomIds] = useState<number[]>([]);
   const [isRegeneratingEntryCode, setIsRegeneratingEntryCode] = useState(false);
 
+  // 벌금제도 전환 예약 다이얼로그 관련 상태
+  const [showPenaltyScheduleDialog, setShowPenaltyScheduleDialog] = useState(false);
+  const [penaltyScheduleTargetEnabled, setPenaltyScheduleTargetEnabled] = useState(true);
+  const [penaltyScheduleAmount, setPenaltyScheduleAmount] = useState('5000');
+  const [penaltyScheduleDate, setPenaltyScheduleDate] = useState<Date | undefined>(undefined);
+  const [isSchedulingPenaltyChange, setIsSchedulingPenaltyChange] = useState(false);
+  const [penaltyScheduleError, setPenaltyScheduleError] = useState('');
+
   // 오늘이 휴식일인지 확인하는 함수
   const isTodayRestDay = () => {
     if (!currentWorkoutRoom) return false;
@@ -192,6 +202,54 @@ export const DashboardPage = () => {
     setShowAvailableRoomsDialog(false);
   };
 
+  const handleOpenPenaltySchedule = () => {
+    const room = currentWorkoutRoom?.workoutRoomInfo;
+    if (!room) return;
+    setPenaltyScheduleTargetEnabled(!room.penaltyEnabled);
+    setPenaltyScheduleAmount(String(room.penaltyPerMiss ?? 5000));
+    setPenaltyScheduleDate(undefined);
+    setPenaltyScheduleError('');
+    setShowPenaltyScheduleDialog(true);
+  };
+
+  const handlePenaltyScheduleDialogClose = () => {
+    setShowPenaltyScheduleDialog(false);
+    setPenaltyScheduleError('');
+  };
+
+  const handleSchedulePenaltyChange = async () => {
+    const roomId = currentWorkoutRoom?.workoutRoomInfo?.id;
+    if (!roomId || !penaltyScheduleDate) return;
+
+    if (penaltyScheduleTargetEnabled) {
+      const amount = parseInt(penaltyScheduleAmount, 10);
+      if (Number.isNaN(amount) || amount < 1000 || amount > 50000) {
+        setPenaltyScheduleError('벌금은 1,000원 이상 50,000원 이하여야 합니다.');
+        return;
+      }
+    }
+
+    setIsSchedulingPenaltyChange(true);
+    setPenaltyScheduleError('');
+    try {
+      const effectiveDate = format(penaltyScheduleDate, 'yyyy-MM-dd');
+      await api.schedulePenaltyChange(roomId, {
+        penaltyEnabled: penaltyScheduleTargetEnabled,
+        penaltyPerMiss: penaltyScheduleTargetEnabled ? parseInt(penaltyScheduleAmount, 10) : undefined,
+        effectiveDate,
+      });
+      const detail = await api.getWorkoutRoomDetail(roomId) as WorkoutRoomDetail;
+      setCurrentWorkoutRoom(detail);
+      setShowPenaltyScheduleDialog(false);
+      toast.success('벌금제도 전환이 예약되었습니다.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '예약에 실패했습니다. 잠시 후 다시 시도해주세요.';
+      setPenaltyScheduleError(msg);
+    } finally {
+      setIsSchedulingPenaltyChange(false);
+    }
+  };
+
   if (isLoading || !availableWorkoutRooms) {
     return (
       <Layout>
@@ -264,6 +322,7 @@ export const DashboardPage = () => {
                 currentMember={member}
                 onRegenerateEntryCode={handleRegenerateEntryCode}
                 isRegeneratingEntryCode={isRegeneratingEntryCode}
+                onOpenPenaltySchedule={handleOpenPenaltySchedule}
               />
             </TabsContent>
 
@@ -321,6 +380,29 @@ export const DashboardPage = () => {
           error={restDay.error}
           today={restDay.today}
         />
+
+        {/* 벌금제도 전환 예약 다이얼로그 */}
+        {currentWorkoutRoom?.workoutRoomInfo && (
+          <PenaltyScheduleDialog
+            open={showPenaltyScheduleDialog}
+            onOpenChange={setShowPenaltyScheduleDialog}
+            penaltyEnabled={currentWorkoutRoom.workoutRoomInfo.penaltyEnabled}
+            pendingPenaltyEnabled={currentWorkoutRoom.workoutRoomInfo.pendingPenaltyEnabled}
+            pendingPenaltyPerMiss={currentWorkoutRoom.workoutRoomInfo.pendingPenaltyPerMiss}
+            penaltyChangeEffectiveDate={currentWorkoutRoom.workoutRoomInfo.penaltyChangeEffectiveDate}
+            targetEnabled={penaltyScheduleTargetEnabled}
+            onTargetEnabledChange={setPenaltyScheduleTargetEnabled}
+            penaltyPerMiss={penaltyScheduleAmount}
+            onPenaltyPerMissChange={setPenaltyScheduleAmount}
+            effectiveDate={penaltyScheduleDate}
+            onEffectiveDateChange={setPenaltyScheduleDate}
+            onSubmit={handleSchedulePenaltyChange}
+            onClose={handlePenaltyScheduleDialogClose}
+            isSubmitting={isSchedulingPenaltyChange}
+            error={penaltyScheduleError}
+            today={today}
+          />
+        )}
 
         {/* 휴식일 등록 성공 다이얼로그 */}
         <Dialog open={restDay.showRestSuccessDialog} onOpenChange={(open) => !open && restDay.handleRestSuccessDialogClose()}>

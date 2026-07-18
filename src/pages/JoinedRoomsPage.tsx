@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
+import { formatPenaltyPerMiss } from '@/lib/workoutRoomRules';
 import { WorkoutRoom } from '@/types';
 import { Eye, List, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -71,7 +72,7 @@ const JoinedRoomsPage = () => {
                 <CardHeader>
                   <CardTitle>{room.name}</CardTitle>
                   <CardDescription>
-                    주 {room.minWeeklyWorkouts}회 • 벌금 {room.penaltyPerMiss.toLocaleString()}원
+                    주 {room.minWeeklyWorkouts}회 • {formatPenaltyPerMiss(room.penaltyPerMiss)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-2">

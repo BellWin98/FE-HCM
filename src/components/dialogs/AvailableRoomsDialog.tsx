@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { formatPenaltyPerMiss } from '@/lib/workoutRoomRules';
 import { WorkoutRoom } from '@/types';
 import { List, Trophy, Users } from 'lucide-react';
 
@@ -56,7 +57,7 @@ export const AvailableRoomsDialog = ({
                       {workoutRoom.name}
                     </CardTitle>
                     <CardDescription>
-                      주 {workoutRoom.minWeeklyWorkouts}회 • 벌금 {workoutRoom.penaltyPerMiss.toLocaleString()}원
+                      주 {workoutRoom.minWeeklyWorkouts}회 • {formatPenaltyPerMiss(workoutRoom.penaltyPerMiss)}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex-grow">

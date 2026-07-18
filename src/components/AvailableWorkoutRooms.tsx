@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { LogIn, Plus, Trophy, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { formatPenaltyPerMiss } from '@/lib/workoutRoomRules';
 import { WorkoutRoom } from '@/types';
 
 interface AvailableWorkoutRoomsProps {
@@ -42,7 +43,7 @@ export const AvailableWorkoutRooms = ({ workoutRooms, onCreateWorkoutRoom, onJoi
                 {workoutRoom.name}
               </CardTitle>
               <CardDescription>
-                주 {workoutRoom.minWeeklyWorkouts}회 • 벌금 {workoutRoom.penaltyPerMiss.toLocaleString()}원
+                주 {workoutRoom.minWeeklyWorkouts}회 • {formatPenaltyPerMiss(workoutRoom.penaltyPerMiss)}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
