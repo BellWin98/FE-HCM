@@ -11,7 +11,7 @@ import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { validateWorkoutRoomRules } from '@/lib/workoutRoomRules';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AdminStateBlock } from '@/components/admin/AdminStateBlock';
 import { AdminRoomMembersTab } from '@/components/admin/AdminRoomMembersTab';
 import { AdminRoomChatTab } from '@/components/admin/AdminRoomChatTab';
@@ -56,18 +56,18 @@ const AdminRoomDetailPage = () => {
     setActiveTab('settings');
   }, [numericRoomId]);
 
-  const hydrateFromRoom = (r: typeof room) => {
+  const hydrateFromRoom = useCallback((r: typeof room) => {
     if (!r) return;
     setMaxMembers(String(r.maxMembers ?? 10));
     setMinWeeklyWorkouts(String(r.minWeeklyWorkouts ?? 3));
     setPenaltyPerMiss(String(r.penaltyPerMiss ?? 5000));
-  };
+  }, []);
 
   useEffect(() => {
     if (!room || initialized) return;
     hydrateFromRoom(room);
     setInitialized(true);
-  }, [room, initialized]);
+  }, [room, initialized, hydrateFromRoom]);
 
   const updateMutation = useMutation({
     mutationFn: async () => {
