@@ -150,9 +150,9 @@ export const CreateRoomPage = () => {
               <div className="space-y-2 rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label htmlFor="penalty-enabled">벌금제도 사용</Label>
+                    <Label htmlFor="penalty-enabled">벌금제 사용 여부</Label>
                     <p className="text-xs text-gray-500">
-                      끄면 벌금 없이 운동 인증 용도로만 방을 운영합니다.
+                      미사용 시 벌금 없이 운동방을 운영합니다.
                     </p>
                   </div>
                   <Switch

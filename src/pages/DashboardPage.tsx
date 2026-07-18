@@ -241,7 +241,7 @@ export const DashboardPage = () => {
       const detail = await api.getWorkoutRoomDetail(roomId) as WorkoutRoomDetail;
       setCurrentWorkoutRoom(detail);
       setShowPenaltyScheduleDialog(false);
-      toast.success('벌금제도 전환이 예약되었습니다.');
+      toast.success('운동방 운영 방식 바꾸기 예약이 완료되었습니다.');
     } catch (err) {
       const msg = err instanceof Error ? err.message : '예약에 실패했습니다. 잠시 후 다시 시도해주세요.';
       setPenaltyScheduleError(msg);

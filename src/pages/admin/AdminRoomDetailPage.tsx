@@ -131,7 +131,7 @@ const AdminRoomDetailPage = () => {
       });
     },
     onSuccess: () => {
-      toast.success('벌금제도 전환이 예약되었습니다.');
+      toast.success('운영방식 바꾸기 예약이 완료되었습니다.');
       setShowPenaltyScheduleDialog(false);
       setPenaltyScheduleError('');
       queryClient.invalidateQueries({ queryKey: ['adminWorkoutRoomDetail', numericRoomId] });
@@ -282,7 +282,7 @@ const AdminRoomDetailPage = () => {
 
               <Card className="mt-4">
                 <CardHeader>
-                  <CardTitle>벌금제도 전환 예약</CardTitle>
+                  <CardTitle>운영 방식 바꾸기</CardTitle>
                   <CardDescription>
                     벌금제도 사용 여부는 즉시 반영되지 않고, 오늘로부터 최소 7일 이후의 월요일부터 적용되도록
                     예약합니다.
@@ -296,17 +296,17 @@ const AdminRoomDetailPage = () => {
                   {room.pendingPenaltyEnabled !== null && room.pendingPenaltyEnabled !== undefined ? (
                     <Alert>
                       <AlertDescription>
-                        {room.penaltyChangeEffectiveDate} 부터 벌금제도가{' '}
+                        {room.penaltyChangeEffectiveDate} 부터 벌금이{' '}
                         {room.pendingPenaltyEnabled
-                          ? `켜짐(회당 ${room.pendingPenaltyPerMiss?.toLocaleString()}원)`
-                          : '꺼짐'}
+                          ? `부과돼요.(회당 ${room.pendingPenaltyPerMiss?.toLocaleString()}원)`
+                          : '부과되지 않아요.'}
                         으로 전환될 예정입니다.
                       </AlertDescription>
                     </Alert>
                   ) : null}
 
                   <Button type="button" variant="outline" onClick={handleOpenPenaltySchedule}>
-                    벌금제도 전환 예약
+                    운영방식 바꾸기
                   </Button>
                 </CardContent>
               </Card>
