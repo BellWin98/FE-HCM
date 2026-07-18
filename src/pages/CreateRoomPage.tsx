@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { api } from '@/lib/api';
 import { validateWorkoutRoomRules } from '@/lib/workoutRoomRules';
 import { Loader2 } from 'lucide-react';
@@ -19,6 +20,7 @@ export const CreateRoomPage = () => {
   const [roomName, setRoomName] = useState('');
   const [entryCode, setEntryCode] = useState('');
   const [minWeeklyWorkouts, setMinWeeklyWorkouts] = useState('3');
+  const [penaltyEnabled, setPenaltyEnabled] = useState(true);
   const [penaltyPerMiss, setPenaltyPerMiss] = useState('5000');
   const [maxMembers, setMaxMembers] = useState('10');
   const [loading, setLoading] = useState(false);
@@ -51,6 +53,7 @@ export const CreateRoomPage = () => {
     const rulesError = validateWorkoutRoomRules({
       maxMembers,
       minWeeklyWorkouts,
+      penaltyEnabled,
       penaltyPerMiss,
     });
     if (rulesError) {
@@ -89,7 +92,8 @@ export const CreateRoomPage = () => {
       const workoutRoomData = {
         name: roomName.trim(),
         minWeeklyWorkouts: parseInt(minWeeklyWorkouts),
-        penaltyPerMiss: parseInt(penaltyPerMiss),
+        penaltyEnabled,
+        penaltyPerMiss: penaltyEnabled ? parseInt(penaltyPerMiss) : undefined,
         maxMembers: parseInt(maxMembers),
         entryCode: entryCode.trim(),
       };
@@ -141,20 +145,39 @@ export const CreateRoomPage = () => {
                   />
                   <p className="text-xs text-gray-500">일주일에 최소 몇 번 운동할지 설정하세요</p>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="penalty">1회 누락당 벌금 (원)</Label>
-                  <Input
-                    id="penalty"
-                    type="number"
-                    min="1000"
-                    max="50000"
-                    step="1000"
-                    value={penaltyPerMiss}
-                    onChange={(e) => setPenaltyPerMiss(e.target.value)}
+              <div className="space-y-2 rounded-lg border p-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="penalty-enabled">벌금제도 사용</Label>
+                    <p className="text-xs text-gray-500">
+                      끄면 벌금 없이 운동 인증 용도로만 방을 운영합니다.
+                    </p>
+                  </div>
+                  <Switch
+                    id="penalty-enabled"
+                    checked={penaltyEnabled}
+                    onCheckedChange={setPenaltyEnabled}
                   />
-                  <p className="text-xs text-gray-500">운동을 빠뜨릴 때마다 부과될 벌금</p>
                 </div>
+
+                {penaltyEnabled && (
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor="penalty">1회 누락당 벌금 (원)</Label>
+                    <Input
+                      id="penalty"
+                      type="number"
+                      min="1000"
+                      max="50000"
+                      step="1000"
+                      value={penaltyPerMiss}
+                      onChange={(e) => setPenaltyPerMiss(e.target.value)}
+                      className="max-w-xs"
+                    />
+                    <p className="text-xs text-gray-500">운동을 빠뜨릴 때마다 부과될 벌금</p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">

@@ -7,11 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Calendar } from "./ui/calendar";
 import MemberStatus from "./MemberStatus";
 import { RoomCodeSection } from "./RoomCodeSection";
+import { PenaltySettingsSection } from "./PenaltySettingsSection";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "./ui/carousel";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Clock } from "lucide-react";
 
-export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRegenerateEntryCode, isRegeneratingEntryCode }) => {
+export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRegenerateEntryCode, isRegeneratingEntryCode, onOpenPenaltySchedule }) => {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [zoomImageUrls, setZoomImageUrls] = useState<string[] | null>(null);
     const [zoomImageIndex, setZoomImageIndex] = useState<number>(0);
@@ -232,14 +233,32 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
             </CardContent>
           </Card>
         )}
+        {currentWorkoutRoom.workoutRoomInfo && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">💰 벌금제도</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PenaltySettingsSection
+                penaltyEnabled={currentWorkoutRoom.workoutRoomInfo.penaltyEnabled}
+                penaltyPerMiss={currentWorkoutRoom.workoutRoomInfo.penaltyPerMiss}
+                pendingPenaltyEnabled={currentWorkoutRoom.workoutRoomInfo.pendingPenaltyEnabled}
+                pendingPenaltyPerMiss={currentWorkoutRoom.workoutRoomInfo.pendingPenaltyPerMiss}
+                penaltyChangeEffectiveDate={currentWorkoutRoom.workoutRoomInfo.penaltyChangeEffectiveDate}
+                isOwner={isOwner}
+                onOpenSchedule={onOpenPenaltySchedule}
+              />
+            </CardContent>
+          </Card>
+        )}
         <MemberStatus currentWorkoutRoom={currentWorkoutRoom} today={today} />
         <Card>
           <CardHeader>
             <CardTitle className="text-xl font-bold">📅 월별 운동 현황</CardTitle>
-            <CardDescription className='p-2'>
+            <div className="text-sm text-muted-foreground p-2">
               <div>
                 달력에서 날짜를 선택하여
-              </div>   
+              </div>
               <div>
                 멤버별 운동 상태를 확인하세요.
               </div>
@@ -253,7 +272,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
                   <span className="text-gray-600">다른 멤버 활동</span>
                 </div>
               </div>
-            </CardDescription>
+            </div>
           </CardHeader>
           <CardContent className="flex justify-center">
             <Calendar

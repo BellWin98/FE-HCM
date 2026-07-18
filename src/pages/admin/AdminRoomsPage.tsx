@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { formatPenaltyPerMiss } from '@/lib/workoutRoomRules';
 import { WorkoutRoom } from '@/types';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RefreshCcw, Search, Trash2 } from 'lucide-react';
@@ -228,9 +229,7 @@ const AdminRoomsPage = () => {
                   {content.map((r: WorkoutRoom) => {
                     const activeLabel = r.isActive ? '활성' : '비활성';
                     const membersText = `${r.currentMembers ?? 0} / ${r.maxMembers ?? 0}`;
-                    const rulesText = `주 ${r.minWeeklyWorkouts ?? 0}회 · 미달 ${(
-                      r.penaltyPerMiss ?? 0
-                    ).toLocaleString()}원`;
+                    const rulesText = `주 ${r.minWeeklyWorkouts ?? 0}회 · 미달 ${formatPenaltyPerMiss(r.penaltyPerMiss)}`;
                     const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === r.id;
 
                     return (
@@ -305,9 +304,7 @@ const AdminRoomsPage = () => {
                         {content.map((r: WorkoutRoom) => {
                           const activeLabel = r.isActive ? '활성' : '비활성';
                           const membersText = `${r.currentMembers ?? 0} / ${r.maxMembers ?? 0}`;
-                          const rulesText = `주 ${r.minWeeklyWorkouts ?? 0}회 · 미달 ${(
-                            r.penaltyPerMiss ?? 0
-                          ).toLocaleString()}원`;
+                          const rulesText = `주 ${r.minWeeklyWorkouts ?? 0}회 · 미달 ${formatPenaltyPerMiss(r.penaltyPerMiss)}`;
                           const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === r.id;
                           return (
                             <TableRow key={r.id}>

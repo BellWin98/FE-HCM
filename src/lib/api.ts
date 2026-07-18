@@ -8,6 +8,7 @@ import {
   PageResponse,
   PenaltyPayment,
   PenaltyRecord,
+  SchedulePenaltyChangeRequest,
   WorkoutFeedItem,
   WorkoutRoom,
   WorkoutRoomDetail,
@@ -190,6 +191,20 @@ class ApiClient {
   async regenerateRoomEntryCode(roomId: number) {
     return this.request(`/workout/rooms/${roomId}/regenerate-entry-code`, {
       method: "POST",
+    });
+  }
+
+  async schedulePenaltyChange(roomId: number, body: SchedulePenaltyChangeRequest) {
+    return this.request(`/workout/rooms/${roomId}/penalty-schedule`, {
+      method: "PATCH",
+      data: body,
+    });
+  }
+
+  async scheduleAdminPenaltyChange(roomId: number, body: SchedulePenaltyChangeRequest) {
+    return this.request(`/admin/workout/rooms/${roomId}/penalty-schedule`, {
+      method: "PATCH",
+      data: body,
     });
   }
 

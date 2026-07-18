@@ -51,7 +51,9 @@ export const StatsCards = ({ currentWorkoutRoom, member, isTodayRestDay }: Stats
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-red-600">
-            {currentWorkoutRoom.workoutRoomInfo.penaltyPerMiss}원
+            {currentWorkoutRoom.workoutRoomInfo.penaltyEnabled
+              ? `${currentWorkoutRoom.workoutRoomInfo.penaltyPerMiss?.toLocaleString()}원`
+              : '없음'}
           </div>
         </CardContent>
       </Card>

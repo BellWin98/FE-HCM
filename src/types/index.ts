@@ -22,12 +22,22 @@ export interface WorkoutRoom {
   id: number;
   name: string;
   minWeeklyWorkouts: number;
-  penaltyPerMiss: number;
+  penaltyEnabled: boolean;
+  penaltyPerMiss: number | null;
+  pendingPenaltyEnabled?: boolean | null;
+  pendingPenaltyPerMiss?: number | null;
+  penaltyChangeEffectiveDate?: string | null;
   maxMembers: number;
   currentMembers: number;
   ownerNickname: string;
   isActive: boolean;
   entryCode?: string;
+}
+
+export interface SchedulePenaltyChangeRequest {
+  penaltyEnabled: boolean;
+  penaltyPerMiss?: number;
+  effectiveDate: string;
 }
 
 export interface WorkoutRoomDetail {

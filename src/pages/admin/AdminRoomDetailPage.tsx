@@ -15,6 +15,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { AdminStateBlock } from '@/components/admin/AdminStateBlock';
 import { AdminRoomMembersTab } from '@/components/admin/AdminRoomMembersTab';
 import { AdminRoomChatTab } from '@/components/admin/AdminRoomChatTab';
+import { PenaltyScheduleDialog } from '@/components/dialogs/PenaltyScheduleDialog';
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
 
 const AdminRoomDetailPage = () => {
   const { roomId } = useParams();
@@ -38,6 +42,12 @@ const AdminRoomDetailPage = () => {
   const [penaltyPerMiss, setPenaltyPerMiss] = useState('5000');
   const [localError, setLocalError] = useState('');
   const [activeTab, setActiveTab] = useState('settings');
+
+  const [showPenaltyScheduleDialog, setShowPenaltyScheduleDialog] = useState(false);
+  const [penaltyScheduleTargetEnabled, setPenaltyScheduleTargetEnabled] = useState(true);
+  const [penaltyScheduleAmount, setPenaltyScheduleAmount] = useState('5000');
+  const [penaltyScheduleDate, setPenaltyScheduleDate] = useState<Date | undefined>(undefined);
+  const [penaltyScheduleError, setPenaltyScheduleError] = useState('');
 
   // When navigating between room IDs without unmount, reset initialization.
   useEffect(() => {
@@ -88,6 +98,47 @@ const AdminRoomDetailPage = () => {
       const msg = err instanceof Error ? err.message : '저장에 실패했습니다. 잠시 후 다시 시도해주세요.';
       setLocalError(msg);
       toast.error(msg);
+    },
+  });
+
+  const handleOpenPenaltySchedule = () => {
+    if (!room) return;
+    setPenaltyScheduleTargetEnabled(!room.penaltyEnabled);
+    setPenaltyScheduleAmount(String(room.penaltyPerMiss ?? 5000));
+    setPenaltyScheduleDate(undefined);
+    setPenaltyScheduleError('');
+    setShowPenaltyScheduleDialog(true);
+  };
+
+  const schedulePenaltyMutation = useMutation({
+    mutationFn: async () => {
+      if (!Number.isFinite(numericRoomId)) throw new Error('유효하지 않은 roomId 입니다.');
+      if (!penaltyScheduleDate) throw new Error('전환 예정일을 선택해주세요.');
+
+      if (penaltyScheduleTargetEnabled) {
+        const amount = Number.parseInt(penaltyScheduleAmount, 10);
+        if (Number.isNaN(amount) || amount < 1000 || amount > 50000) {
+          throw new Error('벌금은 1,000원 이상 50,000원 이하여야 합니다.');
+        }
+      }
+
+      const effectiveDate = `${penaltyScheduleDate.getFullYear()}-${String(penaltyScheduleDate.getMonth() + 1).padStart(2, '0')}-${String(penaltyScheduleDate.getDate()).padStart(2, '0')}`;
+
+      return api.scheduleAdminPenaltyChange(numericRoomId, {
+        penaltyEnabled: penaltyScheduleTargetEnabled,
+        penaltyPerMiss: penaltyScheduleTargetEnabled ? Number.parseInt(penaltyScheduleAmount, 10) : undefined,
+        effectiveDate,
+      });
+    },
+    onSuccess: () => {
+      toast.success('벌금제도 전환이 예약되었습니다.');
+      setShowPenaltyScheduleDialog(false);
+      setPenaltyScheduleError('');
+      queryClient.invalidateQueries({ queryKey: ['adminWorkoutRoomDetail', numericRoomId] });
+    },
+    onError: (err) => {
+      const msg = err instanceof Error ? err.message : '예약에 실패했습니다. 잠시 후 다시 시도해주세요.';
+      setPenaltyScheduleError(msg);
     },
   });
 
@@ -228,6 +279,37 @@ const AdminRoomDetailPage = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle>벌금제도 전환 예약</CardTitle>
+                  <CardDescription>
+                    벌금제도 사용 여부는 즉시 반영되지 않고, 오늘로부터 최소 7일 이후의 월요일부터 적용되도록
+                    예약합니다.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 p-4 sm:p-6">
+                  <p className="text-sm text-muted-foreground">
+                    현재 상태: {room.penaltyEnabled ? `벌금제도 사용 중 (회당 ${room.penaltyPerMiss?.toLocaleString()}원)` : '벌금제도 미사용'}
+                  </p>
+
+                  {room.pendingPenaltyEnabled !== null && room.pendingPenaltyEnabled !== undefined ? (
+                    <Alert>
+                      <AlertDescription>
+                        {room.penaltyChangeEffectiveDate} 부터 벌금제도가{' '}
+                        {room.pendingPenaltyEnabled
+                          ? `켜짐(회당 ${room.pendingPenaltyPerMiss?.toLocaleString()}원)`
+                          : '꺼짐'}
+                        으로 전환될 예정입니다.
+                      </AlertDescription>
+                    </Alert>
+                  ) : null}
+
+                  <Button type="button" variant="outline" onClick={handleOpenPenaltySchedule}>
+                    벌금제도 전환 예약
+                  </Button>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="members" className="mt-3 md:mt-4">
@@ -248,6 +330,31 @@ const AdminRoomDetailPage = () => {
             </TabsContent>
           </Tabs>
         )}
+
+        {room ? (
+          <PenaltyScheduleDialog
+            open={showPenaltyScheduleDialog}
+            onOpenChange={setShowPenaltyScheduleDialog}
+            penaltyEnabled={room.penaltyEnabled}
+            pendingPenaltyEnabled={room.pendingPenaltyEnabled}
+            pendingPenaltyPerMiss={room.pendingPenaltyPerMiss}
+            penaltyChangeEffectiveDate={room.penaltyChangeEffectiveDate}
+            targetEnabled={penaltyScheduleTargetEnabled}
+            onTargetEnabledChange={setPenaltyScheduleTargetEnabled}
+            penaltyPerMiss={penaltyScheduleAmount}
+            onPenaltyPerMissChange={setPenaltyScheduleAmount}
+            effectiveDate={penaltyScheduleDate}
+            onEffectiveDateChange={setPenaltyScheduleDate}
+            onSubmit={() => schedulePenaltyMutation.mutate()}
+            onClose={() => {
+              setShowPenaltyScheduleDialog(false);
+              setPenaltyScheduleError('');
+            }}
+            isSubmitting={schedulePenaltyMutation.isPending}
+            error={penaltyScheduleError}
+            today={today}
+          />
+        ) : null}
       </div>
     </Layout>
   );
