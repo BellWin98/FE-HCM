@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { consumePendingJoinCode } from '@/lib/pendingJoinCode';
 
 const SAVED_EMAIL_KEY = 'saved_email';
 
@@ -61,7 +62,13 @@ const koreanToEnglish = (text: string): string => {
 };
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    const pendingJoinCode = consumePendingJoinCode();
+    return (
+      <Navigate
+        to={pendingJoinCode ? `/join?code=${pendingJoinCode}` : '/dashboard'}
+        replace
+      />
+    );
   }
 
   type SocialProvider = 'google' | 'kakao' | 'naver';

@@ -225,6 +225,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
             </CardHeader>
             <CardContent>
               <RoomCodeSection
+                roomName={currentWorkoutRoom.workoutRoomInfo?.name ?? ''}
                 entryCode={entryCode}
                 isOwner={isOwner}
                 onRegenerate={onRegenerateEntryCode}

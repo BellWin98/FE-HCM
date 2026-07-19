@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { consumePendingJoinCode } from '@/lib/pendingJoinCode';
 
 const OAuthCallbackPage = () => {
   const [searchParams] = useSearchParams();
@@ -26,7 +27,8 @@ const OAuthCallbackPage = () => {
     const handleSocialCallback = async () => {
       try {
         await socialLogin(accessToken, refreshToken);
-        navigate('/dashboard', { replace: true });
+        const pendingJoinCode = consumePendingJoinCode();
+        navigate(pendingJoinCode ? `/join?code=${pendingJoinCode}` : '/dashboard', { replace: true });
       } catch (error) {
         toast({
           title: '소셜 로그인에 실패했어요.',
