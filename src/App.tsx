@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -5,7 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { RequireRole } from '@/components/RequireRole';
 import { PwaUpdateBanner } from '@/components/common/PwaUpdateBanner';
+import { KakaoInAppBrowserNotice } from '@/components/common/KakaoInAppBrowserNotice';
 import { usePwaUpdater } from '@/hooks/usePwaUpdater';
+import { useKakaoInAppBrowserExit } from '@/hooks/useKakaoInAppBrowserExit';
 import Index from './pages/Index';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -109,6 +112,8 @@ const AppRoutes = () => (
 
 const App = () => {
   const { needRefresh, handleUpdate, dismiss } = usePwaUpdater();
+  const { isKakaoInApp, showFallbackGuide } = useKakaoInAppBrowserExit();
+  const [kakaoNoticeDismissed, setKakaoNoticeDismissed] = useState(false);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -120,6 +125,10 @@ const App = () => {
           </BrowserRouter>
         </AuthProvider>
         <PwaUpdateBanner visible={needRefresh} onUpdate={handleUpdate} onClose={dismiss} />
+        <KakaoInAppBrowserNotice
+          visible={isKakaoInApp && showFallbackGuide && !kakaoNoticeDismissed}
+          onClose={() => setKakaoNoticeDismissed(true)}
+        />
       </TooltipProvider>
     </QueryClientProvider>
   );
