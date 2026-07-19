@@ -39,6 +39,10 @@ npm run preview   # 빌드 결과 미리보기
 - `VITE_WS_URL` — STOMP/WebSocket 베이스 URL (기본값 `http://localhost:8080`, `src/components/ChatRoom.tsx`)
 - `VITE_FIREBASE_*` (API_KEY, AUTH_DOMAIN, PROJECT_ID, SENDER_ID, APP_ID, VAPID_KEY) — FCM 푸시 알림용
   Firebase 설정 (`src/lib/firebase.ts`)
+- `VITE_KAKAO_JS_KEY` — 카카오톡 초대 공유(`src/lib/kakao.ts`)에 사용하는 카카오 디벨로퍼스 앱의
+  JavaScript 키. 미설정 시 초대 공유 버튼은 "초대 링크 복사" 버튼으로 자동 대체된다. 실제 발송을 테스트하려면
+  [Kakao Developers](https://developers.kakao.com)에서 앱을 등록하고 사용 중인 도메인을 JavaScript SDK
+  허용 도메인에 추가해야 한다.
 
 ## 아키텍처
 
