@@ -6,8 +6,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { RequireRole } from '@/components/RequireRole';
 import { PwaUpdateBanner } from '@/components/common/PwaUpdateBanner';
+import { PwaInstallBanner } from '@/components/common/PwaInstallBanner';
 import { KakaoInAppBrowserNotice } from '@/components/common/KakaoInAppBrowserNotice';
 import { usePwaUpdater } from '@/hooks/usePwaUpdater';
+import { usePwaInstallPrompt } from '@/hooks/usePwaInstallPrompt';
 import { useKakaoInAppBrowserExit } from '@/hooks/useKakaoInAppBrowserExit';
 import Index from './pages/Index';
 import LoginPage from './pages/LoginPage';
@@ -112,6 +114,7 @@ const AppRoutes = () => (
 
 const App = () => {
   const { needRefresh, handleUpdate, dismiss } = usePwaUpdater();
+  const { visible: installBannerVisible, platform: installPlatform, promptInstall, dismiss: dismissInstall } = usePwaInstallPrompt();
   const { isKakaoInApp, showFallbackGuide } = useKakaoInAppBrowserExit();
   const [kakaoNoticeDismissed, setKakaoNoticeDismissed] = useState(false);
 
@@ -125,6 +128,12 @@ const App = () => {
           </BrowserRouter>
         </AuthProvider>
         <PwaUpdateBanner visible={needRefresh} onUpdate={handleUpdate} onClose={dismiss} />
+        <PwaInstallBanner
+          visible={!needRefresh && installBannerVisible}
+          platform={installPlatform}
+          onInstall={promptInstall}
+          onClose={dismissInstall}
+        />
         <KakaoInAppBrowserNotice
           visible={isKakaoInApp && showFallbackGuide && !kakaoNoticeDismissed}
           onClose={() => setKakaoNoticeDismissed(true)}
