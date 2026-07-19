@@ -7,9 +7,6 @@ interface BeforeInstallPromptEvent extends Event {
 
 export type PwaInstallPlatform = 'android' | 'ios';
 
-const DISMISS_STORAGE_KEY = 'pwaInstallDismissedAt';
-const DISMISS_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7일
-
 const isStandaloneDisplay = (): boolean =>
   window.matchMedia('(display-mode: standalone)').matches ||
   (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -20,14 +17,6 @@ const isIosDevice = (): boolean => {
   // iPadOS 13+는 UA에 Mac으로 표시되므로 터치 지원 여부로 구분한다.
   const isIpad = /iPad/.test(ua) || (ua.includes('Macintosh') && navigator.maxTouchPoints > 1);
   return isIphoneOrIpod || isIpad;
-};
-
-const wasDismissedRecently = (): boolean => {
-  const dismissedAt = localStorage.getItem(DISMISS_STORAGE_KEY);
-  if (!dismissedAt) {
-    return false;
-  }
-  return Date.now() - Number(dismissedAt) < DISMISS_COOLDOWN_MS;
 };
 
 interface UsePwaInstallPromptResult {
@@ -43,7 +32,7 @@ export const usePwaInstallPrompt = (): UsePwaInstallPromptResult => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (isStandaloneDisplay() || wasDismissedRecently()) {
+    if (isStandaloneDisplay()) {
       return;
     }
 
@@ -64,7 +53,6 @@ export const usePwaInstallPrompt = (): UsePwaInstallPromptResult => {
     const handleAppInstalled = () => {
       setVisible(false);
       setDeferredPrompt(null);
-      localStorage.removeItem(DISMISS_STORAGE_KEY);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -78,7 +66,6 @@ export const usePwaInstallPrompt = (): UsePwaInstallPromptResult => {
 
   const dismiss = useCallback(() => {
     setVisible(false);
-    localStorage.setItem(DISMISS_STORAGE_KEY, String(Date.now()));
   }, []);
 
   const promptInstall = useCallback(() => {
