@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { ko } from 'date-fns/locale';
@@ -15,9 +15,25 @@ import { Clock } from "lucide-react";
 export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRegenerateEntryCode, isRegeneratingEntryCode, onOpenPenaltySchedule }) => {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [zoomImageUrls, setZoomImageUrls] = useState<string[] | null>(null);
+    // 다이얼로그를 열 때 한 번만 정해지는 시작 인덱스. 캐러셀을 넘겨도 바뀌지 않아야 한다.
+    const [zoomStartIndex, setZoomStartIndex] = useState<number>(0);
+    // 현재 보고 있는 인덱스. "2 / 3" 카운터 표시 전용.
     const [zoomImageIndex, setZoomImageIndex] = useState<number>(0);
     const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-    
+
+    const handleZoomImages = useCallback((urls: string[], index: number) => {
+      setZoomStartIndex(index);
+      setZoomImageIndex(index);
+      setZoomImageUrls(urls);
+    }, []);
+
+    // opts를 매 렌더마다 새 객체로 넘기면 embla가 옵션 변경으로 보고 reInit한다.
+    // startIndex에 현재 인덱스를 물리면 슬라이드를 넘길 때마다 캐러셀이 재초기화되어 화면이 튄다.
+    const zoomCarouselOpts = useMemo(
+      () => ({ startIndex: zoomStartIndex, loop: true }),
+      [zoomStartIndex]
+    );
+
     // 순위용 정렬된 멤버 목록 (원본 배열은 변경하지 않음)
     const sortedMembersByWorkouts = [...currentWorkoutRoom.workoutRoomMembers]
       .sort((a, b) => b.totalWorkouts - a.totalWorkouts);
@@ -140,10 +156,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
                                       src={imageUrls[0]}
                                       alt="운동 인증 사진"
                                       className="max-w-xs max-h-60 rounded cursor-zoom-in"
-                                      onClick={() => {
-                                        setZoomImageUrls(imageUrls);
-                                        setZoomImageIndex(0);
-                                      }}
+                                      onClick={() => handleZoomImages(imageUrls, 0)}
                                     />
                                    <div className="text-center text-xs text-muted-foreground mt-1">
                                       클릭하여 확대
@@ -161,10 +174,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
                                                 src={url}
                                                 alt={`운동 인증 사진 ${idx + 1}`}
                                                 className="w-full h-32 sm:h-40 object-cover rounded cursor-zoom-in"
-                                                onClick={() => {
-                                                  setZoomImageUrls(imageUrls);
-                                                  setZoomImageIndex(idx);
-                                                }}
+                                                onClick={() => handleZoomImages(imageUrls, idx)}
                                               />
                                             </CarouselItem>
                                           ))}
@@ -367,13 +377,10 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
                     className="w-full h-auto max-h-[90vh] object-contain rounded" 
                   />
                 ) : (
-                  <Carousel 
-                    className="w-full" 
+                  <Carousel
+                    className="w-full"
                     setApi={setCarouselApi}
-                    opts={{ 
-                      startIndex: zoomImageIndex,
-                      loop: true 
-                    }}
+                    opts={zoomCarouselOpts}
                   >
                     <CarouselContent>
                       {zoomImageUrls.map((url, idx) => (

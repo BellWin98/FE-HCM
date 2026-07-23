@@ -27,7 +27,7 @@ export const MobileCTABar = ({ onNavigate }: MobileCTABarProps) => {
             onClick={() => onNavigate('/login')}
             aria-label="무료로 운동방 만들기"
           >
-            무료로 방 만들기
+            로그인 하기
           </Button>
         </HeroRevealItem>
       </div>

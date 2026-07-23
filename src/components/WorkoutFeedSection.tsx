@@ -24,8 +24,24 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
   const [hasMore, setHasMore] = useState(!initialIsLastPage);
   const [selectedPeriod, setSelectedPeriod] = useState<WorkoutFeedPeriod>('ALL');
   const [zoomImageUrls, setZoomImageUrls] = useState<string[] | null>(null);
+  // 다이얼로그를 열 때 한 번만 정해지는 시작 인덱스. 캐러셀을 넘겨도 바뀌지 않아야 한다.
+  const [zoomStartIndex, setZoomStartIndex] = useState<number>(0);
+  // 현재 보고 있는 인덱스. "2 / 3" 카운터 표시 전용.
   const [zoomImageIndex, setZoomImageIndex] = useState<number>(0);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+
+  const handleZoomImages = useCallback((urls: string[], index: number) => {
+    setZoomStartIndex(index);
+    setZoomImageIndex(index);
+    setZoomImageUrls(urls);
+  }, []);
+
+  // opts를 매 렌더마다 새 객체로 넘기면 embla가 옵션 변경으로 보고 reInit한다.
+  // startIndex에 현재 인덱스를 물리면 슬라이드를 넘길 때마다 캐러셀이 재초기화되어 화면이 튄다.
+  const zoomCarouselOpts = useMemo(
+    () => ({ startIndex: zoomStartIndex, loop: true }),
+    [zoomStartIndex]
+  );
 
   // feed가 배열이 아닐 경우 빈 배열로 처리
   const safeFeed = useMemo<WorkoutFeedItem[]>(() => {
@@ -190,10 +206,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
                             src={imageUrls[0]}
                             alt={`${workoutTypes.join(', ')} 운동`}
                             className="w-full h-64 sm:h-80 object-cover cursor-zoom-in"
-                            onClick={() => {
-                              setZoomImageUrls(imageUrls);
-                              setZoomImageIndex(0);
-                            }}
+                            onClick={() => handleZoomImages(imageUrls, 0)}
                           />
                         ) : (
                           <Carousel className="w-full">
@@ -204,10 +217,7 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
                                     src={url}
                                     alt={`${workoutTypes.join(', ')} 운동 ${idx + 1}`}
                                     className="w-full h-64 sm:h-80 object-cover cursor-zoom-in"
-                                    onClick={() => {
-                                      setZoomImageUrls(imageUrls);
-                                      setZoomImageIndex(idx);
-                                    }}
+                                    onClick={() => handleZoomImages(imageUrls, idx)}
                                   />
                                 </CarouselItem>
                               ))}
@@ -285,13 +295,10 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
                   className="w-full h-auto max-h-[90vh] object-contain rounded" 
                 />
               ) : (
-                <Carousel 
-                  className="w-full" 
+                <Carousel
+                  className="w-full"
                   setApi={setCarouselApi}
-                  opts={{ 
-                    startIndex: zoomImageIndex,
-                    loop: true 
-                  }}
+                  opts={zoomCarouselOpts}
                 >
                   <CarouselContent>
                     {zoomImageUrls.map((url, idx) => (

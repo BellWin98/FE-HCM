@@ -296,6 +296,9 @@ export const AdminRoomMembersTab = ({
   const isMobile = useIsMobile();
   const [selectedMember, setSelectedMember] = useState<RoomMember | null>(null);
   const [zoomImageUrls, setZoomImageUrls] = useState<string[] | null>(null);
+  // 다이얼로그를 열 때 한 번만 정해지는 시작 인덱스. 캐러셀을 넘겨도 바뀌지 않아야 한다.
+  const [zoomStartIndex, setZoomStartIndex] = useState(0);
+  // 현재 보고 있는 인덱스. "2 / 3" 카운터 표시 전용.
   const [zoomImageIndex, setZoomImageIndex] = useState(0);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
 
@@ -313,9 +316,17 @@ export const AdminRoomMembersTab = ({
   };
 
   const handleZoomImages = (urls: string[], index = 0) => {
-    setZoomImageUrls(urls);
+    setZoomStartIndex(index);
     setZoomImageIndex(index);
+    setZoomImageUrls(urls);
   };
+
+  // opts를 매 렌더마다 새 객체로 넘기면 embla가 옵션 변경으로 보고 reInit한다.
+  // startIndex에 현재 인덱스를 물리면 슬라이드를 넘길 때마다 캐러셀이 재초기화되어 화면이 튄다.
+  const zoomCarouselOpts = useMemo(
+    () => ({ startIndex: zoomStartIndex, loop: true }),
+    [zoomStartIndex],
+  );
 
   useEffect(() => {
     if (!carouselApi) return;
@@ -511,10 +522,7 @@ export const AdminRoomMembersTab = ({
                 <Carousel
                   className="w-full px-12"
                   setApi={setCarouselApi}
-                  opts={{
-                    startIndex: zoomImageIndex,
-                    loop: true,
-                  }}
+                  opts={zoomCarouselOpts}
                 >
                   <CarouselContent>
                     {zoomImageUrls.map((url, idx) => (
