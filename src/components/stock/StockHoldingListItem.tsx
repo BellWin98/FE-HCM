@@ -246,43 +246,53 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
           tabIndex={0}
           onClick={() => setExpanded(!expanded)}
           onKeyDown={(e) => e.key === 'Enter' && setExpanded(!expanded)}
-          className="flex items-center gap-3 p-4 min-h-[56px] active:bg-gray-50 dark:active:bg-gray-800/70"
+          className="flex items-start gap-2.5 p-4 min-h-[56px] active:bg-gray-50 dark:active:bg-gray-800/70"
         >
-          <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-sm font-semibold text-white shrink-0">
+          <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
             {getInitials(holding.stockName)}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+            <div className="font-semibold text-gray-900 dark:text-gray-100 break-words leading-snug">
               {holding.stockName}
             </div>
             {displayMode === 'currentPrice' ? (
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                 내 평균 {formatCurrency(holding.averagePrice)}
               </div>
             ) : (
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                 {holding.quantity.toLocaleString(undefined, { maximumFractionDigits: 6 })}주
               </div>
             )}
           </div>
-          <div className="text-right shrink-0">
+          <div className="text-right shrink-0 tabular-nums">
             {displayMode === 'currentPrice' ? (
               <>
-                <div className="font-semibold text-gray-900 dark:text-gray-100">
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap leading-snug">
                   {formatCurrency(holding.currentPrice)}
                 </div>
                 {dayChangeRate != null && (
-                  <div className={cn('text-sm font-medium', getProfitLossColor(dayChangeRate))}>
+                  <div
+                    className={cn(
+                      'text-xs font-medium whitespace-nowrap mt-0.5',
+                      getProfitLossColor(dayChangeRate)
+                    )}
+                  >
                     {dayChangeDisplay}
                   </div>
                 )}
               </>
-            ) : ( 
+            ) : (
               <>
-                <div className="font-semibold text-gray-900 dark:text-gray-100">
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap leading-snug">
                   {formatCurrency(holding.marketValue)}
                 </div>
-                <div className={cn('text-sm font-medium', getProfitLossColor(holding.profitLoss))}>
+                <div
+                  className={cn(
+                    'text-xs font-medium whitespace-nowrap mt-0.5',
+                    getProfitLossColor(holding.profitLoss)
+                  )}
+                >
                   {holding.profitLoss >= 0 ? '+' : ''}
                   {formatCurrency(holding.profitLoss)} ({formatPercentage(holding.profitLossRate)})
                 </div>
@@ -290,9 +300,9 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
             )}
           </div>
           {expanded ? (
-            <ChevronUp className="h-5 w-5 text-gray-400 shrink-0" />
+            <ChevronUp className="h-4 w-4 text-gray-400 shrink-0 mt-1" />
           ) : (
-            <ChevronDown className="h-5 w-5 text-gray-400 shrink-0" />
+            <ChevronDown className="h-4 w-4 text-gray-400 shrink-0 mt-1" />
           )}
         </div>
         {expanded && detailSection}
@@ -313,8 +323,8 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
           <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-sm font-semibold text-white shrink-0">
             {getInitials(holding.stockName)}
           </div>
-          <div>
-            <div className="font-semibold text-gray-900 dark:text-gray-100">
+          <div className="min-w-0">
+            <div className="font-semibold text-gray-900 dark:text-gray-100 break-words">
               {holding.stockName}
             </div>
             {displayMode === 'currentPrice' ? (
@@ -328,7 +338,7 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6 shrink-0">
           {displayMode === 'currentPrice' ? (
             <>
               <div className="text-right">
