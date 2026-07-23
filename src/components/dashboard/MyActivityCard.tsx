@@ -20,7 +20,7 @@ export const MyActivityCard = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl font-bold">내 활동</CardTitle>
+        <CardTitle className="font-heading text-xl font-bold">내 활동</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg bg-gray-50">
@@ -43,7 +43,7 @@ export const MyActivityCard = ({
                       </Badge>
                     ))}
                   </div>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="font-number text-xs tabular-nums">
                     <Clock className="h-3 w-3 mr-1" />
                     {todayWorkoutRecord.duration}분
                   </Badge>

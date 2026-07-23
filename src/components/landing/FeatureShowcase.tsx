@@ -12,7 +12,7 @@ export const FeatureShowcase = ({ sectionRef, isInView }: FeatureShowcaseProps) 
   <section ref={sectionRef} className="py-20 sm:py-28">
     <div className="container mx-auto max-w-6xl px-4">
       <HeroRevealItem delay={200} revealed={isInView}>
-        <h2 className="text-center text-2xl font-bold text-slate-900 sm:text-3xl">
+        <h2 className="text-center font-heading text-2xl font-bold text-slate-900 sm:text-3xl">
           왜 꼭 헬창마을이어야 할까요?
         </h2>
       </HeroRevealItem>

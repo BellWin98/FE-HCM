@@ -27,7 +27,7 @@ export const StatsCards = ({ currentWorkoutRoom, member, isTodayRestDay }: Stats
               <span className="text-2xl font-bold text-blue-600">휴식</span>
             </div>
           ) : (
-            <div className="text-2xl font-bold">
+            <div className="font-number text-2xl font-bold tabular-nums">
               {currentMember?.weeklyWorkouts}/{currentWorkoutRoom.workoutRoomInfo.minWeeklyWorkouts}회
             </div>
           )}
@@ -40,7 +40,7 @@ export const StatsCards = ({ currentWorkoutRoom, member, isTodayRestDay }: Stats
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{currentMember?.totalWorkouts}일</div>
+          <div className="font-number text-2xl font-bold tabular-nums">{currentMember?.totalWorkouts}일</div>
         </CardContent>
       </Card>
 
@@ -50,7 +50,7 @@ export const StatsCards = ({ currentWorkoutRoom, member, isTodayRestDay }: Stats
           <AlertTriangle className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-600">
+          <div className="font-number text-2xl font-bold text-red-600 tabular-nums">
             {currentWorkoutRoom.workoutRoomInfo.penaltyEnabled
               ? `${currentWorkoutRoom.workoutRoomInfo.penaltyPerMiss?.toLocaleString()}원`
               : '없음'}

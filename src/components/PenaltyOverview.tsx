@@ -403,7 +403,7 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
         <div className="grid grid-cols-1 gap-2 sm:gap-4 mb-3 sm:mb-4">
           <div className="rounded-md bg-gray-50 p-3 text-center">
             <div className="text-[11px] sm:text-xs text-gray-500">벌금합계</div>
-            <div className="text-sm sm:text-base font-semibold">{totals.penalty.toLocaleString()}원</div>
+            <div className="font-number text-sm sm:text-base font-semibold tabular-nums">{totals.penalty.toLocaleString()}원</div>
           </div>
           {/* <div className="rounded-md bg-gray-50 p-3 text-center">
             <div className="text-[11px] sm:text-xs text-gray-500">납부합계</div>
@@ -446,7 +446,8 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
                       {nickname}
                     </span>
                     <span className="text-xs sm:text-sm text-gray-600 shrink-0 ml-auto mr-1">
-                      기간 내 합계 <strong>{memberPenaltySum.toLocaleString()}원</strong>
+                      기간 내 합계{' '}
+                      <strong className="font-number tabular-nums">{memberPenaltySum.toLocaleString()}원</strong>
                       <span className="text-gray-400 ml-1">· {records.length}건</span>
                     </span>
                   </AccordionTrigger>
@@ -472,7 +473,7 @@ export const PenaltyOverview: React.FC<PenaltyOverviewProps> = ({ roomId, roomMe
                           <div className="grid grid-cols-1 gap-3 sm:gap-4 mt-3">
                             <div>
                               <div className="text-[11px] sm:text-xs text-gray-500">벌금</div>
-                              <div className="text-sm sm:text-base font-semibold">{r.penaltyAmount.toLocaleString()}원</div>
+                              <div className="font-number text-sm sm:text-base font-semibold tabular-nums">{r.penaltyAmount.toLocaleString()}원</div>
                             </div>
                           </div>
                         </button>

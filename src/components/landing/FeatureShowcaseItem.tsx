@@ -42,7 +42,7 @@ export const FeatureShowcaseItem = ({ item }: FeatureShowcaseItemProps) => {
           </div>
           <span className={`text-sm font-medium ${item.labelClassName}`}>{item.label}</span>
         </div>
-        <h3 className="mb-3 text-2xl font-bold text-slate-900">{item.title}</h3>
+        <h3 className="mb-3 font-heading text-2xl font-bold text-slate-900">{item.title}</h3>
         <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
           {item.description.split('\n').map((line, i) => (
             <span key={i}>

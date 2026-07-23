@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 제목용: Gmarket Sans (눈누 안내 jsdelivr CDN, weight별 개별 파일) */
+@font-face {
+  font-family: 'Gmarket Sans';
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansLight.woff')
+    format('woff');
+}
+@font-face {
+  font-family: 'Gmarket Sans';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff')
+    format('woff');
+}
+@font-face {
+  font-family: 'Gmarket Sans';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff')
+    format('woff');
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -87,6 +113,14 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer utilities {
+  /* font-number 사용 시 항상 고정폭 숫자 적용 — 카운팅/값 변경 시 레이아웃 떨림 방지.
+     font-family는 tailwind.config.ts의 fontFamily.number가 공급하고, 여기서 variant만 보강한다. */
+  .font-number {
+    font-variant-numeric: tabular-nums;
   }
 }
 
