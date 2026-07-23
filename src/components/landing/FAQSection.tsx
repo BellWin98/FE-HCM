@@ -35,6 +35,29 @@ const FAQ_ITEMS = [
     ),
   },
   {
+    id: 'no-penalty',
+    question: (
+      <>
+        벌금이 부담스러운데,
+        <br />
+        벌금 없이도 쓸 수 있나요?
+      </>
+    ),
+    answer: (
+      <>
+        네! 방을 만들 때 벌금 제도를 끌 수 있어요.
+        <br /><br />
+        벌금 없이도 운동 인증, 대시보드, 캘린더, 채팅 등
+        <br />
+        모든 기능을 그대로 사용할 수 있어요.
+        <br /><br />
+        나중에 멤버들과 합의되면 벌금 제도를 다시 켤 수도 있고,
+        <br />
+        규칙 변경은 다음 주 월요일부터 적용되니 소급 걱정도 없어요.
+      </>
+    ),
+  },
+  {
     id: 'rest-day',
     question: '운동을 쉬고 싶은 날에는 어떻게 하나요?',
     answer: (
@@ -139,7 +162,7 @@ export const FAQSection = ({ sectionRef, isInView }: FAQSectionProps) => (
     <div className="container mx-auto max-w-6xl px-4">
       <HeroRevealItem delay={0} revealed={isInView}>
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">자주 묻는 질문</h2>
+          <h2 className="font-heading text-2xl font-bold text-slate-900 sm:text-3xl">자주 묻는 질문</h2>
           <p className="mt-3 text-sm text-slate-600 sm:text-base">
             가입 전에 궁금하실 수 있는 것들을 먼저 정리했어요.
             <br />
