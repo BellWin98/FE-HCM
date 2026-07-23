@@ -58,7 +58,9 @@ export const HowItWorksSection = ({ sectionRef, isInView }: HowItWorksSectionPro
       <HeroRevealItem delay={0} revealed={isInView}>
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="font-heading text-2xl font-bold text-slate-900 sm:text-3xl">
-            시작까지 딱 3단계, 1분이면 충분해요
+            시작까지 딱 3단계, 
+            <br />
+            1분이면 충분해요
           </h2>
           <p className="mt-3 text-sm text-slate-600 sm:text-base">
             복잡한 설정도, 예치금도 없어요.

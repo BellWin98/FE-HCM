@@ -37,7 +37,7 @@ export const HeroSection = ({ navigate }: HeroSectionProps) => {
             <h1 className="mb-6 max-w-2xl font-heading text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl sm:leading-tight lg:text-6xl">
               &ldquo;내일부터 운동해야지&rdquo;
               <br /><br />
-              더 이상 자신에게 속지마세요!
+              더 이상 속지마세요!
               <br /><br />
               <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
                 "헬창마을"이 도와드릴게요
