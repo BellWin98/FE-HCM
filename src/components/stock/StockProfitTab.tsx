@@ -385,12 +385,12 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
                               dark ? 'border border-gray-700' : 'border border-gray-200'
                             )}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-sm font-semibold text-white">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
                                 {getInitials(t.stockName)}
                               </div>
-                              <div>
-                                <div className="font-medium text-gray-900 dark:text-gray-100">
+                              <div className="min-w-0">
+                                <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
                                   {t.stockName}
                                 </div>
                                 <div className={cn('text-sm', getProfitLossColor(t.profitLoss))}>
@@ -421,12 +421,14 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
                     dark ? 'border border-gray-700' : 'border border-gray-200'
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-sm font-semibold text-white">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
                       {getInitials(s.name)}
                     </div>
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-gray-100">{s.name}</div>
+                    <div className="min-w-0">
+                      <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
+                        {s.name}
+                      </div>
                       <div className={cn('text-sm', getProfitLossColor(s.profit))}>
                         {formatCurrency(s.profit)}
                         {s.count === 1 && ` (${formatPercentage(s.rate)})`}
@@ -499,12 +501,12 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
                               dark ? 'border border-gray-700' : 'border border-gray-200'
                             )}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-sm font-semibold text-white">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
                                 {getInitials(t.stockName)}
                               </div>
-                              <div>
-                                <div className="font-medium text-gray-900 dark:text-gray-100">
+                              <div className="min-w-0">
+                                <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
                                   {t.stockName}
                                 </div>
                                 <div className={cn('text-sm', getProfitLossColor(-t.fee))}>
@@ -535,12 +537,14 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
                     dark ? 'border border-gray-700' : 'border border-gray-200'
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-sm font-semibold text-white">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
                       {getInitials(s.name)}
                     </div>
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-gray-100">{s.name}</div>
+                    <div className="min-w-0">
+                      <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
+                        {s.name}
+                      </div>
                       <div className={cn('text-sm', getProfitLossColor(-s.fee))}>
                         -{formatCurrency(s.fee)}
                       </div>
@@ -612,12 +616,12 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
                               dark ? 'border border-gray-700' : 'border border-gray-200'
                             )}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-sm font-semibold text-white">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
                                 {getInitials(t.stockName)}
                               </div>
-                              <div>
-                                <div className="font-medium text-gray-900 dark:text-gray-100">
+                              <div className="min-w-0">
+                                <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
                                   {t.stockName}
                                 </div>
                                 <div className={cn('text-sm', getProfitLossColor(-t.tax))}>
@@ -648,12 +652,14 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
                     dark ? 'border border-gray-700' : 'border border-gray-200'
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-sm font-semibold text-white">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
                       {getInitials(s.name)}
                     </div>
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-gray-100">{s.name}</div>
+                    <div className="min-w-0">
+                      <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
+                        {s.name}
+                      </div>
                       <div className={cn('text-sm', getProfitLossColor(-s.tax))}>
                         -{formatCurrency(s.tax)}
                       </div>
