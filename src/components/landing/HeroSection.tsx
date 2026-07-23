@@ -1,9 +1,22 @@
 import { Button } from '@/components/ui/button';
 import { useHeroReveal } from '@/hooks/useHeroReveal';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, BellOff, CreditCard, Zap } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { FeatureMedia } from './FeatureMedia';
 import { HeroRevealItem } from './HeroRevealItem';
 import { HERO_REVEAL_STAGGER } from './constants';
+
+type TrustChip = {
+  id: string;
+  icon: LucideIcon;
+  label: string;
+};
+
+const TRUST_CHIPS: TrustChip[] = [
+  { id: 'no-deposit', icon: CreditCard, label: '예치금·결제 없음' },
+  { id: 'no-penalty', icon: BellOff, label: '벌금 없이도 시작 가능' },
+  { id: 'quick-login', icon: Zap, label: '1초 간편 로그인' },
+];
 
 type HeroSectionProps = {
   navigate: (path: string) => void;
@@ -12,38 +25,70 @@ type HeroSectionProps = {
 export const HeroSection = ({ navigate }: HeroSectionProps) => {
   const revealed = useHeroReveal();
 
+  const handleScrollToHowItWorks = () => {
+    document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <section className="container mx-auto max-w-6xl px-4 pt-16 pb-20 sm:pt-24 sm:pb-28">
       <div className="grid items-center gap-10 lg:grid-cols-[1.2fr_minmax(0,1fr)] lg:gap-14">
         <div className="flex flex-col">
           <HeroRevealItem delay={HERO_REVEAL_STAGGER} revealed={revealed}>
-            <h1 className="mb-6 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl sm:leading-tight lg:text-6xl">
-              헬창마을은 <br /><br />벌금 관리형
-              <br />
+            <h1 className="mb-6 max-w-2xl font-heading text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl sm:leading-tight lg:text-6xl">
+              &ldquo;내일부터 운동해야지&rdquo;
+              <br /><br />
+              더 이상 자신에게 속지마세요!
+              <br /><br />
               <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                운동 인증 플랫폼입니다.
+                "헬창마을"이 도와드릴게요
               </span>
-              <br />
             </h1>
           </HeroRevealItem>
           <HeroRevealItem delay={HERO_REVEAL_STAGGER * 2} revealed={revealed}>
-            <p className="mb-10 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
-              벌금 관리는 신경쓰지 마세요 <br /> 운동에만 집중할 수 있게 도와드릴게요
+            <p className="mb-6 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+              헬창마을은 벌금 기반 운동 인증 앱입니다.
+              <br />
+              매주 벌금을 자동으로 계산해요.
+              <br /><br />
+              벌금이 부담스럽다면?{' '}
+              <span className="font-semibold text-slate-800">벌금 기능을 끌 수 있어요.</span>
             </p>
           </HeroRevealItem>
+          {/* <HeroRevealItem delay={HERO_REVEAL_STAGGER * 2} revealed={revealed}>
+            <ul className="mb-8 flex flex-wrap gap-2">
+              {TRUST_CHIPS.map((chip) => {
+                const ChipIcon = chip.icon;
+                return (
+                  <li
+                    key={chip.id}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-medium text-slate-600"
+                  >
+                    <ChipIcon className="h-3.5 w-3.5 text-indigo-500" aria-hidden="true" />
+                    {chip.label}
+                  </li>
+                );
+              })}
+            </ul>
+          </HeroRevealItem> */}
           <HeroRevealItem delay={HERO_REVEAL_STAGGER * 3} revealed={revealed}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <Button
                 size="lg"
                 onClick={() => navigate('/login')}
-                className="rounded-full bg-indigo-600 px-10 py-6 text-base font-semibold text-white shadow-lg shadow-indigo-500/30 transition-transform duration-150 hover:scale-[1.02] hover:bg-indigo-700 sm:text-lg"
+                className="rounded-full bg-indigo-600 px-10 py-6 font-heading text-base font-bold text-white shadow-lg shadow-indigo-500/30 transition-transform duration-150 hover:scale-[1.02] hover:bg-indigo-700 sm:text-lg"
                 aria-label="헬창마을 무료로 시작하고 운동방 만들기"
               >
-                운동 인증 하러가기
+                무료로 운동방 만들기
               </Button>
-              <div className="text-center text-xs leading-relaxed text-slate-500 sm:text-sm">
-                <p>간편 로그인으로 누구나 1초 만에 가입할 수 있어요.</p>
-              </div>
+              <Button
+                size="lg"
+                variant="ghost"
+                onClick={handleScrollToHowItWorks}
+                className="rounded-full px-6 py-6 text-sm font-semibold text-slate-600 hover:text-indigo-600 sm:text-base"
+                aria-label="헬창마을 이용 방법 3단계 보기"
+              >
+                어떻게 시작하나요? ↓
+              </Button>
             </div>
           </HeroRevealItem>
         </div>
