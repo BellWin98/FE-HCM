@@ -15,6 +15,38 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        // 본문 기본: Pretendard — html/body 전역에 preflight로 자동 적용
+        sans: [
+          "Pretendard Variable",
+          "Pretendard",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "system-ui",
+          "Roboto",
+          "Helvetica Neue",
+          "Segoe UI",
+          "Apple SD Gothic Neo",
+          "Noto Sans KR",
+          "Malgun Gothic",
+          "sans-serif",
+        ],
+        // 제목/CTA: Gmarket Sans (미로드 시 Pretendard 폴백)
+        heading: [
+          "Gmarket Sans",
+          "Pretendard Variable",
+          "Pretendard",
+          "sans-serif",
+        ],
+        // 숫자 지표: Montserrat (한글 글리프는 자동으로 Pretendard 폴백)
+        // index.css의 .font-number 유틸리티가 tabular-nums를 함께 적용한다
+        number: [
+          "Montserrat",
+          "Pretendard Variable",
+          "Pretendard",
+          "sans-serif",
+        ],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

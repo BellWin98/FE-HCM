@@ -29,14 +29,14 @@ const SocialProofStats = ({
     <div className="grid w-full max-w-xl grid-cols-2 gap-3 text-center text-xs sm:text-sm">
       <div className="rounded-2xl border border-slate-200/80 bg-slate-50 px-3 py-2.5">
         <p className="text-sm font-semibold text-slate-900">
-          {stat1.toLocaleString()}
+          <span className="font-number tabular-nums">{stat1.toLocaleString()}</span>
           회
         </p>
         <p className="mt-0.5 text-[10px] text-slate-500 sm:text-xs">총 운동 인증 횟수</p>
       </div>
       <div className="rounded-2xl border border-slate-200/80 bg-slate-50 px-3 py-2.5">
         <p className="text-sm font-semibold text-slate-900">
-          {stat2.toLocaleString()}
+          <span className="font-number tabular-nums">{stat2.toLocaleString()}</span>
           개
         </p>
         <p className="mt-0.5 text-[10px] text-slate-500 sm:text-xs">현재 운영 중인 방</p>
@@ -103,8 +103,11 @@ export const SocialProofSection = ({ sectionRef, isInView }: SocialProofSectionP
             <div className="flex items-center gap-2 text-xs font-medium text-slate-700 sm:text-sm">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               <span>
-                현재 {displayStats.totalUsers.toLocaleString()}명의 유저가 꾸준히 운동을 인증하고
-                있어요!
+                현재{' '}
+                <span className="font-number font-semibold tabular-nums">
+                  {displayStats.totalUsers.toLocaleString()}
+                </span>
+                명의 유저가 꾸준히 운동을 인증하고 있어요!
               </span>
             </div>
           </HeroRevealItem>
