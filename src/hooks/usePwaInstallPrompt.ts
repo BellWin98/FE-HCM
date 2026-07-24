@@ -7,6 +7,40 @@ interface BeforeInstallPromptEvent extends Event {
 
 export type PwaInstallPlatform = 'android' | 'ios';
 
+export type PwaInstallSnoozeDuration = 'today' | 'week';
+
+const SNOOZE_STORAGE_KEY = 'pwa-install-snooze-until';
+
+// 스누즈 만료 시각(ms)을 반환한다. '오늘'은 오늘 자정까지, '일주일'은 7일 뒤까지 배너를 숨긴다.
+const getSnoozeUntil = (duration: PwaInstallSnoozeDuration): number => {
+  if (duration === 'today') {
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    return endOfToday.getTime();
+  }
+  return Date.now() + 7 * 24 * 60 * 60 * 1000;
+};
+
+const isSnoozed = (): boolean => {
+  try {
+    const raw = window.localStorage.getItem(SNOOZE_STORAGE_KEY);
+    if (!raw) {
+      return false;
+    }
+    const until = Number(raw);
+    if (Number.isNaN(until)) {
+      return false;
+    }
+    if (Date.now() >= until) {
+      window.localStorage.removeItem(SNOOZE_STORAGE_KEY);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const isStandaloneDisplay = (): boolean =>
   window.matchMedia('(display-mode: standalone)').matches ||
   (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -24,6 +58,7 @@ interface UsePwaInstallPromptResult {
   platform: PwaInstallPlatform | null;
   promptInstall: () => void;
   dismiss: () => void;
+  snooze: (duration: PwaInstallSnoozeDuration) => void;
 }
 
 export const usePwaInstallPrompt = (): UsePwaInstallPromptResult => {
@@ -32,7 +67,7 @@ export const usePwaInstallPrompt = (): UsePwaInstallPromptResult => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (isStandaloneDisplay()) {
+    if (isStandaloneDisplay() || isSnoozed()) {
       return;
     }
 
@@ -68,6 +103,15 @@ export const usePwaInstallPrompt = (): UsePwaInstallPromptResult => {
     setVisible(false);
   }, []);
 
+  const snooze = useCallback((duration: PwaInstallSnoozeDuration) => {
+    try {
+      window.localStorage.setItem(SNOOZE_STORAGE_KEY, String(getSnoozeUntil(duration)));
+    } catch {
+      // localStorage 접근이 차단된 경우 무시하고 세션 동안만 숨긴다.
+    }
+    setVisible(false);
+  }, []);
+
   const promptInstall = useCallback(() => {
     if (!deferredPrompt) {
       return;
@@ -80,5 +124,5 @@ export const usePwaInstallPrompt = (): UsePwaInstallPromptResult => {
     });
   }, [deferredPrompt]);
 
-  return { visible, platform, promptInstall, dismiss };
+  return { visible, platform, promptInstall, dismiss, snooze };
 };

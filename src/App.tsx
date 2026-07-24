@@ -114,7 +114,13 @@ const AppRoutes = () => (
 
 const App = () => {
   const { needRefresh, handleUpdate, dismiss } = usePwaUpdater();
-  const { visible: installBannerVisible, platform: installPlatform, promptInstall, dismiss: dismissInstall } = usePwaInstallPrompt();
+  const {
+    visible: installBannerVisible,
+    platform: installPlatform,
+    promptInstall,
+    dismiss: dismissInstall,
+    snooze: snoozeInstall,
+  } = usePwaInstallPrompt();
   const { isKakaoInApp, showFallbackGuide } = useKakaoInAppBrowserExit();
   const [kakaoNoticeDismissed, setKakaoNoticeDismissed] = useState(false);
 
@@ -133,6 +139,7 @@ const App = () => {
           platform={installPlatform}
           onInstall={promptInstall}
           onClose={dismissInstall}
+          onSnooze={snoozeInstall}
         />
         <KakaoInAppBrowserNotice
           visible={isKakaoInApp && showFallbackGuide && !kakaoNoticeDismissed}
