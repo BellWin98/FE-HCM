@@ -71,12 +71,12 @@ export const PenaltyChoiceSection = ({ sectionRef, isInView }: PenaltyChoiceSect
       <HeroRevealItem delay={0} revealed={isInView}>
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="font-heading text-2xl font-bold text-slate-900 sm:text-3xl">
-            벌금은 강요가 아닌 선택이에요
+            독하게 운동하고 싶으면,
+            <br />
+            벌금제로도 운영할 수 있어요
           </h2>
           <p className="mt-3 text-sm text-slate-600 sm:text-base">
-            벌금 걸고 독하게 운동해도 좋고, 
-            <br /><br />
-            부담 없이 함께 운동 기록해도 좋아요.
+            헬창마을에서 벌금까지 자동으로 계산해줘요.
           </p>
         </div>
       </HeroRevealItem>
@@ -90,8 +90,8 @@ export const PenaltyChoiceSection = ({ sectionRef, isInView }: PenaltyChoiceSect
             }
             badge="벌금 모드"
             badgeClassName="bg-orange-100 text-orange-700"
-            title="진심으로 갈 거라면"
-            subtitle="돈이 걸려야 움직이는 우리를 위해, 확실한 실행 장치"
+            title="돈이 걸려야 움직일 것 같으면"
+            subtitle=""
             features={PENALTY_MODE_FEATURES}
             checkColorClassName="text-orange-500"
           />
@@ -105,8 +105,8 @@ export const PenaltyChoiceSection = ({ sectionRef, isInView }: PenaltyChoiceSect
             }
             badge="노벌금 모드"
             badgeClassName="bg-emerald-100 text-emerald-700"
-            title="부담 없이 함께 하고 싶다면"
-            subtitle="벌금 기능을 끄고, 인증·기록·응원만 가볍게"
+            title="부담 없이 운동 하고 싶다면"
+            subtitle=""
             features={FREE_MODE_FEATURES}
             checkColorClassName="text-emerald-500"
           />

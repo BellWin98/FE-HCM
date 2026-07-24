@@ -23,7 +23,7 @@ const STEP_ITEMS: StepConfig[] = [
     iconColorClassName: 'text-indigo-600',
     title: '운동방을 만들어요',
     description:
-      '주간 목표 횟수와 벌금액만 정하면 끝.\n벌금이 부담스럽다면 끄고 시작해도 돼요.',
+      '주간 운동 목표 횟수와 벌금 여부를 정해요.',
   },
   {
     id: 'invite',
@@ -33,7 +33,7 @@ const STEP_ITEMS: StepConfig[] = [
     iconColorClassName: 'text-amber-600',
     title: '친구를 초대해요',
     description:
-      '입장 코드를 카카오톡으로 공유하면\n친구는 클릭 한 번으로 바로 들어와요.',
+      '입장 코드를 카카오톡으로 공유하거나, 친구에게 알려주세요.',
   },
   {
     id: 'certify',
@@ -41,9 +41,9 @@ const STEP_ITEMS: StepConfig[] = [
     icon: CalendarCheck,
     iconBgClassName: 'bg-emerald-100',
     iconColorClassName: 'text-emerald-600',
-    title: '인증하면, 계산은 자동',
+    title: '운동하고 인증샷을 올려요.',
     description:
-      '사진 한 장으로 10초 인증.\n매주 월요일 자정, 집계는 앱이 알아서 해요.',
+      '운동을 인증하면 친구들이 인증샷을 볼 수 있어요.',
   },
 ];
 
@@ -63,9 +63,7 @@ export const HowItWorksSection = ({ sectionRef, isInView }: HowItWorksSectionPro
             1분이면 충분해요
           </h2>
           <p className="mt-3 text-sm text-slate-600 sm:text-base">
-            복잡한 설정도, 예치금도 없어요.
-            <br />
-            방 만들고 친구만 초대하면 오늘부터 바로 시작이에요.
+            방 만들고, 친구 초대하고, 운동 인증하러 가세요!
           </p>
         </div>
       </HeroRevealItem>

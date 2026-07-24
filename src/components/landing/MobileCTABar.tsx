@@ -16,8 +16,7 @@ export const MobileCTABar = ({ onNavigate }: MobileCTABarProps) => {
       <div className="mx-auto flex max-w-md items-center justify-between gap-3">
         <HeroRevealItem delay={0} revealed={revealed}>
           <div className="text-xs leading-snug text-slate-600">
-            <p className="font-semibold text-slate-900">1초 로그인, 예치금 없음</p>
-            <p>벌금 없이도 시작할 수 있어요</p>
+            <p className="font-semibold text-slate-900">고민은 운동만 늦출 뿐이에요!</p>
           </div>
         </HeroRevealItem>
         <HeroRevealItem delay={HERO_REVEAL_STAGGER} revealed={revealed}>
@@ -27,7 +26,7 @@ export const MobileCTABar = ({ onNavigate }: MobileCTABarProps) => {
             onClick={() => onNavigate('/login')}
             aria-label="무료로 운동방 만들기"
           >
-            로그인 하기
+            로그인 하러가기
           </Button>
         </HeroRevealItem>
       </div>

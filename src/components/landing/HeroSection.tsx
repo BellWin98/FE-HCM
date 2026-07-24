@@ -35,23 +35,27 @@ export const HeroSection = ({ navigate }: HeroSectionProps) => {
         <div className="flex flex-col">
           <HeroRevealItem delay={HERO_REVEAL_STAGGER} revealed={revealed}>
             <h1 className="mb-6 max-w-2xl font-heading text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl sm:leading-tight lg:text-6xl">
-              &ldquo;내일부터 운동해야지&rdquo;
+              &ldquo;내일부터 운동해야지!&rdquo;
               <br /><br />
-              더 이상 속지마세요!
+              정말 하실건가요?
+              <br /><br />
+              작심삼일의 진짜 이유는
+              <br />
+              의지가 아닙니다.
               <br /><br />
               <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                "헬창마을"이 도와드릴게요
+              "혼자"였기 때문입니다.
               </span>
             </h1>
           </HeroRevealItem>
           <HeroRevealItem delay={HERO_REVEAL_STAGGER * 2} revealed={revealed}>
             <p className="mb-6 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
-              헬창마을은 벌금 기반 운동 인증 앱입니다.
+              헬창마을은 친구들과 함께하는 
               <br />
-              매주 벌금을 자동으로 계산해요.
+              운동 인증 서비스입니다.
               <br /><br />
-              벌금이 부담스럽다면?{' '}
-              <span className="font-semibold text-slate-800">벌금 기능을 끌 수 있어요.</span>
+              혼자 운동하지 말고, {' '}
+              <span className="font-semibold text-slate-800">친구들과 같이 하세요</span>
             </p>
           </HeroRevealItem>
           {/* <HeroRevealItem delay={HERO_REVEAL_STAGGER * 2} revealed={revealed}>

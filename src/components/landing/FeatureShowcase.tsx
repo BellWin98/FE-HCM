@@ -22,7 +22,7 @@ export const FeatureShowcase = ({ sectionRef, isInView }: FeatureShowcaseProps) 
           <br /><br />
           대시보드, 운동 인증, 벌금 집계, 인증 캘린더, 채팅방까지.
           <br /><br />
-          헬창마을 안에서 전부 해결되도록 설계했어요.
+          헬창마을 안에서 전부 해결하세요.
         </p>
       </HeroRevealItem>
       <div className="mx-auto mt-16 max-w-5xl space-y-24">
