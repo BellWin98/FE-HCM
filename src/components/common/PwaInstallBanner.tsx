@@ -1,16 +1,17 @@
 import type { FC } from 'react';
 import { Download, Share2, SquarePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { PwaInstallPlatform } from '@/hooks/usePwaInstallPrompt';
+import type { PwaInstallPlatform, PwaInstallSnoozeDuration } from '@/hooks/usePwaInstallPrompt';
 
 interface PwaInstallBannerProps {
   visible: boolean;
   platform: PwaInstallPlatform | null;
   onInstall: () => void;
   onClose: () => void;
+  onSnooze: (duration: PwaInstallSnoozeDuration) => void;
 }
 
-export const PwaInstallBanner: FC<PwaInstallBannerProps> = ({ visible, platform, onInstall, onClose }) => {
+export const PwaInstallBanner: FC<PwaInstallBannerProps> = ({ visible, platform, onInstall, onClose, onSnooze }) => {
   if (!visible || !platform) {
     return null;
   }
@@ -46,21 +47,36 @@ export const PwaInstallBanner: FC<PwaInstallBannerProps> = ({ visible, platform,
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex justify-end gap-2 border-t px-4 py-2.5 sm:px-5">
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            나중에
-          </Button>
+        <div className="flex flex-col gap-2 border-t px-4 py-2.5 sm:px-5">
           {platform === 'android' && (
-            <Button size="sm" onClick={onInstall}>
+            <Button size="sm" className="w-full" onClick={onInstall}>
               <Download className="h-4 w-4" />
               앱 설치하기
             </Button>
           )}
           {platform === 'ios' && (
-            <Button size="sm" onClick={onClose}>
+            <Button size="sm" className="w-full" onClick={onClose}>
               확인했어요
             </Button>
           )}
+          <div className="flex justify-between gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 text-xs text-muted-foreground"
+              onClick={() => onSnooze('today')}
+            >
+              오늘 하루 보지 않기
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 text-xs text-muted-foreground"
+              onClick={() => onSnooze('week')}
+            >
+              일주일 동안 보지 않기
+            </Button>
+          </div>
         </div>
       </div>
     </div>
