@@ -7,10 +7,10 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { RequireRole } from '@/components/RequireRole';
 import { PwaUpdateBanner } from '@/components/common/PwaUpdateBanner';
 import { PwaInstallBanner } from '@/components/common/PwaInstallBanner';
-import { KakaoInAppBrowserNotice } from '@/components/common/KakaoInAppBrowserNotice';
+import { InAppBrowserNotice } from '@/components/common/InAppBrowserNotice';
 import { usePwaUpdater } from '@/hooks/usePwaUpdater';
 import { usePwaInstallPrompt } from '@/hooks/usePwaInstallPrompt';
-import { useKakaoInAppBrowserExit } from '@/hooks/useKakaoInAppBrowserExit';
+import { useInAppBrowserExit } from '@/hooks/useInAppBrowserExit';
 import Index from './pages/Index';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -121,8 +121,8 @@ const App = () => {
     dismiss: dismissInstall,
     snooze: snoozeInstall,
   } = usePwaInstallPrompt();
-  const { isKakaoInApp, showFallbackGuide } = useKakaoInAppBrowserExit();
-  const [kakaoNoticeDismissed, setKakaoNoticeDismissed] = useState(false);
+  const { isInApp, showFallbackGuide } = useInAppBrowserExit();
+  const [inAppNoticeDismissed, setInAppNoticeDismissed] = useState(false);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -141,9 +141,9 @@ const App = () => {
           onClose={dismissInstall}
           onSnooze={snoozeInstall}
         />
-        <KakaoInAppBrowserNotice
-          visible={isKakaoInApp && showFallbackGuide && !kakaoNoticeDismissed}
-          onClose={() => setKakaoNoticeDismissed(true)}
+        <InAppBrowserNotice
+          visible={isInApp && showFallbackGuide && !inAppNoticeDismissed}
+          onClose={() => setInAppNoticeDismissed(true)}
         />
       </TooltipProvider>
     </QueryClientProvider>
