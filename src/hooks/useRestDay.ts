@@ -1,4 +1,4 @@
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import { format } from 'date-fns';
 import { useState } from 'react';

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { WorkoutSuccessDialog } from '@/components/WorkoutSuccessDialog';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { WORKOUT_TYPES, WorkoutResponse, WorkoutRoomDetail, WorkoutType } from '@/types';

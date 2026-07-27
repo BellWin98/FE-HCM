@@ -14,7 +14,7 @@ import PenaltyOverview from '@/components/PenaltyOverview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useRestDay } from '@/hooks/useRestDay';
@@ -22,29 +22,11 @@ import { useRoomJoin } from '@/hooks/useRoomJoin';
 import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
-import { initializeApp } from 'firebase/app';
-import { onMessage } from 'firebase/messaging';
-import { getToken } from 'firebase/messaging';
-import { getMessaging } from 'firebase/messaging';
-import { useState, useEffect } from 'react';
+import { useFcm } from '@/hooks/useFcm';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
-
-// VAPID 키는 웹 푸시 토큰 발급에 필요
-const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
-
-
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -70,45 +52,8 @@ export const DashboardPage = () => {
   const joinedRoomCount = joinedRooms.length;
   const hasReachedRoomLimit = !isAdmin && joinedRoomCount >= 3;
 
-  // FCM 토큰 발급 (로그인 + 운동방 참여 시)
-  useEffect(() => {
-    if (member && isMemberInWorkoutRoom) {
-      const requestPermission = async () => {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          const token = await getToken(messaging, { vapidKey: vapidKey });
-          if (!token) return null;
-          try {
-            await api.registerFcmToken(token);
-          } catch (e) {
-            console.warn('FCM 토큰 등록 실패 (서버)', e);
-          }
-        }
-      };
-
-      requestPermission();
-
-      // 2. 포그라운드 메시지 수신 리스너 (같은 운동방 타 유저 알림만 Toast로 표시, 발신자 본인은 제외)
-      const unsubscribe = onMessage(messaging, (payload) => {
-        const data = payload.data as Record<string, string> | undefined;
-        console.log("data: " + JSON.stringify(data));
-        const senderId = data?.senderId;
-        const isFromMe = senderId != null && String(member?.id) === senderId;
-        const isChatNotification = data?.type === 'CHAT';
-        
-        if (isFromMe || isChatNotification) return;
-
-        const title = data?.title ?? '알림';
-        const body = data?.body;
-        toast(title, {
-          description: body ?? undefined,
-          duration: 2000,
-        });
-      });
-
-      return () => unsubscribe();
-    }
-  }, [member, isMemberInWorkoutRoom]);
+  // FCM 토큰 발급 + 포그라운드 알림 처리 (로그인 + 운동방 참여 시)
+  useFcm({ enabled: Boolean(member && isMemberInWorkoutRoom), member });
 
   // 모든 운동방 보기 관련 상태
   const [showAvailableRoomsDialog, setShowAvailableRoomsDialog] = useState(false);

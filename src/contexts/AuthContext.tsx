@@ -1,16 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { Member, AuthContextType } from '@/types';
 import { api } from '@/lib/api';
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+import { unregisterFcmToken } from '@/lib/firebase';
+import { AuthContext } from '@/contexts/auth-context';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -119,11 +111,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // 액세스 토큰이 아직 남아 있는 동안(요청 인터셉터가 헤더에 주입) 서버의 FCM 토큰 매핑을 해제한다.
+    // best-effort이므로 실패해도 로그아웃은 계속 진행한다.
+    await unregisterFcmToken();
+
     localStorage.removeItem('member');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-    // localStorage.clear();
     setMember(null);
   };
 

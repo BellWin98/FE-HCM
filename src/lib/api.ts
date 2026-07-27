@@ -282,6 +282,13 @@ class ApiClient {
     });
   }
 
+  async deleteFcmToken(token: string) {
+    return this.request("/notifications/fcm/token", {
+      method: "DELETE",
+      data: { token },
+    });
+  }
+
   async notifyAllRoomMembers(payload: { title: string, body: string, type: string }) {
     return this.request(`/notifications/rooms`, {
       method: "POST",

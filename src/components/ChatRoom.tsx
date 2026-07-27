@@ -1,4 +1,4 @@
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import { ChatMessage, RoomMember, isChatContentType, isSystemChatType } from '@/types';
 import { Client, IMessage } from '@stomp/stompjs';
