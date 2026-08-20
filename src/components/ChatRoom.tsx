@@ -495,17 +495,7 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
       textareaRef.current?.focus();
     }, 0);
     setTimeout(() => api.updateLastRead(roomId), 500); // 서버 반영 시간 고려 약간의 딜레이
-
-    if (roomId) {
-      api.notifyRoomMembers(roomId, {
-        title: member.nickname + "님이 메시지를 보냈어요!",
-        body: content,
-        type: "CHAT",
-      }).catch((notifyErr) => {
-        console.warn('채팅 알림 전송 실패', notifyErr);
-      });
-    }
-  }, [input, roomId, accessToken, member.nickname]);
+  }, [input, roomId, accessToken]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // 모바일: Enter 시 기본 줄바꿈만 허용 (전송 안 함)
@@ -585,13 +575,6 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
       });
       clearFile();
       setTimeout(() => api.updateLastRead(roomId), 500);
-      api.notifyRoomMembers(roomId, {
-        title: member.nickname + '님이 사진을 보냈어요!',
-        body: '사진',
-        type: 'CHAT',
-      }).catch((notifyErr) => {
-        console.warn('채팅 알림 전송 실패', notifyErr);
-      });
       setTimeout(() => textareaRef.current?.focus(), 0);
     } catch (err) {
       const message = err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.';
@@ -599,7 +582,7 @@ export const ChatRoom = ({ currentWorkoutRoom }: ChatRoomProps) => {
     } finally {
       setIsUploadingImage(false);
     }
-  }, [file, roomId, accessToken, member.nickname, clearFile]);
+  }, [file, roomId, accessToken, clearFile]);
 
   const handleSubmit = useCallback(() => {
     if (file) {
