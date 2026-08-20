@@ -226,20 +226,6 @@ export const WorkoutUploadPage = () => {
 
       const data = await api.uploadWorkout(workoutData, selectedImages) as WorkoutResponse;
 
-      // 날짜가 오늘인지 확인 (타임스탬프 비교)
-      const isTodayParams = today.getTime() === toDateOnly(workoutDate).getTime();
-
-      // 날짜에 따라 메시지 분기 처리
-      const dateText = isTodayParams ? "오늘" : format(workoutDate, 'yyyy-MM-dd');
-
-      api.notifyAllRoomMembers({
-        title: `${member.nickname}님이 ${dateText} 운동을 인증했어요!`,
-        body: `운동시간: ${duration}분`,
-        type: "WORKOUT",
-      }).catch((notifyErr) => {
-        console.warn('운동 업로드 알림 전송 실패', notifyErr);
-      });
-
       setTotalWorkoutDays(data.memberTotalWorkoutDays);
 
       const currentWorkoutRoomId = getCurrentWorkoutRoomId();
