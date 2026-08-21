@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  TradingProfitLossSummary,
-  TradingProfitLossPeriod,
-  TradingProfitLoss,
-} from '@/types';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import type { TradingProfitLossSummary, TradingProfitLossPeriod } from '@/types';
+import { groupSellTradesByDate, groupSellTradesByStock } from '@/lib/stockProfit';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { format, subDays, subWeeks, subMonths, subYears, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import PeriodSegmentControl, { PeriodType } from './PeriodSegmentControl';
+import ProfitDetailSection, { ProfitMetric, DetailViewMode } from './ProfitDetailSection';
+import { formatCurrency, formatPercentage, getProfitLossColor } from '@/lib/stockFormat';
 import { cn } from '@/lib/utils';
+import { STOCK_CARD_BG, STOCK_TEXT_MUTED } from '@/lib/stockTheme';
 
 const formatDateLocal = (date: Date) => {
   const y = date.getFullYear();
@@ -38,37 +37,19 @@ const formatDateSafe = (date: Date, formatStr: string, fallback: string): string
   }
 };
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(amount);
-const formatPercentage = (rate: number) =>
-  `${rate >= 0 ? '+' : ''}${rate.toFixed(2)}%`;
+const PROFIT_TABS: ReadonlyArray<{ key: ProfitMetric; label: string }> = [
+  { key: 'sales', label: '판매수익' },
+  { key: 'fee', label: '수수료' },
+  { key: 'tax', label: '제세금' },
+];
 
-const getProfitLossColor = (amount: number) => {
-  if (amount > 0) return 'text-red-500 dark:text-red-400';
-  if (amount < 0) return 'text-blue-500 dark:text-blue-400';
-  return 'text-gray-400 dark:text-gray-500';
-};
-
-const getInitials = (stockName: string) => {
-  if (!stockName?.length) return '?';
-  return stockName.replace(/\s/g, '').slice(0, 2).toUpperCase();
-};
-
-type ProfitTypeTab = 'sales' | 'fee' | 'tax';
-type DetailViewMode = 'daily' | 'stock';
-
-interface StockProfitTabProps {
-  dark?: boolean;
-}
-
-const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
-  const isMobile = useIsMobile();
+const StockProfitTab = () => {
   const [summary, setSummary] = useState<TradingProfitLossSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [periodType, setPeriodType] = useState<PeriodType>('MONTHLY');
   const [navOffset, setNavOffset] = useState(0); // 0=현재, 음수=과거
-  const [profitTypeTab, setProfitTypeTab] = useState<ProfitTypeTab>('sales');
+  const [profitTypeTab, setProfitTypeTab] = useState<ProfitMetric>('sales');
   const [detailViewMode, setDetailViewMode] = useState<DetailViewMode>('daily');
 
   const handlePeriodTypeChange = (type: PeriodType) => {
@@ -135,19 +116,25 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
 
   const canGoNext = navOffset < 0;
 
-  const fetchData = useCallback(async () => {
+  // 화살표를 연달아 누르면 무거운 조회가 중첩되고, 늦게 도착한 이전 응답이 최신 응답을
+  // 덮어쓸 수 있다. 요청마다 세대 번호를 붙여 마지막 요청의 결과만 반영한다.
+  const requestIdRef = useRef(0);
+
+  const fetchData = useCallback(async (): Promise<void> => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     try {
-      const data = (await api.getTradingProfitLoss({
-        ...appliedPeriod,
-        periodType: appliedPeriod.periodType,
-      })) as TradingProfitLossSummary;
+      const data = await api.getTradingProfitLoss(appliedPeriod);
+      if (requestId !== requestIdRef.current) return;
       setSummary(data);
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       setError(err instanceof Error ? err.message : '수익 분석을 불러오는데 실패했습니다.');
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [appliedPeriod]);
 
@@ -185,45 +172,18 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
   const tax = summary?.totalTax ?? 0;
   const totalRealized = salesProfit - fee - tax;
 
-  const tradesByDate = useMemo(() => {
-    if (!summary?.trades?.length) return {};
-    const sellTrades = summary.trades.filter((t) => t.tradeType === 'SELL');
-    return sellTrades.reduce((acc, t) => {
-      if (!acc[t.tradeDate]) acc[t.tradeDate] = [];
-      acc[t.tradeDate].push(t);
-      return acc;
-    }, {} as Record<string, TradingProfitLoss[]>);
-  }, [summary?.trades]);
+  // 수수료·제세금은 지출이므로 상세 섹션에 음수로 넘긴다.
+  const metricTotals: Record<ProfitMetric, number> = {
+    sales: salesProfit,
+    fee: -fee,
+    tax: -tax,
+  };
 
-  const tradesByStock = useMemo(() => {
-    if (!summary?.trades?.length) return [];
-    const sellTrades = summary.trades.filter((t) => t.tradeType === 'SELL');
-    const map = new Map<
-      string,
-      { name: string; code: string; profit: number; rate: number; fee: number; tax: number; count: number }
-    >();
-    for (const t of sellTrades) {
-      const existing = map.get(t.stockCode);
-      if (existing) {
-        existing.profit += t.profitLoss;
-        existing.count += 1;
-      } else {
-        map.set(t.stockCode, {
-          name: t.stockName,
-          code: t.stockCode,
-          profit: t.profitLoss,
-          rate: t.profitLossRate,
-          fee: t.fee,
-          tax: t.tax,
-          count: 1,
-        });
-      }
-    }
-    return Array.from(map.values()).sort((a, b) => b.profit - a.profit);
-  }, [summary?.trades]);
+  const dailyGroups = useMemo(() => groupSellTradesByDate(summary?.trades), [summary?.trades]);
+  const tradesByStock = useMemo(() => groupSellTradesByStock(summary?.trades), [summary?.trades]);
 
-  const cardBg = dark ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200';
-  const textMuted = dark ? 'text-gray-400' : 'text-gray-600';
+  const cardBg = STOCK_CARD_BG;
+  const textMuted = STOCK_TEXT_MUTED;
 
   if (loading && !summary) {
     return (
@@ -248,7 +208,7 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* 기간 필터 */}
-      <PeriodSegmentControl value={periodType} onChange={handlePeriodTypeChange} dark={dark} />
+      <PeriodSegmentControl value={periodType} onChange={handlePeriodTypeChange} />
 
       {/* 실현수익 요약 */}
       <div className={cn('p-4 rounded-xl border', cardBg)}>
@@ -306,14 +266,11 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
 
       {/* 수익 유형 탭 */}
       <div className="flex border-b border-gray-200 dark:border-gray-700 min-h-[44px]">
-        {[
-          { key: 'sales' as const, label: '판매수익' },
-          { key: 'fee' as const, label: '수수료' },
-          { key: 'tax' as const, label: '제세금' },
-        ].map((tab) => (
+        {PROFIT_TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
+            aria-pressed={profitTypeTab === tab.key}
             onClick={() => setProfitTypeTab(tab.key)}
             className={cn(
               'flex-1 min-h-[44px] text-sm font-medium border-b-2 transition-colors',
@@ -327,357 +284,16 @@ const StockProfitTab: React.FC<StockProfitTabProps> = ({ dark }) => {
         ))}
       </div>
 
-      {/* 판매수익 상세 */}
-      {profitTypeTab === 'sales' && (
-        <>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p className={cn('text-xl font-bold', getProfitLossColor(salesProfit))}>
-              {formatCurrency(salesProfit)}
-              {summary?.totalProfitLossRate != null && ` (${formatPercentage(summary.totalProfitLossRate)})`}
-            </p>
-            <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shrink-0">
-              <button
-                type="button"
-                className={cn(
-                  'px-3 py-2 text-sm min-h-[40px]',
-                  detailViewMode === 'daily' ? 'bg-gray-200 dark:bg-gray-700' : textMuted
-                )}
-                onClick={() => setDetailViewMode('daily')}
-              >
-                일별
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  'px-3 py-2 text-sm min-h-[40px]',
-                  detailViewMode === 'stock' ? 'bg-gray-200 dark:bg-gray-700' : textMuted
-                )}
-                onClick={() => setDetailViewMode('stock')}
-              >
-                종목별 합계
-              </button>
-            </div>
-          </div>
-
-          {detailViewMode === 'daily' && (
-            <div className="space-y-4 overflow-y-auto max-h-[400px]">
-              {Object.entries(tradesByDate)
-                .sort(([a], [b]) => b.localeCompare(a))
-                .map(([dateStr, trades]) => {
-                  const date = parseLocalDate(dateStr);
-                  const dayProfit = trades.reduce((s, t) => s + t.profitLoss, 0);
-                  const dayRate = trades[0]?.profitLossRate ?? 0;
-                  return (
-                    <div key={dateStr}>
-                      <div className="text-sm font-medium mb-2">
-                        {formatDateSafe(date, 'M월 d일 (EEE)', dateStr)} ·{' '}
-                        <span className={getProfitLossColor(dayProfit)}>
-                          {formatCurrency(dayProfit)} ({formatPercentage(dayRate)})
-                        </span>
-                      </div>
-                      <div className="space-y-2 pl-2">
-                        {trades.map((t, i) => (
-                          <div
-                            key={`${t.stockCode}-${t.tradeType}-${i}`}
-                            className={cn(
-                              'flex items-center justify-between p-3 rounded-lg min-h-[56px]',
-                              cardBg,
-                              dark ? 'border border-gray-700' : 'border border-gray-200'
-                            )}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
-                                {getInitials(t.stockName)}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
-                                  {t.stockName}
-                                </div>
-                                <div className={cn('text-sm', getProfitLossColor(t.profitLoss))}>
-                                  {formatCurrency(t.profitLoss)} ({formatPercentage(t.profitLossRate)})
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              {Object.keys(tradesByDate).length === 0 && (
-                <div className={cn('py-8 text-center', textMuted)}>거래 내역이 없습니다.</div>
-              )}
-            </div>
-          )}
-
-          {detailViewMode === 'stock' && (
-            <div className="space-y-2 overflow-y-auto max-h-[400px]">
-              {tradesByStock.map((s) => (
-                <div
-                  key={s.code}
-                  className={cn(
-                    'flex items-center justify-between p-4 rounded-lg min-h-[56px]',
-                    cardBg,
-                    dark ? 'border border-gray-700' : 'border border-gray-200'
-                  )}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
-                      {getInitials(s.name)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
-                        {s.name}
-                      </div>
-                      <div className={cn('text-sm', getProfitLossColor(s.profit))}>
-                        {formatCurrency(s.profit)}
-                        {s.count === 1 && ` (${formatPercentage(s.rate)})`}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {tradesByStock.length === 0 && (
-                <div className={cn('py-8 text-center', textMuted)}>종목별 내역이 없습니다.</div>
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* 수수료 상세 */}
-      {profitTypeTab === 'fee' && (
-        <>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p className={cn('text-xl font-bold', getProfitLossColor(-fee))}>
-              -{formatCurrency(fee)}
-            </p>
-            <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shrink-0">
-              <button
-                type="button"
-                className={cn(
-                  'px-3 py-2 text-sm min-h-[40px]',
-                  detailViewMode === 'daily' ? 'bg-gray-200 dark:bg-gray-700' : textMuted
-                )}
-                onClick={() => setDetailViewMode('daily')}
-              >
-                일별
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  'px-3 py-2 text-sm min-h-[40px]',
-                  detailViewMode === 'stock' ? 'bg-gray-200 dark:bg-gray-700' : textMuted
-                )}
-                onClick={() => setDetailViewMode('stock')}
-              >
-                종목별 합계
-              </button>
-            </div>
-          </div>
-
-          {detailViewMode === 'daily' && (
-            <div className="space-y-4 overflow-y-auto max-h-[400px]">
-              {Object.entries(tradesByDate)
-                .sort(([a], [b]) => b.localeCompare(a))
-                .map(([dateStr, trades]) => {
-                  const date = parseLocalDate(dateStr);
-                  const dayFee = trades.reduce((s, t) => s + t.fee, 0);
-                  return (
-                    <div key={dateStr}>
-                      <div className="text-sm font-medium mb-2">
-                        {formatDateSafe(date, 'M월 d일 (EEE)', dateStr)} ·{' '}
-                        <span className={getProfitLossColor(-dayFee)}>
-                          -{formatCurrency(dayFee)}
-                        </span>
-                      </div>
-                      <div className="space-y-2 pl-2">
-                        {trades.map((t, i) => (
-                          <div
-                            key={`${t.stockCode}-${t.tradeType}-${i}`}
-                            className={cn(
-                              'flex items-center justify-between p-3 rounded-lg min-h-[56px]',
-                              cardBg,
-                              dark ? 'border border-gray-700' : 'border border-gray-200'
-                            )}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
-                                {getInitials(t.stockName)}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
-                                  {t.stockName}
-                                </div>
-                                <div className={cn('text-sm', getProfitLossColor(-t.fee))}>
-                                  -{formatCurrency(t.fee)}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              {Object.keys(tradesByDate).length === 0 && (
-                <div className={cn('py-8 text-center', textMuted)}>거래 내역이 없습니다.</div>
-              )}
-            </div>
-          )}
-
-          {detailViewMode === 'stock' && (
-            <div className="space-y-2 overflow-y-auto max-h-[400px]">
-              {tradesByStock.map((s) => (
-                <div
-                  key={s.code}
-                  className={cn(
-                    'flex items-center justify-between p-4 rounded-lg min-h-[56px]',
-                    cardBg,
-                    dark ? 'border border-gray-700' : 'border border-gray-200'
-                  )}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
-                      {getInitials(s.name)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
-                        {s.name}
-                      </div>
-                      <div className={cn('text-sm', getProfitLossColor(-s.fee))}>
-                        -{formatCurrency(s.fee)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {tradesByStock.length === 0 && (
-                <div className={cn('py-8 text-center', textMuted)}>종목별 내역이 없습니다.</div>
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* 제세금 상세 */}
-      {profitTypeTab === 'tax' && (
-        <>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p className={cn('text-xl font-bold', getProfitLossColor(-tax))}>
-              -{formatCurrency(tax)}
-            </p>
-            <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shrink-0">
-              <button
-                type="button"
-                className={cn(
-                  'px-3 py-2 text-sm min-h-[40px]',
-                  detailViewMode === 'daily' ? 'bg-gray-200 dark:bg-gray-700' : textMuted
-                )}
-                onClick={() => setDetailViewMode('daily')}
-              >
-                일별
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  'px-3 py-2 text-sm min-h-[40px]',
-                  detailViewMode === 'stock' ? 'bg-gray-200 dark:bg-gray-700' : textMuted
-                )}
-                onClick={() => setDetailViewMode('stock')}
-              >
-                종목별 합계
-              </button>
-            </div>
-          </div>
-
-          {detailViewMode === 'daily' && (
-            <div className="space-y-4 overflow-y-auto max-h-[400px]">
-              {Object.entries(tradesByDate)
-                .sort(([a], [b]) => b.localeCompare(a))
-                .map(([dateStr, trades]) => {
-                  const date = parseLocalDate(dateStr);
-                  const dayTax = trades.reduce((s, t) => s + t.tax, 0);
-                  return (
-                    <div key={dateStr}>
-                      <div className="text-sm font-medium mb-2">
-                        {formatDateSafe(date, 'M월 d일 (EEE)', dateStr)} ·{' '}
-                        <span className={getProfitLossColor(-dayTax)}>
-                          -{formatCurrency(dayTax)}
-                        </span>
-                      </div>
-                      <div className="space-y-2 pl-2">
-                        {trades.map((t, i) => (
-                          <div
-                            key={`${t.stockCode}-${t.tradeType}-${i}`}
-                            className={cn(
-                              'flex items-center justify-between p-3 rounded-lg min-h-[56px]',
-                              cardBg,
-                              dark ? 'border border-gray-700' : 'border border-gray-200'
-                            )}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
-                                {getInitials(t.stockName)}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
-                                  {t.stockName}
-                                </div>
-                                <div className={cn('text-sm', getProfitLossColor(-t.tax))}>
-                                  -{formatCurrency(t.tax)}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              {Object.keys(tradesByDate).length === 0 && (
-                <div className={cn('py-8 text-center', textMuted)}>거래 내역이 없습니다.</div>
-              )}
-            </div>
-          )}
-
-          {detailViewMode === 'stock' && (
-            <div className="space-y-2 overflow-y-auto max-h-[400px]">
-              {tradesByStock.map((s) => (
-                <div
-                  key={s.code}
-                  className={cn(
-                    'flex items-center justify-between p-4 rounded-lg min-h-[56px]',
-                    cardBg,
-                    dark ? 'border border-gray-700' : 'border border-gray-200'
-                  )}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
-                      {getInitials(s.name)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-gray-900 dark:text-gray-100 break-words leading-snug">
-                        {s.name}
-                      </div>
-                      <div className={cn('text-sm', getProfitLossColor(-s.tax))}>
-                        -{formatCurrency(s.tax)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {tradesByStock.length === 0 && (
-                <div className={cn('py-8 text-center', textMuted)}>종목별 내역이 없습니다.</div>
-              )}
-            </div>
-          )}
-        </>
-      )}            
-
-      {/* {profitTypeTab !== 'sales' && (
-        <div className={cn('py-12 text-center', textMuted)}>데이터가 없습니다.</div>
-      )} */}
+      {/* 선택된 유형의 상세 내역 — 판매수익/수수료/제세금이 동일한 레이아웃을 공유한다. */}
+      <ProfitDetailSection
+        metric={profitTypeTab}
+        total={metricTotals[profitTypeTab]}
+        totalRate={summary?.totalProfitLossRate}
+        dailyGroups={dailyGroups}
+        stockGroups={tradesByStock}
+        viewMode={detailViewMode}
+        onViewModeChange={setDetailViewMode}
+      />
 
       <Button
         variant="outline"

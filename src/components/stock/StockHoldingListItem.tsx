@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { STOCK_TEXT_MUTED, STOCK_BORDER, STOCK_SEGMENT_ACTIVE } from '@/lib/stockTheme';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(amount);
@@ -49,7 +50,6 @@ interface StockHoldingListItemProps {
   holding: StockHolding;
   displayMode: DisplayMode;
   isMobile: boolean;
-  dark?: boolean;
   trades?: TradingProfitLoss[];
 }
 
@@ -57,14 +57,13 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
   holding,
   displayMode,
   isMobile,
-  dark,
   trades = [],
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [tradeSortOrder, setTradeSortOrder] = useState<'desc' | 'asc'>('desc'); // desc=최신순
-  const textMuted = dark ? 'text-gray-400' : 'text-gray-600';
-  const cardBg = dark ? 'bg-gray-800/50' : 'bg-white';
-  const borderColor = dark ? 'border-gray-700' : 'border-gray-200';
+  const textMuted = STOCK_TEXT_MUTED;
+  const cardBg = 'bg-white dark:bg-gray-800/50';
+  const borderColor = STOCK_BORDER;
 
   const tradesGrouped = useMemo(() => {
     const sorted = [...trades].sort((a, b) => {
@@ -145,9 +144,7 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
               className={cn(
                 'px-2.5 py-1 min-w-[60px]',
                 tradeSortOrder === 'desc'
-                  ? dark
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'bg-gray-900 text-white'
+                  ? STOCK_SEGMENT_ACTIVE
                   : textMuted
               )}
               onClick={() => setTradeSortOrder('desc')}
@@ -159,9 +156,7 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
               className={cn(
                 'px-2.5 py-1 min-w-[60px]',
                 tradeSortOrder === 'asc'
-                  ? dark
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'bg-gray-900 text-white'
+                  ? STOCK_SEGMENT_ACTIVE
                   : textMuted
               )}
               onClick={() => setTradeSortOrder('asc')}

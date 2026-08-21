@@ -99,9 +99,9 @@ const AppRoutes = () => (
       </ProtectedRoute>
     } />
     <Route path="/stock/portfolio" element={
-      <ProtectedRoute>
+      <RequireRole allowedRoles={['FAMILY', 'ADMIN']}>
         <StockPortfolioPage />
-      </ProtectedRoute>
+      </RequireRole>
     } />
     <Route path="/mypage" element={
       <ProtectedRoute>

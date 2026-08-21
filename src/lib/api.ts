@@ -9,6 +9,9 @@ import {
   PenaltyPayment,
   PenaltyRecord,
   SchedulePenaltyChangeRequest,
+  StockPortfolio,
+  TradingProfitLossPeriod,
+  TradingProfitLossSummary,
   WorkoutFeedItem,
   WorkoutRoom,
   WorkoutRoomDetail,
@@ -263,12 +266,16 @@ class ApiClient {
   }
 
   // Stock APIs
-  async getStockPortfolio() {
-    return this.request("/stock/portfolio");
+  async getStockPortfolio(config: AxiosRequestConfig = {}): Promise<StockPortfolio> {
+    return this.request<StockPortfolio>("/stock/portfolio", config);
   }
 
-  async getTradingProfitLoss(period: { startDate: string; endDate: string; periodType: string }) {
-    return this.request("/stock/trading-profit-loss", {
+  async getTradingProfitLoss(
+    period: TradingProfitLossPeriod,
+    config: AxiosRequestConfig = {}
+  ): Promise<TradingProfitLossSummary> {
+    return this.request<TradingProfitLossSummary>("/stock/trading-profit-loss", {
+      ...config,
       method: "POST",
       data: period,
     });
