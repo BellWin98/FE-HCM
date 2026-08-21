@@ -7,12 +7,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { STOCK_CARD_BG, STOCK_TEXT_MUTED, STOCK_TEXT_PRIMARY } from '@/lib/stockTheme';
 
 interface StockTradingHistoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   trades: TradingProfitLoss[];
-  dark?: boolean;
 }
 
 const formatDateToMD = (dateString: string): string => {
@@ -34,7 +34,6 @@ const StockTradingHistoryDialog: React.FC<StockTradingHistoryDialogProps> = ({
   open,
   onOpenChange,
   trades,
-  dark,
 }) => {
   const groupedTrades = useMemo(() => {
     if (!trades.length) return [];
@@ -68,16 +67,16 @@ const StockTradingHistoryDialog: React.FC<StockTradingHistoryDialogProps> = ({
     return grouped;
   }, [trades]);
 
-  const cardBg = dark ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200';
-  const textMuted = dark ? 'text-gray-400' : 'text-gray-600';
-  const textPrimary = dark ? 'text-gray-100' : 'text-gray-900';
+  const cardBg = STOCK_CARD_BG;
+  const textMuted = STOCK_TEXT_MUTED;
+  const textPrimary = STOCK_TEXT_PRIMARY;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
           'max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col',
-          dark && 'bg-gray-900 border-gray-700'
+          'dark:bg-gray-900 dark:border-gray-700'
         )}
       >
         <DialogHeader>

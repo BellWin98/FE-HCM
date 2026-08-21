@@ -14,16 +14,11 @@ const PERIOD_OPTIONS: { value: PeriodType; label: string }[] = [
 interface PeriodSegmentControlProps {
   value: PeriodType;
   onChange: (value: PeriodType) => void;
-  dark?: boolean;
 }
 
-const PeriodSegmentControl: React.FC<PeriodSegmentControlProps> = ({ value, onChange, dark }) => {
-  const baseClass = dark
-    ? 'text-gray-400 hover:text-gray-200'
-    : 'text-gray-600 hover:text-gray-900';
-  const activeClass = dark
-    ? 'bg-gray-700 text-white'
-    : 'bg-gray-200 text-gray-900';
+const PeriodSegmentControl: React.FC<PeriodSegmentControlProps> = ({ value, onChange }) => {
+  const baseClass = 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200';
+  const activeClass = 'bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-white';
 
   return (
     <div className="flex gap-1 p-1 rounded-lg min-h-[44px] overflow-x-auto">

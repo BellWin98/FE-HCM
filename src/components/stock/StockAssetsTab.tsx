@@ -16,6 +16,7 @@ import StockChart from '@/components/StockChart';
 import StockHoldingListItem from './StockHoldingListItem';
 import StockTradingHistoryDialog from './StockTradingHistoryDialog';
 import { cn } from '@/lib/utils';
+import { STOCK_CARD_BG, STOCK_TEXT_MUTED, STOCK_BORDER, STOCK_SEGMENT_ACTIVE } from '@/lib/stockTheme';
 
 const formatDateLocal = (date: Date) => {
   const y = date.getFullYear();
@@ -44,7 +45,6 @@ interface StockAssetsTabProps {
   onRefresh: () => void;
   loading: boolean;
   onNavigateToProfit: () => void;
-  dark?: boolean;
 }
 
 const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
@@ -52,7 +52,6 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
   onRefresh,
   loading,
   onNavigateToProfit,
-  dark,
 }) => {
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<ViewMode>('marketValue');
@@ -97,8 +96,8 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
     });
   }, [portfolio.holdings, sortOption]);
 
-  const cardBg = dark ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200';
-  const textMuted = dark ? 'text-gray-400' : 'text-gray-600';
+  const cardBg = STOCK_CARD_BG;
+  const textMuted = STOCK_TEXT_MUTED;
 
   return (
     <div className={cn('space-y-4 sm:space-y-6', isMobile && 'pb-6')}>
@@ -155,7 +154,6 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
       <StockChart
         holdings={portfolio.holdings}
         totalMarketValue={portfolio.totalMarketValue}
-        dark={dark}
       />
 
       {/* 주식 보유 목록 헤더 */}
@@ -175,7 +173,7 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
         <div
           className={cn(
             'inline-flex rounded-lg overflow-hidden border text-sm',
-            dark ? 'border-gray-600' : 'border-gray-200'
+            'border-gray-200 dark:border-gray-600'
           )}
         >
           <button
@@ -184,9 +182,7 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
             className={cn(
               'px-4 py-2 min-w-[70px] font-medium transition-colors',
               displayMode === 'currentPrice'
-                ? dark
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'bg-gray-900 text-white'
+                ? STOCK_SEGMENT_ACTIVE
                 : textMuted
             )}
           >
@@ -198,9 +194,7 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
             className={cn(
               'px-4 py-2 min-w-[70px] font-medium transition-colors',
               displayMode === 'marketValue'
-                ? dark
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'bg-gray-900 text-white'
+                ? STOCK_SEGMENT_ACTIVE
                 : textMuted
             )}
           >
@@ -220,7 +214,6 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
               holding={holding}
               displayMode={displayMode}
               isMobile={isMobile}
-              dark={dark}
               trades={(tradesSummary?.trades ?? []).filter((t) => t.stockCode === holding.stockCode)}
             />
           ))
@@ -228,9 +221,9 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
       </div>
 
       {/* 하단 요약 링크 영역 */}
-      <div className={cn('space-y-2 pt-4 border-t', dark ? 'border-gray-700' : 'border-gray-200')}>
+      <div className={cn('space-y-2 pt-4 border-t', STOCK_BORDER)}>
         <Button
-          variant={dark ? 'secondary' : 'default'}
+          variant="default"
           className="w-full min-h-[48px] justify-between"
           onClick={onNavigateToProfit}
         >
@@ -238,7 +231,7 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
           <ChevronRight className="h-5 w-5" />
         </Button>
         <Button
-          variant={dark ? 'secondary' : 'default'}
+          variant="default"
           className="w-full min-h-[48px] justify-between"
           onClick={() => setIsTradingHistoryOpen(true)}
         >
@@ -261,7 +254,6 @@ const StockAssetsTab: React.FC<StockAssetsTabProps> = ({
         open={isTradingHistoryOpen}
         onOpenChange={setIsTradingHistoryOpen}
         trades={tradesSummary?.trades ?? []}
-        dark={dark}
       />
     </div>
   );
