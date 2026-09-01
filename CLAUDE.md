@@ -11,14 +11,18 @@ FE-HCM은 "헬창모임"(그룹 운동 습관 관리 앱)의 React 18 / TypeScri
 ## 명령어
 
 ```bash
-npm run dev       # 개발 서버 (포트 3000)
-npm run build     # 프로덕션 빌드 (vite build)
-npm run lint      # ESLint 검사 (./src, --quiet)
-npm run preview   # 빌드 결과 미리보기
+npm run dev        # 개발 서버 (포트 3000)
+npm run build      # 프로덕션 빌드 (vite build)
+npm run lint       # ESLint 검사 (./src, --quiet)
+npm run preview    # 빌드 결과 미리보기
+npm test           # 전체 테스트 실행 (vitest run)
+npm test -- --run <파일명 일부>   # 특정 테스트 파일만 실행
+npm run test:watch # 테스트 watch 모드
 ```
 
-별도의 테스트 러너/테스트 스위트는 구성되어 있지 않습니다. 타입 검사는 빌드(`tsc` 없이 Vite/esbuild가 트랜스파일)
-와 `npm run lint`로 갈음합니다.
+테스트는 Vitest + React Testing Library(jsdom)로 실행합니다(`vitest.config.ts`, 셋업은
+`src/test/setup.ts`). 타입 검사는 `npx tsc --noEmit`과 `npm run lint`로 합니다(Vite 빌드 자체는
+esbuild 트랜스파일이라 타입 오류를 잡지 않습니다).
 
 ## 테스트 작성 원칙 (TDD)
 
@@ -28,8 +32,8 @@ npm run preview   # 빌드 결과 미리보기
 2. **GREEN** — 테스트를 통과시키는 최소한의 코드를 작성합니다.
 3. **REFACTOR** — 테스트가 계속 통과하는 상태를 유지하면서 코드를 정리합니다.
 
-현재 테스트 러너가 구성되어 있지 않으므로, 이 방식을 적용하려면 Vitest + React Testing Library 등 적절한
-테스트 러너 도입을 함께 검토하세요.
+테스트는 `src/test/*.test.tsx`에 둡니다. 컴포넌트 테스트에서는 `@/lib/api`를 `vi.mock`으로 대체하고,
+사용자 관점의 쿼리(`getByRole`의 접근성 이름 등)로 검증하는 기존 패턴을 따르세요.
 
 ## 환경 변수
 
@@ -105,6 +109,25 @@ npm run preview   # 빌드 결과 미리보기
   플로우를 수정할 때 참고하세요.
 - `src/types/index.ts` — 백엔드 응답과 매핑되는 공유 타입 정의(Member, WorkoutRoom, PenaltyRecord,
   ChatMessage, PageResponse 등). 새 API 응답 타입을 추가할 때 이 파일에 정의합니다.
+- `src/lib/workoutReactions.ts` — 운동 인증 리액션 이모지 카탈로그. 백엔드 `ReactionEmoji` enum과
+  목록·순서를 맞춰야 합니다(서버는 리액션이 달린 이모지만 내려주므로, 피커는 이 목록으로 그립니다).
+- `WorkoutSocialBar`(리액션 알약 + 이모지 피커 + 댓글 버튼)와 `WorkoutCommentDialog`가 운동 인증의
+  리액션/댓글 UI입니다. **팝오버 안에서 이 바를 쓸 때는 `onOpenComments`로 댓글 다이얼로그를 팝오버
+  바깥에서 열어야 합니다** — 팝오버 안에서 렌더하면 팝오버가 닫히는 순간 다이얼로그까지 언마운트됩니다.
+  같은 이유로 이모지 피커는 Popover(포털)가 아니라 인라인으로 펼칩니다.
+- **운동방 화면의 리액션/댓글 집계는 `WorkoutSocialProvider`(`src/contexts/WorkoutSocialContext.tsx`)가
+  운동방 단위로 한 벌만 들고 있습니다.** 소셜 바는 팝오버가 닫힐 때 함께 언마운트되어 자기 상태를 잃고,
+  같은 인증이 `MemberStatus`(이번주 현황)와 `MyWorkoutRoom`(월별 달력) 두 곳에 동시에 그려지기 때문입니다.
+  프로바이더는 `DashboardPage`에서 `<Tabs>` **바깥**에 두어야 합니다 — 안에 두면 탭 전환 시
+  `TabsContent`가 언마운트되면서 방금 남긴 리액션이 사라집니다.
+- **달력(`Calendar`)의 `components.Day`는 렌더마다 새 함수로 넘기면 안 됩니다.** 컴포넌트 타입이 매번
+  바뀌어 react-day-picker가 날짜 셀을 재마운트하고, 그 순간 열려 있던 팝오버가 닫힙니다. `MyWorkoutRoom`은
+  타입을 `useMemo`로 고정하고 최신 렌더 함수만 ref로 갈아끼웁니다.
+- **마이페이지 피드(`WorkoutFeedSection`)에서는 `WorkoutSocialBar` 대신 `WorkoutFeedSocial`을 씁니다.**
+  운동 인증 한 번은 참여 중인 방 수만큼 별도 레코드로 저장되는데(백엔드 `WorkoutService.authenticateWorkout`),
+  피드는 사진 중복을 피하려고 하루 한 장만 그립니다. 그래서 카드에 보이는 `reactions`/`commentCount`는
+  방 전체 합계이고, 어느 방에 리액션을 남길지는 정할 수 없습니다 — 합계는 표시 전용이며 댓글을 열 때는
+  `rooms[].recordId`로 방을 골라야 합니다.
 
 ## 따라야 할 컨벤션
 
