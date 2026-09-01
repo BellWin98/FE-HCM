@@ -17,6 +17,12 @@ import {
   WorkoutRoomDetail,
   type WorkoutFeedPeriod,
 } from "@/types";
+import type {
+  TossAccountOwner,
+  TossPortfolio,
+  TossRealizedProfit,
+  TossRealizedProfitPeriod,
+} from "@/types/tossStock";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
@@ -275,6 +281,27 @@ class ApiClient {
     config: AxiosRequestConfig = {}
   ): Promise<TradingProfitLossSummary> {
     return this.request<TradingProfitLossSummary>("/stock/trading-profit-loss", {
+      ...config,
+      method: "POST",
+      data: period,
+    });
+  }
+
+  // Toss Stock APIs
+  // 한국투자증권(/stock)과 응답 구조가 완전히 달라 경로와 타입을 분리한다.
+  async getTossOwners(config: AxiosRequestConfig = {}): Promise<TossAccountOwner[]> {
+    return this.request<TossAccountOwner[]>("/toss-stock/owners", config);
+  }
+
+  async getTossPortfolio(owner: string, config: AxiosRequestConfig = {}): Promise<TossPortfolio> {
+    return this.request<TossPortfolio>(`/toss-stock/portfolio?owner=${encodeURIComponent(owner)}`, config);
+  }
+
+  async getTossRealizedProfit(
+    period: TossRealizedProfitPeriod,
+    config: AxiosRequestConfig = {}
+  ): Promise<TossRealizedProfit> {
+    return this.request<TossRealizedProfit>("/toss-stock/realized-profit", {
       ...config,
       method: "POST",
       data: period,

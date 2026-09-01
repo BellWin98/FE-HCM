@@ -20,6 +20,7 @@ import CreateRoomPage from './pages/CreateRoomPage';
 import NotFound from './pages/NotFound';
 import JoinedRoomsPage from './pages/JoinedRoomsPage';
 import StockPortfolioPage from './pages/StockPortfolioPage';
+import TossStockPortfolioPage from './pages/TossStockPortfolioPage';
 import MyPage from './pages/MyPage';
 import AdminHomePage from './pages/admin/AdminHomePage';
 import AdminMembersPage from './pages/admin/AdminMembersPage';
@@ -101,6 +102,11 @@ const AppRoutes = () => (
     <Route path="/stock/portfolio" element={
       <RequireRole allowedRoles={['FAMILY', 'ADMIN']}>
         <StockPortfolioPage />
+      </RequireRole>
+    } />
+    <Route path="/toss/stock/portfolio" element={
+      <RequireRole allowedRoles={['FAMILY', 'ADMIN']}>
+        <TossStockPortfolioPage />
       </RequireRole>
     } />
     <Route path="/mypage" element={
