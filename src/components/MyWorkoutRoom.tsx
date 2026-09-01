@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { ko } from 'date-fns/locale';
@@ -9,17 +9,26 @@ import MemberStatus from "./MemberStatus";
 import { RoomCodeSection } from "./RoomCodeSection";
 import { PenaltySettingsSection } from "./PenaltySettingsSection";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "./ui/carousel";
+import { WorkoutSocialBar } from "@/components/WorkoutSocialBar";
+import { WorkoutCommentDialog } from "@/components/WorkoutCommentDialog";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Clock } from "lucide-react";
+import { useWorkoutSocial } from "@/contexts/WorkoutSocialContext";
 
 export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRegenerateEntryCode, isRegeneratingEntryCode, onOpenPenaltySchedule }) => {
     const [date, setDate] = useState<Date | undefined>(new Date());
+    // 댓글 다이얼로그는 팝오버 바깥에서 연다. 팝오버 안에서 렌더하면 팝오버가 닫힐 때
+    // 다이얼로그까지 함께 언마운트된다.
+    const [commentRecordId, setCommentRecordId] = useState<number | null>(null);
     const [zoomImageUrls, setZoomImageUrls] = useState<string[] | null>(null);
     // 다이얼로그를 열 때 한 번만 정해지는 시작 인덱스. 캐러셀을 넘겨도 바뀌지 않아야 한다.
     const [zoomStartIndex, setZoomStartIndex] = useState<number>(0);
     // 현재 보고 있는 인덱스. "2 / 3" 카운터 표시 전용.
     const [zoomImageIndex, setZoomImageIndex] = useState<number>(0);
     const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+    // 리액션/댓글 집계는 운동방 단위 저장소에서 읽고 쓴다.
+    // MemberStatus 와 같은 인증을 그리므로 한쪽에서 남긴 리액션이 다른 쪽에도 바로 보여야 한다.
+    const { summaryOf, applySummary, applyCommentCount } = useWorkoutSocial();
 
     const handleZoomImages = useCallback((urls: string[], index: number) => {
       setZoomStartIndex(index);
@@ -196,6 +205,20 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
                             ) : (
                               <div>인증 사진이 없습니다.</div>
                             )}
+                            {record ? (() => {
+                              const social = summaryOf(record);
+
+                              return (
+                                <WorkoutSocialBar
+                                  recordId={record.id}
+                                  reactions={social.reactions}
+                                  commentCount={social.commentCount}
+                                  onChange={(summary) => applySummary(record.id, summary)}
+                                  onOpenComments={setCommentRecordId}
+                                  className="border-t pt-2"
+                                />
+                              );
+                            })() : null}
                           </div>
                         </PopoverContent>
                       </Popover>
@@ -223,6 +246,19 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
       );
     };
   
+    // Day 컴포넌트의 정체성을 렌더마다 고정한다.
+    //
+    // `components={{ Day: (props) => ... }}` 처럼 인라인으로 넘기면 렌더마다 새로운 컴포넌트 타입이
+    // 되어 react-day-picker 가 날짜 셀을 통째로 언마운트/재마운트한다. 그러면 리액션을 누르거나
+    // 댓글 다이얼로그를 열어 이 컴포넌트가 리렌더될 때마다 열려 있던 팝오버가 닫혀 버린다.
+    // 타입은 고정하고, 최신 렌더 함수만 ref 로 갈아끼운다.
+    const renderDayContentRef = useRef(renderDayContent);
+    renderDayContentRef.current = renderDayContent;
+    const calendarComponents = useMemo(
+      () => ({ Day: ({ date }: { date: Date }) => renderDayContentRef.current(date) }),
+      []
+    );
+
     const isOwner = currentWorkoutRoom.workoutRoomInfo?.ownerNickname === currentMember?.nickname;
     const entryCode = currentWorkoutRoom.workoutRoomInfo?.entryCode;
 
@@ -292,9 +328,7 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
               onSelect={setDate}
               className="p-0"
               locale={ko}
-              components={{
-                Day: ({ date }) => renderDayContent(date as Date),
-              }}
+              components={calendarComponents}
               // classNames={{
               //   day: 'h-20 w-24 text-center rounded-md',
               //   day_today: 'bg-accent text-accent-foreground',
@@ -406,6 +440,17 @@ export const MyWorkoutRoom = ( {currentWorkoutRoom, today, currentMember, onRege
             )}
           </DialogContent>
         </Dialog>
+
+        {commentRecordId !== null && (
+          <WorkoutCommentDialog
+            recordId={commentRecordId}
+            open
+            onOpenChange={(open) => {
+              if (!open) setCommentRecordId(null);
+            }}
+            onCommentCountChange={(count) => applyCommentCount(commentRecordId, count)}
+          />
+        )}
       </div>
     );
 }

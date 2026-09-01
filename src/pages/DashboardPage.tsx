@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { WorkoutSocialProvider } from '@/contexts/WorkoutSocialContext';
 import { format } from 'date-fns';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useRestDay } from '@/hooks/useRestDay';
@@ -308,42 +309,46 @@ export const DashboardPage = () => {
 
         {/* 탭 컨텐츠 */}
         {currentWorkoutRoom ? (
-          <Tabs defaultValue="room" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="room">운동방</TabsTrigger>
-              <TabsTrigger value="penalty">벌금 관리</TabsTrigger>
-              <TabsTrigger value="chatroom">채팅방</TabsTrigger>
-            </TabsList>
+          // 리액션/댓글 집계는 탭 바깥에서 들고 있는다. 탭을 바꾸면 TabsContent 가 언마운트되므로
+          // 안에서 들고 있으면 방금 남긴 리액션이 사라진다.
+          <WorkoutSocialProvider workoutRoom={currentWorkoutRoom}>
+            <Tabs defaultValue="room" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="room">운동방</TabsTrigger>
+                <TabsTrigger value="penalty">벌금 관리</TabsTrigger>
+                <TabsTrigger value="chatroom">채팅방</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="room" className="space-y-6">
-              <MyWorkoutRoom
-                currentWorkoutRoom={currentWorkoutRoom}
-                today={today}
-                currentMember={member}
-                onRegenerateEntryCode={handleRegenerateEntryCode}
-                isRegeneratingEntryCode={isRegeneratingEntryCode}
-                onOpenPenaltySchedule={handleOpenPenaltySchedule}
-              />
-            </TabsContent>
-
-            <TabsContent value="penalty" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <PenaltyOverview
-                  roomId={currentWorkoutRoom.workoutRoomInfo?.id ?? 0}
-                  roomMembers={currentWorkoutRoom.workoutRoomMembers}
-                  currentUserId={member?.id || 0}
+              <TabsContent value="room" className="space-y-6">
+                <MyWorkoutRoom
+                  currentWorkoutRoom={currentWorkoutRoom}
+                  today={today}
+                  currentMember={member}
+                  onRegenerateEntryCode={handleRegenerateEntryCode}
+                  isRegeneratingEntryCode={isRegeneratingEntryCode}
+                  onOpenPenaltySchedule={handleOpenPenaltySchedule}
                 />
-                <PenaltyAccountManager
-                  roomId={currentWorkoutRoom.workoutRoomInfo?.id ?? 0}
-                  isOwner={currentWorkoutRoom.workoutRoomInfo?.ownerNickname === member?.nickname}
-                />
-              </div>
-            </TabsContent>
+              </TabsContent>
 
-            <TabsContent value="chatroom" className="space-y-6">
-              <ChatRoom currentWorkoutRoom={currentWorkoutRoom} />
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="penalty" className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <PenaltyOverview
+                    roomId={currentWorkoutRoom.workoutRoomInfo?.id ?? 0}
+                    roomMembers={currentWorkoutRoom.workoutRoomMembers}
+                    currentUserId={member?.id || 0}
+                  />
+                  <PenaltyAccountManager
+                    roomId={currentWorkoutRoom.workoutRoomInfo?.id ?? 0}
+                    isOwner={currentWorkoutRoom.workoutRoomInfo?.ownerNickname === member?.nickname}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="chatroom" className="space-y-6">
+                <ChatRoom currentWorkoutRoom={currentWorkoutRoom} />
+              </TabsContent>
+            </Tabs>
+          </WorkoutSocialProvider>
         ) : (
           <AvailableWorkoutRooms
             workoutRooms={availableWorkoutRooms}
