@@ -4,6 +4,16 @@ import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -34,6 +44,7 @@ export const WorkoutCommentDialog = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [content, setContent] = useState('');
+  const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState<number | null>(null);
 
   // 콜백은 ref 로 들고 간다.
   //
@@ -73,6 +84,7 @@ export const WorkoutCommentDialog = ({
   // 다이얼로그를 열 때마다 첫 페이지부터 다시 읽는다(다른 사람이 그 사이 남긴 댓글 반영).
   useEffect(() => {
     if (!open) {
+      setPendingDeleteCommentId(null);
       return;
     }
     setComments([]);
@@ -99,7 +111,18 @@ export const WorkoutCommentDialog = ({
     }
   };
 
-  const handleDelete = async (commentId: number) => {
+  const handleRequestDelete = (commentId: number) => {
+    setPendingDeleteCommentId(commentId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (pendingDeleteCommentId === null) {
+      return;
+    }
+
+    const commentId = pendingDeleteCommentId;
+    setPendingDeleteCommentId(null);
+
     try {
       await api.deleteWorkoutComment(recordId, commentId);
       setComments((previous) => previous.filter((comment) => comment.id !== commentId));
@@ -118,6 +141,7 @@ export const WorkoutCommentDialog = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -154,7 +178,7 @@ export const WorkoutCommentDialog = ({
                   <button
                     type="button"
                     aria-label="댓글 삭제"
-                    onClick={() => handleDelete(comment.id)}
+                    onClick={() => handleRequestDelete(comment.id)}
                     className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -205,6 +229,32 @@ export const WorkoutCommentDialog = ({
         </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog
+      open={pendingDeleteCommentId !== null}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          setPendingDeleteCommentId(null);
+        }
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>댓글을 삭제할까요?</AlertDialogTitle>
+          <AlertDialogDescription>삭제한 댓글은 되돌릴 수 없습니다.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>취소</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => void handleConfirmDelete()}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            삭제
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
 
