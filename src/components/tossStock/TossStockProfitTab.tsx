@@ -294,7 +294,7 @@ const TossStockProfitTab: React.FC<TossStockProfitTabProps> = ({ owner }) => {
     <div key={totals.currency} className={cn('p-4 rounded-xl border', STOCK_CARD_BG)}>
       <div className="flex items-baseline justify-between">
         <p className={cn('text-sm', textMuted)}>
-          실현손익{totals.currency === 'USD' ? ' (해외)' : ''}
+          실현손익{totals.currency === 'USD' ? ' (해외)' : ' (국내)'}
         </p>
         <p className={cn('text-xs', textMuted)}>{totals.tradeCount}건</p>
       </div>
