@@ -88,7 +88,6 @@ const TossStockPortfolioPage = () => {
     setSelectedOwner(owner);
     setPortfolio(null);
   };
-  const handleNavigateToProfit = () => setActiveTab('profit');
   const handleTabChange = (value: string) => setActiveTab(value as StockTab);
 
   const renderBody = () => {
@@ -153,7 +152,6 @@ const TossStockPortfolioPage = () => {
               portfolio={portfolio}
               onRefresh={fetchPortfolio}
               loading={loading}
-              onNavigateToProfit={handleNavigateToProfit}
             />
           </TabsContent>
           <TabsContent value="profit" className="mt-0">

@@ -54,6 +54,35 @@ export interface TossPortfolio {
   dailyProfitLossKrw: number;
   dailyProfitLossUsd: number | null;
   dailyProfitLossRate: number;
+  /** 세금·수수료 공제 후 평가금액·손익. 토스가 요약 레벨에도 내려주는 값이다. */
+  totalMarketValueAfterCostKrw: number;
+  totalMarketValueAfterCostUsd: number | null;
+  totalProfitLossAfterCostKrw: number;
+  totalProfitLossAfterCostUsd: number | null;
+  /** 세후 전체 손익률(%). 위 손익률과 마찬가지로 원화 환산 기준. */
+  totalProfitLossRateAfterCost: number;
+
+  /**
+   * 적용 환율(1 USD = ? KRW). 해외 종목이 없거나 환율 조회에 실패하면 null.
+   * 환산 금액을 보여주는 이상 어떤 환율을 썼는지도 함께 보여줘야 한다.
+   */
+  usdKrwRate: number | null;
+  usdKrwMidRate: number | null;
+  usdKrwRateChangeType: 'UP' | 'EQUAL' | 'DOWN' | null;
+  usdKrwRateAsOf: string | null;
+
+  /**
+   * 국내 + 해외×환율. 통화별로 나뉜 위 합계와 달리 계좌 전체를 가리킨다.
+   * 해외 종목이 있는데 환율을 못 받으면 null — 0으로 채우면 해외 자산이 사라진 것처럼 보인다.
+   */
+  totalPurchaseAmountInKrw: number | null;
+  totalMarketValueInKrw: number | null;
+  totalProfitLossInKrw: number | null;
+  totalProfitLossAfterCostInKrw: number | null;
+  dailyProfitLossInKrw: number | null;
+  /** 원화 환산 평가금액에서 해외가 차지하는 비중(%). */
+  overseasWeightPercent: number | null;
+
   /** 현금 매수가능금액. 조회 실패 시 null(0으로 채우면 잔고 없음으로 오해한다). */
   cashBuyingPowerKrw: number | null;
   cashBuyingPowerUsd: number | null;

@@ -26,6 +26,26 @@ export const formatOptionalMoney = (
   currency: TossCurrency
 ): string => (amount == null ? '—' : formatMoney(amount, currency));
 
+/**
+ * 손익 금액. 양수에만 `+` 를 붙인다 — 음수는 Intl 포맷이 이미 `-` 를 넣고,
+ * 0 은 부호 없이 그대로 두는 편이 읽기 쉽다.
+ */
+export const formatSignedMoney = (amount: number, currency: TossCurrency): string =>
+  `${amount > 0 ? '+' : ''}${formatMoney(amount, currency)}`;
+
+/** 값이 없을 수 있는 손익 금액(해외 미보유 등). {@link formatOptionalMoney} 와 같은 이유로 0 으로 대체하지 않는다. */
+export const formatOptionalSignedMoney = (
+  amount: number | null | undefined,
+  currency: TossCurrency
+): string => (amount == null ? '—' : formatSignedMoney(amount, currency));
+
+/**
+ * 적용 환율 표기.
+ * 원화지만 소수점이 의미 있으므로 통화 포맷({@link formatMoney})을 쓸 수 없다 — KRW 는 소수점을 버린다.
+ */
+export const formatExchangeRate = (rate: number): string =>
+  `$1 = ₩${rate.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}`;
+
 /** 보유 수량. 해외 소수점 매매를 고려해 소수점을 허용한다. */
 export const formatQuantity = (quantity: number): string =>
   quantity.toLocaleString(undefined, { maximumFractionDigits: 6 });
