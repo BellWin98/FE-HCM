@@ -9,7 +9,10 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: 'autoUpdate', // service worker 자동 업데이트
-      cleanupOutdatedCaches: true,
+      // cleanupOutdatedCaches 는 최상위가 아니라 workbox 옵션이다. 최상위에 두면 조용히 무시된다.
+      workbox: {
+        cleanupOutdatedCaches: true,
+      },
       includeAssets: ['favicon.ico', 'robots.txt', 'icons/*', 'firebase-messaging-sw.js'],
       devOptions: {
         enabled: false,

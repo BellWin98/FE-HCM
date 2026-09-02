@@ -7,10 +7,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Settings, LogOut, BarChart3, Menu, X, UserCircle, Clock, Warehouse, Dumbbell } from 'lucide-react';
+import { User, Settings, LogOut, BarChart3, Menu, X, UserCircle, Clock, Warehouse, Dumbbell, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTossAccess } from '@/hooks/useTossAccess';
 
 export const Header = () => {
   const { member, logout, isAuthenticated } = useAuth();
@@ -18,6 +19,8 @@ export const Header = () => {
   const isMobile = useIsMobile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isAdmin = member?.role === 'ADMIN';
+  // 토스는 role 이 아니라 ADMIN 이 지정한 개별 권한(`toss_access`)으로 열린다.
+  const { hasAccess: hasTossAccess } = useTossAccess();
 
   const handleLogout = () => {
     logout();
@@ -56,10 +59,22 @@ export const Header = () => {
                     className="flex items-center space-x-2"
                   >
                     <BarChart3 className="h-4 w-4" />
-                    <span>주식 현황</span>
+                    <span>한국투자증권</span>
                   </Button>
                 )}
-                
+
+                {/* 토스증권 메뉴 - 토스 접근 권한을 가진 회원만 표시 */}
+                {hasTossAccess && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/toss/stock/portfolio')}
+                    className="flex items-center space-x-2"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    <span>토스증권</span>
+                  </Button>
+                )}
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -155,7 +170,19 @@ export const Header = () => {
                 className="w-full justify-start"
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
-                <span>주식 현황</span>
+                <span>한국투자증권</span>
+              </Button>
+            )}
+
+            {/* 토스증권 메뉴 - 토스 접근 권한을 가진 회원만 표시 */}
+            {hasTossAccess && (
+              <Button
+                variant="outline"
+                onClick={() => handleNavigation('/toss/stock/portfolio')}
+                className="w-full justify-start"
+              >
+                <Wallet className="h-4 w-4 mr-2" />
+                <span>토스증권</span>
               </Button>
             )}
 

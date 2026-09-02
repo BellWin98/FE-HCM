@@ -15,14 +15,20 @@ npm run dev        # 개발 서버 (포트 3000)
 npm run build      # 프로덕션 빌드 (vite build)
 npm run lint       # ESLint 검사 (./src, --quiet)
 npm run preview    # 빌드 결과 미리보기
+npx tsc -b         # 타입 검사 (아래 주의사항 참고 — `tsc --noEmit` 은 아무것도 검사하지 않는다)
 npm test           # 전체 테스트 실행 (vitest run)
 npm test -- --run <파일명 일부>   # 특정 테스트 파일만 실행
 npm run test:watch # 테스트 watch 모드
 ```
 
 테스트는 Vitest + React Testing Library(jsdom)로 실행합니다(`vitest.config.ts`, 셋업은
-`src/test/setup.ts`). 타입 검사는 `npx tsc --noEmit`과 `npm run lint`로 합니다(Vite 빌드 자체는
+`src/test/setup.ts`). 타입 검사는 **`npx tsc -b`**와 `npm run lint`로 합니다(Vite 빌드 자체는
 esbuild 트랜스파일이라 타입 오류를 잡지 않습니다).
+
+> **`npx tsc --noEmit`은 쓰지 마세요 — 아무것도 검사하지 않고 조용히 성공합니다.**
+> 루트 `tsconfig.json`은 `"files": []` + project references 구조라 그 자체로는 검사 대상이 0개입니다.
+> 실제 소스는 `tsconfig.app.json`(`include: ["src"]`)과 `tsconfig.node.json`에 들어 있으므로
+> `npx tsc -b`(두 프로젝트 모두) 또는 `npx tsc -p tsconfig.app.json --noEmit`(앱 코드만)을 써야 합니다.
 
 ## 테스트 작성 원칙 (TDD)
 

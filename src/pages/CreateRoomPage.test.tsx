@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateRoomPage } from './CreateRoomPage';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -12,13 +13,16 @@ vi.mock('@/lib/api', () => ({
   },
 }));
 
+// 페이지가 Layout(→ Header)을 그리고 Header 가 react-query 를 쓰므로, 앱과 동일하게 감싸 준다.
 const renderPage = () =>
   render(
-    <MemoryRouter>
-      <AuthProvider>
-        <CreateRoomPage />
-      </AuthProvider>
-    </MemoryRouter>
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter>
+        <AuthProvider>
+          <CreateRoomPage />
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 
 const fillRequiredFieldsExceptPenalty = async (user: ReturnType<typeof userEvent.setup>) => {
@@ -40,7 +44,7 @@ describe('CreateRoomPage - 벌금제도 토글', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByLabelText('벌금제도 사용'));
+    await user.click(screen.getByLabelText('벌금제 사용 여부'));
 
     expect(screen.queryByLabelText('1회 누락당 벌금 (원)')).not.toBeInTheDocument();
   });
@@ -49,7 +53,7 @@ describe('CreateRoomPage - 벌금제도 토글', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByLabelText('벌금제도 사용'));
+    await user.click(screen.getByLabelText('벌금제 사용 여부'));
     await fillRequiredFieldsExceptPenalty(user);
     await user.click(screen.getByRole('button', { name: '방 만들기' }));
 

@@ -135,3 +135,23 @@ export interface TossRealizedProfitPeriod {
   startDate: string;
   endDate: string;
 }
+
+/**
+ * 본인의 토스 접근 권한 여부. 토스 접근은 role 이 아니라 서버의 `toss_access` 로 관리되고
+ * (ADMIN 은 등록 없이도 항상 허용), AuthContext 의 member 는 localStorage 캐시라
+ * 재로그인 전까지 갱신되지 않으므로 화면 진입 시 서버에 물어봐야 한다.
+ */
+export interface TossAccessStatus {
+  hasAccess: boolean;
+}
+
+/** 관리자 화면에서 보는 "토스 접근이 부여된 회원" 한 명. */
+export interface TossAccessGrant {
+  memberId: number;
+  email: string;
+  nickname: string;
+  profileUrl: string | null;
+  /** 부여한 관리자의 id. 마이그레이션으로 승계된 행은 null 이다. */
+  grantedBy: number | null;
+  grantedAt: string;
+}

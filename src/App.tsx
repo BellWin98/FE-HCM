@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { RequireRole } from '@/components/RequireRole';
+import { RequireTossAccess } from '@/components/RequireTossAccess';
 import { PwaUpdateBanner } from '@/components/common/PwaUpdateBanner';
 import { PwaInstallBanner } from '@/components/common/PwaInstallBanner';
 import { InAppBrowserNotice } from '@/components/common/InAppBrowserNotice';
@@ -104,10 +105,11 @@ const AppRoutes = () => (
         <StockPortfolioPage />
       </RequireRole>
     } />
+    {/* 토스는 role 이 아니라 ADMIN 이 지정한 개별 권한(`toss_access`)으로 막는다. */}
     <Route path="/toss/stock/portfolio" element={
-      <RequireRole allowedRoles={['FAMILY', 'ADMIN']}>
+      <RequireTossAccess>
         <TossStockPortfolioPage />
-      </RequireRole>
+      </RequireTossAccess>
     } />
     <Route path="/mypage" element={
       <ProtectedRoute>

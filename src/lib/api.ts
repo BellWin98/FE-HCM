@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosHeaders } from "axios";
 import {
+  AdminMember,
   AdminMemberListParams,
   AdminUpdateRoomRequest,
   AdminWorkoutRoomListParams,
@@ -22,6 +23,8 @@ import {
   type WorkoutFeedPeriod,
 } from "@/types";
 import type {
+  TossAccessGrant,
+  TossAccessStatus,
   TossAccountOwner,
   TossPortfolio,
   TossRealizedProfit,
@@ -337,6 +340,16 @@ class ApiClient {
 
   // Toss Stock APIs
   // 한국투자증권(/stock)과 응답 구조가 완전히 달라 경로와 타입을 분리한다.
+
+  /**
+   * GET /toss-stock/access
+   * 로그인한 본인의 토스 접근 권한 여부. 아래 조회 API 들과 달리 권한이 없어도 403 이 아니라
+   * 200 + hasAccess:false 로 답하므로, 라우트 가드가 "권한 없음"과 "서버 오류"를 구분할 수 있다.
+   */
+  async getTossAccess(config: AxiosRequestConfig = {}): Promise<TossAccessStatus> {
+    return this.request<TossAccessStatus>("/toss-stock/access", config);
+  }
+
   async getTossOwners(config: AxiosRequestConfig = {}): Promise<TossAccountOwner[]> {
     return this.request<TossAccountOwner[]>("/toss-stock/owners", config);
   }
@@ -465,16 +478,16 @@ class ApiClient {
    * GET /admin/members
    * 회원 목록/검색 (닉네임/이메일).
    * @param params - query(검색어), role(역할 필터), page, size
-   * @returns PageResponse<Member>
+   * @returns PageResponse<AdminMember>
    */
-  async getAdminMembers(params?: AdminMemberListParams): Promise<PageResponse<Member>> {
+  async getAdminMembers(params?: AdminMemberListParams): Promise<PageResponse<AdminMember>> {
     const searchParams = new URLSearchParams();
     if (params?.query) searchParams.set("query", params.query);
     if (params?.role) searchParams.set("role", params.role);
     if (params?.page != null) searchParams.set("page", String(params.page));
     if (params?.size != null) searchParams.set("size", String(params.size));
     const qs = searchParams.toString();
-    return this.request<PageResponse<Member>>(`/admin/members${qs ? `?${qs}` : ""}`);
+    return this.request<PageResponse<AdminMember>>(`/admin/members${qs ? `?${qs}` : ""}`);
   }
 
   /**
@@ -486,8 +499,8 @@ class ApiClient {
   async patchAdminMemberRole(
     memberId: number,
     role: "USER" | "FAMILY" | "ADMIN"
-  ): Promise<Member> {
-    return this.request<Member>(`/admin/members/${memberId}/role`, {
+  ): Promise<AdminMember> {
+    return this.request<AdminMember>(`/admin/members/${memberId}/role`, {
       method: "PATCH",
       data: { role },
     });
@@ -581,6 +594,29 @@ class ApiClient {
     return this.request<ChatHistoryResponse>(
       `/admin/workout/rooms/${roomId}/messages?${params.toString()}`
     );
+  }
+
+  // ─── Admin: 토스 접근 권한 ───────────────────────────────────────────────────
+  // 토스 접근은 role 과 분리되어 있다(`toss_access`). ADMIN 은 부여 없이도 항상 접근하므로
+  // 여기서 다루는 것은 "ADMIN 이 지정한 유저" 목록이다.
+
+  /** GET /admin/toss-access — 토스 접근이 부여된 회원 목록. */
+  async getAdminTossAccess(): Promise<TossAccessGrant[]> {
+    return this.request<TossAccessGrant[]>("/admin/toss-access");
+  }
+
+  /** POST /admin/toss-access/{memberId} — 권한 부여(멱등). */
+  async grantAdminTossAccess(memberId: number): Promise<TossAccessGrant> {
+    return this.request<TossAccessGrant>(`/admin/toss-access/${memberId}`, {
+      method: "POST",
+    });
+  }
+
+  /** DELETE /admin/toss-access/{memberId} — 권한 회수(멱등). */
+  async revokeAdminTossAccess(memberId: number): Promise<void> {
+    await this.request<void>(`/admin/toss-access/${memberId}`, {
+      method: "DELETE",
+    });
   }
 }
 

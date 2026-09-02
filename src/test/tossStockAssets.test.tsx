@@ -164,12 +164,7 @@ const domesticOnlyPortfolio = (): TossPortfolio => ({
 
 const renderTab = (portfolio: TossPortfolio) =>
   render(
-    <TossStockAssetsTab
-      portfolio={portfolio}
-      onRefresh={vi.fn()}
-      loading={false}
-      onNavigateToProfit={vi.fn()}
-    />
+    <TossStockAssetsTab portfolio={portfolio} onRefresh={vi.fn()} loading={false} />
   );
 
 describe('토스 자산 탭 — 총자산 한 숫자로 보여주기', () => {
@@ -201,19 +196,19 @@ describe('토스 자산 탭 — 총자산 한 숫자로 보여주기', () => {
     expect(hero).toHaveTextContent('₩412,300');
   });
 
-  it('국내와 해외의 비중·평가금·수익률을 각각 보여준다', () => {
+  // 구간별 손익률은 현재 화면에 그리지 않는다(`TossStockAssetsTab` 의 leg 블록에서 주석 처리됨).
+  // 다시 켠다면 전체 손익률(+2.36%)이 아니라 구간별 손익률(국내 -0.48% / 해외 +4.82%)이어야 한다 —
+  // 모집단이 다르므로 전체 비율을 구간에 붙이면 손실인데 플러스로 보인다.
+  it('국내와 해외의 비중·평가금을 각각 보여준다', () => {
     renderTab(mixedPortfolio());
 
     const domestic = screen.getByTestId('leg-domestic');
     expect(domestic).toHaveTextContent('45.2%');
     expect(domestic).toHaveTextContent('₩2,741,300');
-    // 전체 손익률(+2.36%)이 아니라 국내만의 손익률이어야 한다.
-    expect(domestic).toHaveTextContent('-0.48%');
 
     const overseas = screen.getByTestId('leg-overseas');
     expect(overseas).toHaveTextContent('54.8%');
     expect(overseas).toHaveTextContent('$2,400.60');
-    expect(overseas).toHaveTextContent('+4.82%');
   });
 
   it('해외 종목이 없으면 국내/해외 비중을 그리지 않는다', () => {
