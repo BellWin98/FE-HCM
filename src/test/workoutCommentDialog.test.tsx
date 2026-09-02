@@ -149,9 +149,27 @@ describe('운동 인증 댓글 다이얼로그', () => {
 
     await user.click(screen.getByRole('button', { name: '댓글 삭제' }));
 
+    expect(deleteWorkoutComment).not.toHaveBeenCalled();
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '삭제' }));
+
     await waitFor(() => expect(deleteWorkoutComment).toHaveBeenCalledWith(7, 5));
     expect(screen.queryByText('내 댓글')).not.toBeInTheDocument();
     await waitFor(() => expect(onCommentCountChange).toHaveBeenLastCalledWith(0));
+  });
+
+  it('삭제 확인에서 취소하면 댓글을 지우지 않는다', async () => {
+    const user = userEvent.setup();
+    getWorkoutComments.mockResolvedValue(page([comment({ id: 5, content: '내 댓글', mine: true })], 1));
+
+    render(<WorkoutCommentDialog recordId={7} open onOpenChange={() => {}} />);
+    await screen.findByText('내 댓글');
+
+    await user.click(screen.getByRole('button', { name: '댓글 삭제' }));
+    await user.click(await screen.findByRole('button', { name: '취소' }));
+
+    expect(deleteWorkoutComment).not.toHaveBeenCalled();
+    expect(screen.getByText('내 댓글')).toBeInTheDocument();
   });
 
   it('콜백 identity 만 바뀌어 리렌더되면 목록을 다시 불러오지 않는다', async () => {
