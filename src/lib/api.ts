@@ -8,13 +8,17 @@ import {
   PageResponse,
   PenaltyPayment,
   PenaltyRecord,
+  ReactionEmojiCode,
+  ReactionMember,
   SchedulePenaltyChangeRequest,
   StockPortfolio,
   TradingProfitLossPeriod,
   TradingProfitLossSummary,
+  WorkoutComment,
   WorkoutFeedItem,
   WorkoutRoom,
   WorkoutRoomDetail,
+  WorkoutSocialSummary,
   type WorkoutFeedPeriod,
 } from "@/types";
 import type {
@@ -249,6 +253,50 @@ class ApiClient {
     });
 
     return this.uploadFile("/workouts", formData);
+  }
+
+  // ─── 운동 인증 리액션 / 댓글 APIs ────────────────────────────────────────
+  // 모두 해당 인증이 올라간 운동방의 멤버만 호출할 수 있다(비멤버는 403).
+
+  /** 리액션 등록/변경. 이미 남긴 리액션이 있으면 이모지가 교체된다. */
+  async reactToWorkout(recordId: number, emoji: ReactionEmojiCode): Promise<WorkoutSocialSummary> {
+    return this.request<WorkoutSocialSummary>(`/workouts/${recordId}/reactions`, {
+      method: "POST",
+      data: { emoji },
+    });
+  }
+
+  /** 내가 남긴 리액션 취소. */
+  async cancelWorkoutReaction(recordId: number): Promise<WorkoutSocialSummary> {
+    return this.request<WorkoutSocialSummary>(`/workouts/${recordId}/reactions`, {
+      method: "DELETE",
+    });
+  }
+
+  /** 누가 어떤 리액션을 남겼는지 조회. */
+  async getWorkoutReactionMembers(recordId: number): Promise<ReactionMember[]> {
+    return this.request<ReactionMember[]>(`/workouts/${recordId}/reactions`);
+  }
+
+  async getWorkoutComments(
+    recordId: number,
+    page: number = 0,
+    size: number = 20
+  ): Promise<PageResponse<WorkoutComment>> {
+    return this.request<PageResponse<WorkoutComment>>(
+      `/workouts/${recordId}/comments?page=${page}&size=${size}`
+    );
+  }
+
+  async addWorkoutComment(recordId: number, content: string): Promise<WorkoutComment> {
+    return this.request<WorkoutComment>(`/workouts/${recordId}/comments`, {
+      method: "POST",
+      data: { content },
+    });
+  }
+
+  async deleteWorkoutComment(recordId: number, commentId: number): Promise<void> {
+    return this.request(`/workouts/${recordId}/comments/${commentId}`, { method: "DELETE" });
   }
 
   // Rest APIs

@@ -1,4 +1,5 @@
 import { RestInfo, RoomMember } from "@/types";
+import { useWorkoutSocial } from "@/contexts/WorkoutSocialContext";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,8 @@ import { ko } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { startOfDay, endOfDay } from 'date-fns';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "./ui/carousel";
+import { WorkoutSocialBar } from "@/components/WorkoutSocialBar";
+import { WorkoutCommentDialog } from "@/components/WorkoutCommentDialog";
 
 const RECENT_WORKOUTS_LIMIT = 7;
 
@@ -22,6 +25,12 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
     const [zoomImageIndex, setZoomImageIndex] = useState<number>(0);
     const [carouselApi, setCarouselApi] = useState<CarouselApi>();
     const [selectedMember, setSelectedMember] = useState<RoomMember | null>(null);
+    // 댓글 다이얼로그는 팝오버 바깥에서 연다. 팝오버 안에서 렌더하면 팝오버가 닫힐 때
+    // 다이얼로그까지 함께 언마운트된다.
+    const [commentRecordId, setCommentRecordId] = useState<number | null>(null);
+    // 리액션/댓글 집계는 운동방 단위 저장소에서 읽고 쓴다.
+    // MyWorkoutRoom 의 달력 팝오버와 같은 인증을 그리므로 양쪽이 같은 값을 봐야 한다.
+    const { summaryOf, applySummary, applyCommentCount } = useWorkoutSocial();
 
     const handleZoomImages = useCallback((urls: string[], index: number) => {
       setZoomStartIndex(index);
@@ -199,6 +208,23 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
                                     </div>
                                   );
                                 }
+                              })()}
+                              {(() => {
+                                const todayRecord = member.workoutRecords.find(record => record.workoutDate === format(new Date(), 'yyyy-MM-dd'));
+                                if (!todayRecord) return null;
+
+                                const social = summaryOf(todayRecord);
+
+                                return (
+                                  <WorkoutSocialBar
+                                    recordId={todayRecord.id}
+                                    reactions={social.reactions}
+                                    commentCount={social.commentCount}
+                                    onChange={(summary) => applySummary(todayRecord.id, summary)}
+                                    onOpenComments={setCommentRecordId}
+                                    className="border-t pt-2"
+                                  />
+                                );
                               })()}
                             </div>
                           </PopoverContent>
@@ -423,6 +449,17 @@ export const MemberStatus = ({ currentWorkoutRoom, today }) => {
               )}
             </DialogContent>
           </Dialog>
+
+          {commentRecordId !== null && (
+            <WorkoutCommentDialog
+              recordId={commentRecordId}
+              open
+              onOpenChange={(open) => {
+                if (!open) setCommentRecordId(null);
+              }}
+              onCommentCountChange={(count) => applyCommentCount(commentRecordId, count)}
+            />
+          )}
         </Card>
       );    
 

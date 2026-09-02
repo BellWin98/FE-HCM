@@ -2,6 +2,7 @@ export interface PageResponse<T> {
   content: T[];
   last: boolean;
   totalPages: number;
+  totalElements?: number;
   number: number;
   size: number;
 }
@@ -67,6 +68,44 @@ export interface WorkoutRecord {
   duration: number; // minutes
   imageUrls: string[]; // 여러 이미지 URL (서버에서 항상 배열로 반환)
   createdAt: string;
+  reactions: ReactionCount[]; // 리액션이 하나라도 달린 이모지만 (개수 내림차순)
+  commentCount: number;
+}
+
+// ─── 운동 인증 리액션 / 댓글 ────────────────────────────────────────────────
+// 이모지 문자가 아니라 코드로 주고받는다(백엔드 ReactionEmoji enum 과 1:1).
+
+export type ReactionEmojiCode = 'MUSCLE' | 'FIRE' | 'CLAP' | 'THUMBS_UP' | 'PARTY';
+
+export interface ReactionCount {
+  emoji: ReactionEmojiCode;
+  symbol: string; // 화면에 그릴 이모지 문자
+  count: number;
+  reactedByMe: boolean;
+}
+
+/** 리액션 등록/취소 후 서버가 돌려주는 갱신된 집계. */
+export interface WorkoutSocialSummary {
+  reactions: ReactionCount[];
+  commentCount: number;
+}
+
+export interface ReactionMember {
+  memberId: number;
+  nickname: string;
+  profileUrl?: string;
+  emoji: ReactionEmojiCode;
+  symbol: string;
+}
+
+export interface WorkoutComment {
+  id: number;
+  memberId: number;
+  nickname: string;
+  profileUrl?: string;
+  content: string;
+  createdAt: string;
+  mine: boolean; // 내가 쓴 댓글인지 (삭제 버튼 노출 판단용)
 }
 
 export interface WorkoutResponse {
@@ -283,11 +322,29 @@ export interface WorkoutFeedItem {
   duration: number;
   imageUrls: string[]; // 여러 이미지 URL (서버에서 항상 배열로 반환)
   description?: string;
-  likes: number;
-  comments: number;
-  isLiked: boolean;
   createdAt: string;
+  /** 대표 인증이 저장된 방 이름. 방별 내역은 rooms 를 쓴다. */
   roomName?: string;
+  /**
+   * 이 인증이 저장된 방 전체와 방별 리액션/댓글.
+   *
+   * 운동 인증 한 번은 참여 중인 방 수만큼 레코드로 저장되고 피드는 그걸 하루 한 장으로 묶어 보여준다.
+   * 리액션/댓글은 방마다 따로 달리므로, 남기거나 열 때는 여기 담긴 recordId 를 써야 한다.
+   */
+  rooms?: WorkoutFeedRoom[];
+  /** 방 전체를 합친 집계 (리액션이 하나라도 달린 이모지만, 개수 내림차순) */
+  reactions: ReactionCount[];
+  /** 방 전체를 합친 댓글 수 */
+  commentCount: number;
+}
+
+export interface WorkoutFeedRoom {
+  roomId: number;
+  roomName: string;
+  /** 이 방에 저장된 운동 인증 id. 리액션/댓글 API 는 이 id 로 호출한다. */
+  recordId: number;
+  reactions: ReactionCount[];
+  commentCount: number;
 }
 
 // Admin API types (contract-first; backend endpoints TBD)

@@ -78,10 +78,9 @@ const buildFeedItem = (): WorkoutFeedItem => ({
   workoutTypes: ['헬스(가슴)'],
   duration: 60,
   imageUrls: ['a.jpg', 'b.jpg', 'c.jpg'],
-  likes: 0,
-  comments: 0,
-  isLiked: false,
   createdAt: '2026-07-20T10:00:00',
+  reactions: [],
+  commentCount: 0,
 });
 
 describe('이미지 확대 캐러셀', () => {

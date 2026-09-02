@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { type WorkoutFeedItem, type PageResponse, type WorkoutFeedPeriod } from '@/types';
+import { WorkoutFeedSocial } from '@/components/WorkoutFeedSocial';
 import { api } from '@/lib/api';
 import { Activity, Calendar, Clock } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -126,6 +127,47 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
       setIsLoading(false);
     }
   };
+
+  // 댓글 수가 바뀌면 피드 상태에도 반영해, 더보기나 리렌더 후에도 값이 되돌아가지 않게 한다.
+  //
+  // 댓글은 방마다 따로 달리므로 해당 방의 수를 갈아끼운 뒤 합계를 다시 더한다.
+  // (리액션 합계는 여러 방에 걸친 같은 사람을 한 번만 세야 해서 클라이언트에서 다시 계산하지 않는다.)
+  const handleCommentCountChange = useCallback(
+    (recordId: number, count: number) => {
+      let isChanged = false;
+      const nextFeed = safeFeed.map((item) => {
+        const rooms = item.rooms ?? [];
+        if (rooms.length === 0) {
+          if (item.id !== recordId || item.commentCount === count) {
+            return item;
+          }
+          isChanged = true;
+          return { ...item, commentCount: count };
+        }
+        if (!rooms.some((room) => room.recordId === recordId && room.commentCount !== count)) {
+          return item;
+        }
+
+        const nextRooms = rooms.map((room) =>
+          room.recordId === recordId ? { ...room, commentCount: count } : room,
+        );
+        isChanged = true;
+        return {
+          ...item,
+          rooms: nextRooms,
+          commentCount: nextRooms.reduce((total, room) => total + (room.commentCount ?? 0), 0),
+        };
+      });
+
+      // 값이 그대로면 새 배열을 올리지 않는다. 다이얼로그는 열 때마다 현재 수를 통보하는데,
+      // 그때마다 피드 상태를 갈아끼우면 불필요한 리렌더가 연쇄된다.
+      if (!isChanged) {
+        return;
+      }
+      onFeedUpdate(nextFeed);
+    },
+    [onFeedUpdate, safeFeed],
+  );
 
   const getWorkoutTypeColor = (workoutType: string) => {
     const colors: { [key: string]: string } = {
@@ -259,6 +301,13 @@ export const WorkoutFeedSection = ({ feed, onFeedUpdate, initialIsLastPage = fal
                             {item.duration}분
                           </Badge>
                         </div>
+
+                        {/* 리액션 / 댓글 (방 전체 합계, 펼치면 방별 내역) */}
+                        <WorkoutFeedSocial
+                          item={item}
+                          onCommentCountChange={handleCommentCountChange}
+                          className="pt-1"
+                        />
                     </div>
                   </CardContent>
                 </Card>
