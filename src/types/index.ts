@@ -19,6 +19,14 @@ export interface Member {
   role: 'USER' | 'ADMIN' | 'FAMILY';
 }
 
+/**
+ * 관리자 회원 목록의 한 행. 토스 접근 권한은 role 과 별개로 관리되므로
+ * (`toss_access` 테이블) 관리자 응답에만 실려 온다 — 공용 Member 에는 넣지 않는다.
+ */
+export interface AdminMember extends Member {
+  tossAccess: boolean;
+}
+
 export interface WorkoutRoom {
   id: number;
   name: string;

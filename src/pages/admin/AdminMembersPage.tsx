@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { Member } from '@/types';
+import { AdminMember, Member } from '@/types';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RefreshCcw, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -64,6 +65,11 @@ const AdminMembersPage = () => {
     open: boolean;
     target: Member | null;
   }>({ open: false, target: null });
+  const [pendingTossChange, setPendingTossChange] = useState<{
+    open: boolean;
+    target: AdminMember | null;
+    nextGranted: boolean | null;
+  }>({ open: false, target: null, nextGranted: null });
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -104,6 +110,23 @@ const AdminMembersPage = () => {
     },
   });
 
+  // 토스 접근은 role 과 분리된 개별 권한이라 별도 엔드포인트를 쓴다(ADMIN 은 부여 없이도 항상 접근).
+  const tossAccessMutation = useMutation({
+    mutationFn: ({ memberId, grant }: { memberId: number; grant: boolean }) =>
+      grant ? api.grantAdminTossAccess(memberId).then(() => undefined) : api.revokeAdminTossAccess(memberId),
+    onSuccess: (_data, variables) => {
+      toast.success(variables.grant ? '토스 접근 권한을 부여했습니다.' : '토스 접근 권한을 회수했습니다.');
+      queryClient.invalidateQueries({ queryKey: ['adminMembers'] });
+      // 본인 권한을 바꿨다면 라우트 가드가 보는 캐시도 함께 비운다.
+      if (currentMember?.id === variables.memberId) {
+        queryClient.invalidateQueries({ queryKey: ['tossAccess'] });
+      }
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err));
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (memberId: number) => api.deleteAdminMember(memberId),
     onSuccess: () => {
@@ -126,6 +149,7 @@ const AdminMembersPage = () => {
   const currentPage = membersQuery.data?.number ?? page;
 
   const updatingMemberId = roleMutation.variables?.memberId;
+  const tossUpdatingMemberId = tossAccessMutation.variables?.memberId;
 
   const pageItems = useMemo(() => {
     if (!totalPages || totalPages <= 1) return [];
@@ -169,6 +193,21 @@ const AdminMembersPage = () => {
     roleMutation.mutate({ memberId: target.id, role: nextRole });
   };
 
+  const openTossConfirm = (target: AdminMember, nextGranted: boolean) => {
+    if (target.tossAccess === nextGranted) return;
+    setPendingTossChange({ open: true, target, nextGranted });
+  };
+
+  const closeTossConfirm = () => setPendingTossChange({ open: false, target: null, nextGranted: null });
+
+  const confirmTossChange = async () => {
+    const target = pendingTossChange.target;
+    const nextGranted = pendingTossChange.nextGranted;
+    if (!target || nextGranted === null) return;
+    closeTossConfirm();
+    tossAccessMutation.mutate({ memberId: target.id, grant: nextGranted });
+  };
+
   const openDeleteConfirm = (target: Member) => {
     setPendingDelete({ open: true, target });
   };
@@ -188,7 +227,7 @@ const AdminMembersPage = () => {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-xl font-bold md:text-2xl">회원 관리</h1>
-            <p className="mt-1 text-sm text-muted-foreground md:text-base">회원 목록 검색 및 역할 변경</p>
+            <p className="mt-1 text-sm text-muted-foreground md:text-base">회원 목록 검색, 역할 및 토스 접근 권한 변경</p>
           </div>
           <Button
             variant="outline"
@@ -279,6 +318,7 @@ const AdminMembersPage = () => {
                     const isMe = currentMember?.id === m.id;
                     const isUpdatingThisRow = roleMutation.isPending && updatingMemberId === m.id;
                     const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === m.id;
+                    const isTossUpdatingThisRow = tossAccessMutation.isPending && tossUpdatingMemberId === m.id;
 
                     return (
                       <div key={m.id} className="rounded-lg border bg-card p-4 shadow-sm">
@@ -330,6 +370,20 @@ const AdminMembersPage = () => {
                             </Select>
                           </div>
                           {isUpdatingThisRow ? <span className="text-xs text-muted-foreground">변경 중...</span> : null}
+                          <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                            <span className="text-sm text-foreground">토스 접근</span>
+                            <div className="flex items-center gap-2">
+                              {isTossUpdatingThisRow ? (
+                                <span className="text-xs text-muted-foreground">변경 중...</span>
+                              ) : null}
+                              <Switch
+                                checked={m.role === 'ADMIN' || m.tossAccess}
+                                onCheckedChange={(checked) => openTossConfirm(m, checked)}
+                                disabled={m.role === 'ADMIN' || isTossUpdatingThisRow || isDeletingThisRow}
+                                aria-label={`${m.nickname} 토스 접근 권한`}
+                              />
+                            </div>
+                          </div>
                           <Button
                             variant="outline"
                             size="sm"
@@ -356,6 +410,7 @@ const AdminMembersPage = () => {
                           <TableHead>이메일</TableHead>
                           <TableHead>닉네임</TableHead>
                           <TableHead className="w-[220px]">역할</TableHead>
+                          <TableHead className="w-[110px]">토스 접근</TableHead>
                           <TableHead className="w-[120px] text-right">운동일수</TableHead>
                           <TableHead className="w-[140px] text-right">누적 벌금</TableHead>
                           <TableHead className="w-[140px]">가입일</TableHead>
@@ -367,6 +422,7 @@ const AdminMembersPage = () => {
                           const isMe = currentMember?.id === m.id;
                           const isUpdatingThisRow = roleMutation.isPending && updatingMemberId === m.id;
                           const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === m.id;
+                          const isTossUpdatingThisRow = tossAccessMutation.isPending && tossUpdatingMemberId === m.id;
                           return (
                             <TableRow key={m.id}>
                               <TableCell className="font-mono text-xs text-muted-foreground">{m.id}</TableCell>
@@ -394,6 +450,17 @@ const AdminMembersPage = () => {
                                     </SelectContent>
                                   </Select>
                                   {isUpdatingThisRow ? <span className="text-xs text-muted-foreground">변경 중...</span> : null}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={m.role === 'ADMIN' || m.tossAccess}
+                                    onCheckedChange={(checked) => openTossConfirm(m, checked)}
+                                    disabled={m.role === 'ADMIN' || isTossUpdatingThisRow || isDeletingThisRow}
+                                    aria-label={`${m.nickname} 토스 접근 권한`}
+                                  />
+                                  {isTossUpdatingThisRow ? <span className="text-xs text-muted-foreground">변경 중...</span> : null}
                                 </div>
                               </TableCell>
                               <TableCell className="text-right tabular-nums">{m.totalWorkoutDays ?? 0}</TableCell>
@@ -505,6 +572,39 @@ const AdminMembersPage = () => {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={closeConfirm}>취소</AlertDialogCancel>
             <AlertDialogAction onClick={confirmChange}>변경</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={pendingTossChange.open} onOpenChange={(open) => (open ? null : closeTossConfirm())}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingTossChange.nextGranted ? '토스 접근 권한을 부여할까요?' : '토스 접근 권한을 회수할까요?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingTossChange.target ? (
+                <div className="min-w-0 space-y-2 break-words">
+                  <div>
+                    대상: <span className="font-medium text-foreground">{pendingTossChange.target.nickname}</span> (
+                    {pendingTossChange.target.email})
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {pendingTossChange.nextGranted
+                      ? '토스증권 계좌의 보유종목·평가금액·예수금·거래내역을 모두 볼 수 있게 됩니다.'
+                      : '토스증권 화면과 API 접근이 즉시 차단됩니다.'}
+                  </div>
+                </div>
+              ) : (
+                '토스 접근 권한을 변경합니다.'
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={closeTossConfirm}>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmTossChange}>
+              {pendingTossChange.nextGranted ? '부여' : '회수'}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
