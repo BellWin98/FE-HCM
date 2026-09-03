@@ -11,14 +11,7 @@ FE-HCM은 "헬창모임"(그룹 운동 습관 관리 앱)의 React 18 / TypeScri
 ## 명령어
 
 ```bash
-npm run dev        # 개발 서버 (포트 3000)
-npm run build      # 프로덕션 빌드 (vite build)
-npm run lint       # ESLint 검사 (./src, --quiet)
-npm run preview    # 빌드 결과 미리보기
 npx tsc -b         # 타입 검사 (아래 주의사항 참고 — `tsc --noEmit` 은 아무것도 검사하지 않는다)
-npm test           # 전체 테스트 실행 (vitest run)
-npm test -- --run <파일명 일부>   # 특정 테스트 파일만 실행
-npm run test:watch # 테스트 watch 모드
 ```
 
 테스트는 Vitest + React Testing Library(jsdom)로 실행합니다(`vitest.config.ts`, 셋업은
@@ -58,10 +51,6 @@ esbuild 트랜스파일이라 타입 오류를 잡지 않습니다).
 
 ### 라우팅 및 인증 (`src/App.tsx`)
 
-- `react-router-dom`의 `BrowserRouter`로 라우팅하며, `@tanstack/react-query`의 `QueryClientProvider`가
-  최상위를 감쌉니다.
-- `AuthProvider`(`src/contexts/AuthContext.tsx`)가 `member`/`accessToken`/`refreshToken`을 `localStorage`에
-  저장하고 전역 인증 상태를 제공합니다. `useAuth()` 훅으로 어디서나 접근합니다.
 - 일반 인증 라우트는 `ProtectedRoute`(App.tsx 내부 컴포넌트)로, 관리자 라우트(`/admin/**`)는
   `RequireRole`(`src/components/RequireRole.tsx`, `allowedRoles={['ADMIN']}`)로 가드합니다. 두 컴포넌트
   모두 `loading` 상태를 먼저 처리한 뒤 리다이렉트 여부를 결정하는 패턴을 따릅니다.
@@ -87,27 +76,18 @@ esbuild 트랜스파일이라 타입 오류를 잡지 않습니다).
 
 - `src/components/ChatRoom.tsx`에서 `@stomp/stompjs`의 `Client`와 `sockjs-client`로 `${VITE_WS_URL}/wss`에
   연결합니다(백엔드의 STOMP 엔드포인트와 짝을 이룸).
-- 채팅 이미지 업로드 크기 제한(`MAX_CHAT_IMAGE_SIZE_BYTES = 10MB`)과 허용 타입(`ALLOWED_IMAGE_TYPES`:
-  jpeg/png/webp)이 컴포넌트 상단 상수로 정의되어 있습니다.
-- 메시지 기록은 커서 기반 페이지네이션(`cursorId`, `size=20`)으로 `api.getChatHistory()`를 통해 불러옵니다.
 
 ### 푸시 알림 (Firebase Cloud Messaging)
 
 - `src/lib/firebase.ts`의 `ensureFcmToken()`이 브라우저 알림 권한 요청 → FCM 토큰 발급 → 백엔드에
   토큰 등록(`api.registerFcmToken`)까지 처리합니다. 모듈 스코프의 `registrationPromise`로 중복 초기화를
   방지하므로, 여러 컴포넌트에서 호출해도 안전합니다.
-- PWA 등록/업데이트는 `vite-plugin-pwa`(`vite.config.ts`)와 `src/hooks/usePwaUpdater.tsx` /
-  `src/components/common/PwaUpdateBanner.tsx`가 담당합니다.
 
 ### UI 컴포넌트 구조
 
 - `src/components/ui/` — shadcn/ui 프리미티브(직접 생성/수정하기보다 `components.json` 설정을 따라 shadcn
   CLI로 관리하는 것이 일반적인 패턴). alias는 `@/components`, `@/components/ui`, `@/lib`, `@/hooks`로
   `tsconfig`/`vite.config.ts`에 설정되어 있습니다.
-- `src/components/` 최상위 — 도메인 컴포넌트(ChatRoom, MyWorkoutRoom, PenaltyOverview 등), 그리고
-  `admin/`, `dashboard/`, `dialogs/`, `landing/`, `layout/`, `stock/`, `common/` 하위 폴더로 기능별 세분화.
-- `src/pages/` — 라우트 단위 페이지(각 페이지가 여러 도메인 컴포넌트를 조합). `pages/admin/`은 관리자 전용
-  페이지.
 
 ### 도메인 규칙
 
