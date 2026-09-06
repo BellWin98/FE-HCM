@@ -95,7 +95,13 @@ export interface TossPortfolio {
 export interface TossTrade {
   symbol: string;
   name: string;
+  /** yyyy-MM-dd. 일자별로 묶는 화면(보유 종목의 거래 내역)이 쓰는 키다. */
   tradeDate: string;
+  /**
+   * 체결 시각(`yyyy-MM-ddTHH:mm[:ss]`, KST 로컬 시각).
+   * 같은 날 나눠 체결된 건을 구분하려면 날짜만으로는 부족해 시·분까지 받는다.
+   */
+  tradeDateTime: string;
   tradeType: 'BUY' | 'SELL';
   currency: TossCurrency;
   quantity: number;

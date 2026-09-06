@@ -1,3 +1,5 @@
+import { format, isValid, parseISO } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import type { TossCurrency } from '@/types/tossStock';
 
 /**
@@ -49,3 +51,23 @@ export const formatExchangeRate = (rate: number): string =>
 /** 보유 수량. 해외 소수점 매매를 고려해 소수점을 허용한다. */
 export const formatQuantity = (quantity: number): string =>
   quantity.toLocaleString(undefined, { maximumFractionDigits: 6 });
+
+/**
+ * 체결 일시. "2026-09-01T14:32:11" → "9월 1일 14:32".
+ *
+ * 올해 거래는 연도를 접는다 — 모바일 한 줄에 시각까지 넣으려면 자리가 모자라고, 기간 헤더에
+ * 이미 연도가 적혀 있다. 지난해 거래(전체 기간 조회)만 연도를 붙인다.
+ *
+ * 시각이 없는 값(날짜만 내려온 경우)은 날짜까지만 보여준다 — 장이 열리지 않은 "00:00"을
+ * 체결 시각처럼 적어 두는 셈이 되기 때문이다.
+ */
+export const formatTradeDateTime = (value: string, now: Date = new Date()): string => {
+  // parseISO 는 오프셋 없는 값을 로컬 시각으로 읽는다. `new Date()` 는 날짜만 있는 값을 UTC 로 읽어
+  // 시간대에 따라 하루가 밀린다.
+  const parsed = parseISO(value);
+  if (!isValid(parsed)) return value;
+
+  const datePattern =
+    parsed.getFullYear() === now.getFullYear() ? 'M월 d일' : 'yyyy년 M월 d일';
+  return format(parsed, value.includes('T') ? `${datePattern} HH:mm` : datePattern, { locale: ko });
+};
