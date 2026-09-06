@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TossRealizedProfit, TossTrade } from '@/types/tossStock';
@@ -21,6 +21,7 @@ const trade = (overrides: Partial<TossTrade> = {}): TossTrade => ({
   symbol: 'NVDA',
   name: '엔비디아',
   tradeDate: '2026-09-01',
+  tradeDateTime: '2026-09-01T14:32:11',
   tradeType: 'SELL',
   currency: 'USD',
   quantity: 2,
@@ -57,12 +58,28 @@ const summary = (trades: TossTrade[]): TossRealizedProfit => ({
 
 const allTrades = (): TossTrade[] => [
   trade(),
-  trade({ tradeDate: '2026-09-02', quantity: 1, amount: 141.6, profitLoss: 23.4 }),
-  trade({ tradeDate: '2026-08-15', tradeType: 'BUY', quantity: 8, price: 118.2, amount: 945.6, profitLoss: 0, profitLossRate: 0 }),
+  trade({
+    tradeDate: '2026-09-02',
+    tradeDateTime: '2026-09-02T09:05:00',
+    quantity: 1,
+    amount: 141.6,
+    profitLoss: 23.4,
+  }),
+  trade({
+    tradeDate: '2026-08-15',
+    tradeDateTime: '2026-08-15T10:12:40',
+    tradeType: 'BUY',
+    quantity: 8,
+    price: 118.2,
+    amount: 945.6,
+    profitLoss: 0,
+    profitLossRate: 0,
+  }),
   trade({
     symbol: '005930',
     name: '삼성전자',
     tradeDate: '2026-08-20',
+    tradeDateTime: '2026-08-20T13:44:02',
     currency: 'KRW',
     quantity: 5,
     price: 73400,
@@ -114,15 +131,33 @@ describe('수익분석 탭 — 매도 중심으로 보여주기', () => {
     expect(samsung).toHaveTextContent('매도 1건');
   });
 
-  it('종목을 펼치면 체결 하나하나를 보여준다', async () => {
+  it('종목을 펼치면 체결 하나하나를 시·분까지 보여준다', async () => {
     const user = userEvent.setup();
     renderTab();
 
     const group = await screen.findByTestId('trade-group-NVDA');
     await user.click(screen.getByRole('button', { name: /엔비디아/ }));
 
-    expect(group).toHaveTextContent('2026-09-01');
-    expect(group).toHaveTextContent('2026-09-02');
+    // 같은 날 나눠 판 체결을 구분하려면 날짜만으로는 부족하다.
+    expect(group).toHaveTextContent('9월 1일 14:32');
+    expect(group).toHaveTextContent('9월 2일 09:05');
+    // 기계가 읽는 값은 원본 그대로 남긴다.
+    expect(within(group).getByText('9월 1일 14:32')).toHaveAttribute(
+      'datetime',
+      '2026-09-01T14:32:11'
+    );
+  });
+
+  it('주당 가격을 거래일시와 다른 칸에 붙여 좁은 화면에서 겹치지 않게 한다', async () => {
+    const user = userEvent.setup();
+    renderTab();
+
+    const group = await screen.findByTestId('trade-group-NVDA');
+    await user.click(screen.getByRole('button', { name: /엔비디아/ }));
+
+    // 한 줄에 이어 붙이면 시각까지 들어간 줄이 모바일에서 잘린다.
+    expect(within(group).getAllByText(/주당 \$141\.60/)).toHaveLength(2);
+    expect(group).not.toHaveTextContent('14:32 · 주당');
   });
 });
 

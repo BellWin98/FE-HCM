@@ -25,7 +25,12 @@ import PeriodSegmentControl, { type PeriodType } from '@/components/stock/Period
 import { cn } from '@/lib/utils';
 import { STOCK_CARD_BG, STOCK_TEXT_MUTED, STOCK_BORDER, STOCK_SEGMENT_ACTIVE } from '@/lib/stockTheme';
 import { formatPercentage, getProfitLossColor } from '@/lib/stockFormat';
-import { formatMoney, formatQuantity, formatSignedMoney } from '@/lib/tossFormat';
+import {
+  formatMoney,
+  formatQuantity,
+  formatSignedMoney,
+  formatTradeDateTime,
+} from '@/lib/tossFormat';
 
 /** ALL 조회의 시작일. 계좌 개설일보다 앞서면 되고, 앞서도 무해하다. */
 const ALL_PERIOD_START_DATE = '2020-01-01';
@@ -199,33 +204,57 @@ const TossTradeGroup: React.FC<TossTradeGroupProps> = ({ group, textMuted }) => 
       </button>
 
       {expanded && (
-        <div className={cn('px-4 pb-4 pt-1 space-y-3 border-t', STOCK_BORDER)}>
-          {group.trades.map((trade, index) => (
-            <div
-              key={`${trade.tradeDate}-${trade.tradeType}-${index}`}
-              className="flex items-start justify-between gap-3"
-            >
-              <div className="min-w-0">
-                <p className="text-sm text-gray-900 dark:text-gray-100">
-                  {trade.tradeType === 'BUY' ? '구매' : '판매'} {formatQuantity(trade.quantity)}주
-                </p>
-                <p className={cn('text-xs mt-0.5 tabular-nums', textMuted)}>
-                  {trade.tradeDate} · 주당 {formatMoney(trade.price, trade.currency)}
-                </p>
-              </div>
-              <div className="text-right shrink-0 tabular-nums">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {formatMoney(trade.amount, trade.currency)}
-                </p>
-                {trade.tradeType === 'SELL' && (
-                  <p className={cn('text-xs font-medium', getProfitLossColor(trade.profitLoss))}>
-                    {formatSignedMoney(trade.profitLoss, trade.currency)} (
-                    {formatPercentage(trade.profitLossRate)})
+        <div
+          className={cn(
+            'px-4 border-t divide-y divide-gray-100 dark:divide-gray-700/60',
+            STOCK_BORDER
+          )}
+        >
+          {group.trades.map((trade, index) => {
+            // 백엔드 배포가 프론트보다 늦으면 체결 시각이 비어 올 수 있다. 그때는 일자만이라도 그린다.
+            const executedAt = trade.tradeDateTime ?? trade.tradeDate;
+
+            return (
+              <div
+                key={`${executedAt}-${trade.tradeType}-${index}`}
+                className="flex items-start justify-between gap-2 py-3"
+              >
+                {/*
+                  거래일시와 주당 가격은 한 줄에 이어 붙이지 않는다 — 시각까지 붙으면 좁은 화면에서
+                  줄이 잘리거나 오른쪽 금액과 맞붙는다. 두 값을 각각 감싸 좁으면 아래로 흐르게 둔다.
+                */}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-gray-900 dark:text-gray-100">
+                    {trade.tradeType === 'BUY' ? '구매' : '판매'} {formatQuantity(trade.quantity)}주
                   </p>
-                )}
+                  <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                    <time dateTime={executedAt} className={cn('text-xs tabular-nums', textMuted)}>
+                      {formatTradeDateTime(executedAt)}
+                    </time>
+                    <span className="rounded px-1.5 py-0.5 text-[11px] tabular-nums bg-gray-100 text-gray-600 dark:bg-gray-700/60 dark:text-gray-300">
+                      주당 {formatMoney(trade.price, trade.currency)}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 tabular-nums">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {formatMoney(trade.amount, trade.currency)}
+                  </p>
+                  {trade.tradeType === 'SELL' && (
+                    <p
+                      className={cn(
+                        'text-xs font-medium mt-1',
+                        getProfitLossColor(trade.profitLoss)
+                      )}
+                    >
+                      {formatSignedMoney(trade.profitLoss, trade.currency)} (
+                      {formatPercentage(trade.profitLossRate)})
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
