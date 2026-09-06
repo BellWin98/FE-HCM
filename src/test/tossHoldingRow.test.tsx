@@ -1,19 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { TossHolding } from '@/types/tossStock';
 
 /**
  * 보유 종목 한 줄.
  *
- * 기존에는 "현재가 / 평가금" 토글이 배타적이라 평단·현재가와 평가금·손익을 동시에 볼 수 없었다.
- * 셋을 한 줄에 담고, 그 자리를 세전/세후 전환이 대신한다.
- * 해외 종목은 달러가 주(主)이되 원화를 병기해 국내 종목과 크기를 견줄 수 있게 한다.
+ * 모든 금액은 종목의 거래통화로만 보여준다 — 원화 병기는 하지 않는다. 평단·투자원금·손익은
+ * 매수 시점 환율로 확정된 과거 금액이라 오늘 환율로 환산하면 어느 쪽도 아닌 값이 되기 때문이다.
+ *
+ * 펼친 상세는 매수/매도 판단에 쓰는 값(현재가·평단·평단 대비 위치·손익·오늘)을 위에 두고,
+ * 비용과 거래 내역은 한 번 더 접어 첫 화면을 짧게 유지한다.
  */
 
 const TossHoldingListItem = (await import('@/components/tossStock/TossHoldingListItem')).default;
 
-const samsung = (): TossHolding => ({
+const samsung = (overrides: Partial<TossHolding> = {}): TossHolding => ({
   symbol: '005930',
   name: '삼성전자',
   marketCountry: 'KR',
@@ -32,6 +34,7 @@ const samsung = (): TossHolding => ({
   dailyProfitLossRate: -0.4,
   commission: 2110,
   tax: 0,
+  ...overrides,
 });
 
 const nvidia = (): TossHolding => ({
@@ -56,19 +59,27 @@ const nvidia = (): TossHolding => ({
   tax: 0,
 });
 
-const renderRow = (
-  holding: TossHolding,
-  overrides: { costBasis?: 'preCost' | 'afterCost'; usdKrwRate?: number | null } = {}
-) =>
+interface RenderOverrides {
+  costBasis?: 'preCost' | 'afterCost';
+  onLoadTrades?: () => void;
+}
+
+const renderRow = (holding: TossHolding, overrides: RenderOverrides = {}) =>
   render(
     <TossHoldingListItem
       holding={holding}
       costBasis={overrides.costBasis ?? 'preCost'}
-      usdKrwRate={overrides.usdKrwRate === undefined ? 1382.4 : overrides.usdKrwRate}
       isMobile={false}
       trades={[]}
+      onLoadTrades={overrides.onLoadTrades}
     />
   );
+
+const expand = async (name: RegExp) => {
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('button', { name }));
+  return user;
+};
 
 describe('토스 보유 종목 줄', () => {
   it('수량·평단·현재가와 평가금·손익을 토글 없이 한 번에 보여준다', () => {
@@ -89,22 +100,14 @@ describe('토스 보유 종목 줄', () => {
     expect(screen.getByTestId('holding-row-005930')).toHaveTextContent('오늘 -0.40%');
   });
 
-  it('해외 종목은 달러를 주로 두고 원화 환산 금액을 병기한다', () => {
+  it('해외 종목은 달러만 보여주고 원화를 섞지 않는다', () => {
     renderRow(nvidia());
 
     const row = screen.getByTestId('holding-row-NVDA');
     expect(row).toHaveTextContent('$1,132.80');
-    // 1,132.80 × 1,382.4 = 1,565,982.72
-    expect(row).toHaveTextContent('₩1,565,983');
     expect(row).toHaveTextContent('+$187.20');
-  });
-
-  it('환율이 없으면 원화 병기를 생략한다', () => {
-    renderRow(nvidia(), { usdKrwRate: null });
-
-    const row = screen.getByTestId('holding-row-NVDA');
-    expect(row).toHaveTextContent('$1,132.80');
-    expect(row).not.toHaveTextContent('₩1,565,983');
+    // 오늘 환율로 환산한 원화는 매수 시점 환율과 달라 어느 쪽도 아닌 값이다 — 아예 쓰지 않는다.
+    expect(row).not.toHaveTextContent('₩');
   });
 
   it('국내와 해외를 배지로 구분한다', () => {
@@ -125,82 +128,109 @@ describe('토스 보유 종목 줄', () => {
     expect(row).not.toHaveTextContent('+₩62,400');
   });
 
-  it('펼치면 오늘 손익 금액과 수수료·세금을 보여준다', async () => {
-    const user = userEvent.setup();
+  it('수량·평단·현재가에 각각 라벨을 붙여 보여준다', () => {
     renderRow(samsung());
 
-    await user.click(screen.getByRole('button', { name: /삼성전자/ }));
-
-    expect(screen.getByText('오늘 손익')).toBeInTheDocument();
-    expect(screen.getByTestId('holding-daily-profit')).toHaveTextContent('-₩3,500');
-    expect(screen.getByTestId('holding-commission')).toHaveTextContent('₩2,110');
+    const strip = screen.getByTestId('holding-price-strip');
+    expect(strip).toHaveTextContent('수량');
+    expect(strip).toHaveTextContent('12주');
+    expect(strip).toHaveTextContent('평단');
+    expect(strip).toHaveTextContent('₩68,200');
+    expect(strip).toHaveTextContent('현재가');
+    expect(strip).toHaveTextContent('₩73,400');
   });
 });
 
-describe('토스 보유 종목 상세 — 해외 종목 원화 병기', () => {
-  const expandNvidia = async () => {
-    const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: /엔비디아/ }));
-  };
-
-  it('상세의 모든 금액에 원화 환산을 나란히 붙인다', async () => {
-    renderRow(nvidia());
-    await expandNvidia();
-
-    // 환율 1,382.4 기준.
-    expect(screen.getByTestId('holding-average-price')).toHaveTextContent('₩163,400');
-    expect(screen.getByTestId('holding-market-value')).toHaveTextContent('₩1,565,983');
-    expect(screen.getByTestId('holding-profit-loss')).toHaveTextContent('+₩258,785');
-    expect(screen.getByTestId('holding-purchase-amount')).toHaveTextContent('₩1,307,197');
-    expect(screen.getByTestId('holding-daily-profit')).toHaveTextContent('+₩51,425');
-    expect(screen.getByTestId('holding-profit-after-cost')).toHaveTextContent('+₩254,223');
-    expect(screen.getByTestId('holding-commission')).toHaveTextContent('₩7,603');
-    expect(screen.getByTestId('holding-tax')).toHaveTextContent('₩0');
-  });
-
-  it('거래통화 금액은 그대로 주(主)로 남는다', async () => {
-    renderRow(nvidia());
-    await expandNvidia();
-
-    expect(screen.getByTestId('holding-market-value')).toHaveTextContent('$1,132.80');
-    expect(screen.getByTestId('holding-purchase-amount')).toHaveTextContent('$945.60');
-    expect(screen.getByTestId('holding-commission')).toHaveTextContent('$5.50');
-  });
-
-  it('손익률은 통화와 무관하므로 한 번만 보여준다', async () => {
-    renderRow(nvidia());
-    await expandNvidia();
-
-    const profit = screen.getByTestId('holding-profit-loss');
-    expect(profit.textContent?.match(/\+19\.80%/g)).toHaveLength(1);
-  });
-
-  it('원화가 현재 환율 기준이라는 것을 밝힌다', async () => {
-    renderRow(nvidia());
-    await expandNvidia();
-
-    // 투자 원금·수수료는 과거 금액이라 오늘 환율로 환산한 값이 매수 시점과 다르다.
-    expect(screen.getByText(/현재 환율/)).toBeInTheDocument();
-    expect(screen.getByText(/매수 시점/)).toBeInTheDocument();
-  });
-
-  it('환율이 없으면 원화 열을 아예 그리지 않는다', async () => {
-    renderRow(nvidia(), { usdKrwRate: null });
-    await expandNvidia();
-
-    expect(screen.getByTestId('holding-purchase-amount')).toHaveTextContent('$945.60');
-    expect(screen.getByTestId('holding-detail')).not.toHaveTextContent('₩');
-    expect(screen.queryByText(/현재 환율/)).toBeNull();
-  });
-
-  it('국내 종목은 이미 원화라 열을 늘리지 않는다', async () => {
-    const user = userEvent.setup();
+describe('토스 보유 종목 상세 — 판단 지표 우선', () => {
+  it('현재가와 평단을 맨 위에 둔다', async () => {
     renderRow(samsung());
+    await expand(/삼성전자/);
 
-    await user.click(screen.getByRole('button', { name: /삼성전자/ }));
+    expect(screen.getByTestId('holding-last-price')).toHaveTextContent('₩73,400');
+    expect(screen.getByTestId('holding-average-price')).toHaveTextContent('₩68,200');
+  });
+
+  it('평가손익과 오늘 손익을 나란히 보여준다', async () => {
+    renderRow(samsung());
+    await expand(/삼성전자/);
+
+    expect(screen.getByText('오늘 손익')).toBeInTheDocument();
+    expect(screen.getByTestId('holding-profit-loss')).toHaveTextContent('+₩62,400');
+    expect(screen.getByTestId('holding-daily-profit')).toHaveTextContent('-₩3,500');
+  });
+
+  it('보유 수량과 투자 원금·평가금액을 함께 보여준다', async () => {
+    renderRow(samsung());
+    await expand(/삼성전자/);
+
+    expect(screen.getByTestId('holding-quantity')).toHaveTextContent('12주');
+    expect(screen.getByTestId('holding-purchase-amount')).toHaveTextContent('₩818,400');
+    expect(screen.getByTestId('holding-market-value')).toHaveTextContent('₩880,800');
+  });
+
+  it('수수료·세금은 접혀 있고 열어야 보인다', async () => {
+    renderRow(samsung());
+    const user = await expand(/삼성전자/);
+
+    expect(screen.queryByTestId('holding-commission')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: '수수료·세금' }));
+
+    expect(screen.getByTestId('holding-commission')).toHaveTextContent('₩2,110');
+    expect(screen.getByTestId('holding-tax')).toHaveTextContent('₩0');
+    // 세전을 보고 있으므로 여기에는 반대쪽 기준인 세후 손익이 온다.
+    expect(screen.getByTestId('holding-counterpart-profit')).toHaveTextContent('세후 손익');
+    expect(screen.getByTestId('holding-counterpart-profit')).toHaveTextContent('+₩60,290');
+  });
+
+  it('거래 내역은 접혀 있고, 열었을 때 비로소 조회한다', async () => {
+    const onLoadTrades = vi.fn();
+    renderRow(samsung(), { onLoadTrades });
+    const user = await expand(/삼성전자/);
+
+    // 줄을 펼친 것만으로는 계좌 전체 주문을 훑지 않는다.
+    expect(onLoadTrades).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: '거래 내역' }));
+
+    expect(onLoadTrades).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('거래 내역이 없습니다.')).toBeInTheDocument();
+  });
+
+  it('해외 종목 상세에도 원화가 한 글자도 없다', async () => {
+    renderRow(nvidia());
+    const user = await expand(/엔비디아/);
+    await user.click(screen.getByRole('button', { name: '수수료·세금' }));
+
+    const detail = screen.getByTestId('holding-detail');
+    expect(detail).toHaveTextContent('$1,132.80');
+    expect(detail).toHaveTextContent('$945.60');
+    expect(detail).toHaveTextContent('$5.50');
+    expect(detail).not.toHaveTextContent('₩');
+  });
+
+  it('세후 기준에서는 상세의 평가손익·평가금액도 함께 바뀐다', async () => {
+    renderRow(samsung(), { costBasis: 'afterCost' });
+    const user = await expand(/삼성전자/);
+
+    expect(screen.getByTestId('holding-profit-loss')).toHaveTextContent('+₩60,290');
+    expect(screen.getByTestId('holding-profit-loss')).toHaveTextContent('+7.37%');
+    expect(screen.getByTestId('holding-market-value')).toHaveTextContent('₩878,200');
+
+    // 세전 값은 화면 어디에도 섞여 있으면 안 된다 — 반대쪽 기준은 비용 블록 안에만 둔다.
+    expect(screen.getByTestId('holding-profit-loss')).not.toHaveTextContent('+₩62,400');
+
+    await user.click(screen.getByRole('button', { name: '수수료·세금' }));
+
+    expect(screen.getByTestId('holding-counterpart-profit')).toHaveTextContent('세전 손익');
+    expect(screen.getByTestId('holding-counterpart-profit')).toHaveTextContent('+₩62,400');
+  });
+
+  it('국내 종목 상세는 원화 그대로다', async () => {
+    renderRow(samsung());
+    await expand(/삼성전자/);
 
     expect(screen.getByTestId('holding-purchase-amount')).toHaveTextContent('₩818,400');
-    expect(screen.queryByText('원화 환산')).toBeNull();
-    expect(screen.queryByText(/현재 환율/)).toBeNull();
+    expect(screen.getByTestId('holding-detail')).not.toHaveTextContent('$');
   });
 });

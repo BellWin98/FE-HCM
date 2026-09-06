@@ -135,7 +135,12 @@ const TossStockPortfolioPage = () => {
 
     return (
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
+        {/*
+          Header 가 sticky top-0 z-50 이고 높이가 h-16(64px)이라, 탭바도 top-0 이면 스크롤 시
+          헤더 뒤로 완전히 들어간다. 헤더 바로 아래에 걸리도록 top-16 으로 내리고 z 도 그 아래에 둔다.
+          -mx-4 px-4 는 Layout 의 <main> 좌우 여백을 되돌려, 붙어 있는 동안 배경이 끊기지 않게 한다.
+        */}
+        <div className="sticky top-16 z-30 -mx-4 px-4 bg-gray-50 border-b border-gray-200">
           <TabsList className="w-full h-14 bg-transparent p-0 gap-0 rounded-none border-0 grid grid-cols-2">
             <TabsTrigger value="assets" className={TAB_TRIGGER_CLASS}>
               자산
@@ -146,7 +151,7 @@ const TossStockPortfolioPage = () => {
           </TabsList>
         </div>
 
-        <div className="px-4 pt-4">
+        <div className="pt-4">
           <TabsContent value="assets" className="mt-0">
             <TossStockAssetsTab
               portfolio={portfolio}
@@ -164,10 +169,11 @@ const TossStockPortfolioPage = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen min-h-[100dvh] overflow-x-hidden bg-gray-50 pb-safe-bottom">
+      {/* min-h-screen·bg-gray-50·좌우 여백은 Layout 의 <main> 이 이미 담당한다 — 겹쳐 선언하지 않는다. */}
+      <div className="overflow-x-hidden">
         <div className="max-w-2xl mx-auto w-full overflow-x-hidden min-h-0">
           {owners.length > 1 && selectedOwner && (
-            <div className="px-4 pt-4">
+            <div className="pb-4">
               <OwnerSegmentControl owners={owners} value={selectedOwner} onChange={handleOwnerChange} />
             </div>
           )}

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { StockHolding, TradingProfitLoss } from '@/types';
-import { ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -99,10 +99,6 @@ const StockHoldingListItem: React.FC<StockHoldingListItemProps> = ({
         <p className={cn('text-xs', textMuted)}>1주 평균금액</p>
         <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
           {formatCurrency(holding.averagePrice)}
-        </p>
-        <p className={cn('text-xs mt-1 flex items-center gap-1', textMuted)}>
-          <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
-          수수료·세금 포함
         </p>
       </div>
 

@@ -12,11 +12,18 @@ const formatDateLocal = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+/**
+ * 조회 상태. 화면이 "아직 안 받았다"와 "받아 보니 없다"를 구분하려면 빈 배열만으로는 부족하다 —
+ * 둘 다 `trades.length === 0` 이라 로딩 중에 "거래 내역이 없습니다"가 뜬다.
+ */
+export type TossTradeHistoryStatus = 'idle' | 'loading' | 'loaded' | 'error';
+
 interface TossTradeHistory {
   trades: TossTrade[];
   /** 원가를 추정으로 메운 체결이 섞여 있는지. 화면에 밝혀야 한다. */
   estimated: boolean;
-  /** 처음 호출될 때만 실제로 조회한다. 이후 호출은 무시된다. */
+  status: TossTradeHistoryStatus;
+  /** 처음 호출될 때만 실제로 조회한다. 이후 호출은 무시되고, 실패한 뒤에는 재시도로 동작한다. */
   load: () => void;
 }
 
@@ -33,6 +40,7 @@ interface TossTradeHistory {
 export const useTossTradeHistory = (owner: string): TossTradeHistory => {
   const [trades, setTrades] = useState<TossTrade[]>([]);
   const [estimated, setEstimated] = useState(false);
+  const [status, setStatus] = useState<TossTradeHistoryStatus>('idle');
   const requestedOwnerRef = useRef<string | null>(null);
 
   // 계좌를 바꾸면 이전 사람의 거래가 남지 않도록 비우고, 다시 요청할 수 있게 되돌린다.
@@ -40,11 +48,13 @@ export const useTossTradeHistory = (owner: string): TossTradeHistory => {
     requestedOwnerRef.current = null;
     setTrades([]);
     setEstimated(false);
+    setStatus('idle');
   }, [owner]);
 
   const load = useCallback((): void => {
     if (requestedOwnerRef.current === owner) return;
     requestedOwnerRef.current = owner;
+    setStatus('loading');
 
     const fetchTrades = async (): Promise<void> => {
       try {
@@ -57,14 +67,18 @@ export const useTossTradeHistory = (owner: string): TossTradeHistory => {
         if (requestedOwnerRef.current !== owner) return;
         setTrades(data.trades);
         setEstimated(data.estimated);
+        setStatus('loaded');
       } catch {
-        // 자산 화면 자체는 유효하므로 조용히 넘어가되, 다음 펼침에서 다시 시도할 수 있게 되돌린다.
-        if (requestedOwnerRef.current === owner) requestedOwnerRef.current = null;
+        // 자산 화면 자체는 유효하므로 화면을 죽이지 않되, 실패를 감추지도 않는다.
+        // ref 를 되돌려 두면 화면의 "다시 시도"가 그대로 재조회로 이어진다.
+        if (requestedOwnerRef.current !== owner) return;
+        requestedOwnerRef.current = null;
+        setStatus('error');
       }
     };
 
     fetchTrades();
   }, [owner]);
 
-  return { trades, estimated, load };
+  return { trades, estimated, status, load };
 };

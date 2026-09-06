@@ -6,6 +6,10 @@
  *
  * 주의: 손익률은 백엔드에서 이미 퍼센트(15.16)로 변환해 내려온다.
  * 토스 원본은 소수비율(0.1516)이므로 원본 응답을 직접 다룰 때는 100을 곱해야 한다.
+ *
+ * 금액은 통화를 넘어 합산하지 않는다. 환율로 환산하면 매수/매도 시점 환율과 달라져
+ * 실제로 치른 원화도 앞으로 손에 쥘 원화도 아닌 값이 되기 때문이다 — 화면은 통화 하나를
+ * 골라 그 통화로만 보여준다.
  */
 
 export type TossMarketCountry = 'KR' | 'US';
@@ -50,38 +54,36 @@ export interface TossPortfolio {
   totalMarketValueUsd: number | null;
   totalProfitLossKrw: number;
   totalProfitLossUsd: number | null;
+  /**
+   * 전체 손익률(%). 토스가 국내·해외를 원화 환산해 합친 기준으로 계산해 준 값이다.
+   * 위 통화별 금액과 모집단이 다르므로 한쪽 통화만 보는 화면에 붙이면 안 된다 —
+   * "-₩13,100 (+2.36%)" 처럼 금액과 비율이 어긋난 줄이 나온다.
+   * 통화별 손익률은 `legProfitLossRate` 로 직접 계산한다.
+   */
   totalProfitLossRate: number;
   dailyProfitLossKrw: number;
   dailyProfitLossUsd: number | null;
+  /** 일간 손익률(%). {@link totalProfitLossRate} 와 같은 이유로 통화별 화면에는 쓸 수 없다. */
   dailyProfitLossRate: number;
   /** 세금·수수료 공제 후 평가금액·손익. 토스가 요약 레벨에도 내려주는 값이다. */
   totalMarketValueAfterCostKrw: number;
   totalMarketValueAfterCostUsd: number | null;
   totalProfitLossAfterCostKrw: number;
   totalProfitLossAfterCostUsd: number | null;
-  /** 세후 전체 손익률(%). 위 손익률과 마찬가지로 원화 환산 기준. */
+  /** 세후 전체 손익률(%). 위 손익률과 마찬가지로 원화 환산 합산 기준이라 통화별 화면에 쓸 수 없다. */
   totalProfitLossRateAfterCost: number;
 
   /**
    * 적용 환율(1 USD = ? KRW). 해외 종목이 없거나 환율 조회에 실패하면 null.
-   * 환산 금액을 보여주는 이상 어떤 환율을 썼는지도 함께 보여줘야 한다.
+   *
+   * 금액 환산에는 쓰지 않는다 — 평단·투자원금·손익은 매수/매도 시점 환율로 확정된 과거 금액이라
+   * 오늘 환율을 곱하면 실제로 치른 원화도, 앞으로 손에 쥘 원화도 아닌 값이 된다.
+   * 화면에는 참고 표기("$1 = ₩1,382.4")로만 쓴다.
    */
   usdKrwRate: number | null;
   usdKrwMidRate: number | null;
   usdKrwRateChangeType: 'UP' | 'EQUAL' | 'DOWN' | null;
   usdKrwRateAsOf: string | null;
-
-  /**
-   * 국내 + 해외×환율. 통화별로 나뉜 위 합계와 달리 계좌 전체를 가리킨다.
-   * 해외 종목이 있는데 환율을 못 받으면 null — 0으로 채우면 해외 자산이 사라진 것처럼 보인다.
-   */
-  totalPurchaseAmountInKrw: number | null;
-  totalMarketValueInKrw: number | null;
-  totalProfitLossInKrw: number | null;
-  totalProfitLossAfterCostInKrw: number | null;
-  dailyProfitLossInKrw: number | null;
-  /** 원화 환산 평가금액에서 해외가 차지하는 비중(%). */
-  overseasWeightPercent: number | null;
 
   /** 현금 매수가능금액. 조회 실패 시 null(0으로 채우면 잔고 없음으로 오해한다). */
   cashBuyingPowerKrw: number | null;

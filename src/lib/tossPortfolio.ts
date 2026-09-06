@@ -1,12 +1,12 @@
-import type { TossCurrency, TossHolding, TossPortfolio } from '@/types/tossStock';
+import type { TossHolding, TossPortfolio } from '@/types/tossStock';
 
 /**
  * 토스 자산 화면에서 응답으로부터 파생시키는 값들.
  *
  * 토스 응답은 국내(`...Krw`)와 해외(`...Usd`)를 따로 담아 주고 통화 간 합산은 하지 않는다.
- * 두 덩어리를 견주거나 한 줄로 정렬하려면 환율로 환산해야 하는데, 환율은 백엔드가 함께 내려준다
- * (`usdKrwRate`). 환율이 없으면 환산은 불가능하며 그 경우 `null` 을 돌려준다 —
- * 0 으로 대체하면 해외 자산이 통째로 사라진 것처럼 보인다.
+ * 화면도 합치지 않는다 — 평단·투자원금·손익은 매수/매도 시점 환율로 확정된 과거 금액이라
+ * 오늘 환율을 곱하면 실제로 치른 원화도, 앞으로 손에 쥘 원화도 아닌 값이 나오기 때문이다.
+ * 대신 통화 하나를 골라(`TossMarketSegment`) 그 통화로만 보여준다.
  */
 
 /**
@@ -24,35 +24,39 @@ export const legProfitLossRate = (
 };
 
 /**
- * 종목 거래통화로 된 금액을 원화로 환산한다.
- * 원화 종목은 그대로, 해외 종목은 환율이 있어야 하고 없으면 `null`.
+ * 통화 한 쪽만의 오늘 등락률(%).
+ *
+ * 응답의 `dailyProfitLossRate` 역시 원화 환산 전체 기준이라 통화별로 쓸 수 없는데,
+ * 손익률과 달리 통화별 값이 아예 내려오지 않아 직접 만들어야 한다.
+ * 전일 평가금을 `평가금 - 오늘손익` 으로 두는 근사다 — 장중에 추가 매수·매도가 있으면
+ * 그만큼 어긋나지만, 오차가 매수/매도 판단을 뒤집는 크기는 아니다.
  */
-export const amountInKrw = (
-  amount: number,
-  currency: TossCurrency,
-  usdKrwRate: number | null
+export const legDailyChangeRate = (
+  dailyProfitLoss: number | null | undefined,
+  marketValue: number | null | undefined
 ): number | null => {
-  if (currency !== 'USD') return amount;
-  if (usdKrwRate == null) return null;
-  return amount * usdKrwRate;
+  if (dailyProfitLoss == null || marketValue == null) return null;
+  const previous = marketValue - dailyProfitLoss;
+  if (previous === 0) return null;
+  return (dailyProfitLoss / previous) * 100;
 };
 
-/** 보유 종목 하나의 원화 환산 평가금액. 해외 종목인데 환율이 없으면 환산할 수 없다. */
-export const holdingMarketValueInKrw = (
-  holding: TossHolding,
-  usdKrwRate: number | null
-): number | null => amountInKrw(holding.marketValue, holding.currency, usdKrwRate);
+/** 목록에 어떤 시장을 남길지. 화면 전체(요약 + 목록)가 이 선택 하나를 따른다. */
+export type TossMarketSegment = 'KR' | 'US';
 
-/** 목록에 어떤 시장을 남길지. 계좌 전체를 바꾸는 것이 아니라 목록만 좁힌다. */
-export type TossMarketFilter = 'ALL' | 'KR' | 'US';
+/**
+ * 손익을 세전으로 볼지 세후로 볼지.
+ *
+ * 통화 세그먼트와 마찬가지로 <b>화면 전체</b>가 한 기준을 따른다 — 요약의 총자산·평가손익,
+ * 목록 줄의 평가금·손익, 펼친 상세의 손익과 게이지까지 한 번에 바뀐다.
+ * 일부만 따라가면 같은 화면 안에서 어느 숫자가 어느 기준인지 알 수 없게 된다.
+ */
+export type TossCostBasis = 'preCost' | 'afterCost';
 
 export const filterHoldingsByMarket = (
   holdings: TossHolding[],
-  market: TossMarketFilter
-): TossHolding[] => {
-  if (market === 'ALL') return holdings;
-  return holdings.filter((holding) => holding.marketCountry === market);
-};
+  market: TossMarketSegment
+): TossHolding[] => holdings.filter((holding) => holding.marketCountry === market);
 
 export type TossSortOption =
   | 'profitRateAsc'
@@ -63,15 +67,14 @@ export type TossSortOption =
 /**
  * 보유 종목 정렬.
  *
- * 평가금 정렬은 통화를 맞춰야 의미가 있다 — `880800`(원)과 `1132.80`(달러)을 그냥 비교하면
- * "평가금 높은 순"이 사실상 "국내 종목 먼저"가 되고 해외 종목은 아무리 커도 바닥에 깔린다.
- * 환율이 있으면 원화로 환산해 함께 정렬하고, 없으면 통화별로 묶어(국내 먼저) 그룹 안에서만 정렬한다.
+ * 목록은 세그먼트가 좁혀 준 <b>한 통화</b>만 담으므로 평가금을 그대로 비교하면 된다.
+ * 그래도 통화 경계를 넘어 비교하지 않는 방어는 남겨 둔다 — `880800`(원)과 `1132.80`(달러)을
+ * 그냥 견주면 "평가금 높은 순"이 사실상 "국내 종목 먼저"가 되기 때문이다.
  * 손익률은 애초에 통화와 무관한 비율이라 언제나 전체를 함께 정렬한다.
  */
 export const sortHoldings = (
   holdings: TossHolding[],
-  sortOption: TossSortOption,
-  usdKrwRate: number | null
+  sortOption: TossSortOption
 ): TossHolding[] => {
   const byRate = sortOption === 'profitRateAsc' || sortOption === 'profitRateDesc';
   const ascending = sortOption === 'profitRateAsc' || sortOption === 'marketValueAsc';
@@ -79,27 +82,20 @@ export const sortHoldings = (
 
   return [...holdings].sort((a, b) => {
     if (byRate) return (a.profitLossRate - b.profitLossRate) * direction;
-
-    const left = holdingMarketValueInKrw(a, usdKrwRate);
-    const right = holdingMarketValueInKrw(b, usdKrwRate);
-    // 환산이 불가능한 조합(환율 없음 + 해외 종목)은 국내를 먼저 두고 통화 안에서만 비교한다.
-    if (left == null || right == null) {
-      if (a.currency !== b.currency) return a.currency === 'KRW' ? -1 : 1;
-      return (a.marketValue - b.marketValue) * direction;
-    }
-    return (left - right) * direction;
+    if (a.currency !== b.currency) return a.currency === 'KRW' ? -1 : 1;
+    return (a.marketValue - b.marketValue) * direction;
   });
 };
 
 /**
- * 계좌 전체를 한 숫자로 보여줄 수 있는 상태인지.
+ * 어느 시장의 종목을 보유 중인지. 세그먼트를 그릴지 말지가 여기서 갈린다.
  *
- * 해외 종목이 없으면 국내 금액이 곧 전체이고, 있으면 환율이 있어야 합칠 수 있다.
- * 백엔드가 그 판단을 마친 결과가 `totalMarketValueInKrw` 이므로 그것만 보면 된다.
+ * 합계 금액으로 판단하지 않는다 — 백엔드가 `totalMarketValueKrw` 를 항상 non-null 로
+ * 내려주기 때문에(값이 없으면 0) 해외 전용 계좌도 국내를 가진 것처럼 보인다.
+ * 목록에 실제로 그려질 것과 세그먼트가 어긋나지 않도록 양쪽 다 보유 종목에서 파생시킨다.
  */
-export const canShowUnifiedTotal = (portfolio: TossPortfolio): boolean =>
-  portfolio.totalMarketValueInKrw != null;
+export const hasDomesticHoldings = (portfolio: TossPortfolio): boolean =>
+  portfolio.holdings.some((holding) => holding.marketCountry === 'KR');
 
-/** 해외 종목을 보유 중인지. 0과 미보유를 구분해야 하므로 금액이 아니라 null 여부로 판단한다. */
 export const hasOverseasHoldings = (portfolio: TossPortfolio): boolean =>
-  portfolio.totalMarketValueUsd != null;
+  portfolio.holdings.some((holding) => holding.marketCountry === 'US');
