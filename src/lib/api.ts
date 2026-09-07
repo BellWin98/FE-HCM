@@ -26,9 +26,15 @@ import type {
   TossAccessGrant,
   TossAccessStatus,
   TossAccountOwner,
+  TossOpenOrder,
+  TossOrderResult,
+  TossOrderSide,
+  TossOrderable,
+  TossPlaceOrderRequest,
   TossPortfolio,
   TossRealizedProfit,
   TossRealizedProfitPeriod,
+  TossStockSearchResult,
 } from "@/types/tossStock";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
@@ -126,7 +132,10 @@ class ApiClient {
       //   error.response?.data?.message || `HTTP error! status: ${error.response?.status}`;
       // console.error(message);
       if (axios.isAxiosError(error)) {
-        throw new Error(error.response.data.message);
+        // error.response 는 네트워크가 끊기거나 요청이 타임아웃되면 undefined 다.
+        // 옵셔널 체이닝 없이 읽으면 그 자리에서 TypeError 가 나 원래 실패 원인이 통째로 가려진다 —
+        // 주문 제출이 정확히 그 상황이라(소켓 타임아웃 5초) 사용자가 원인을 모른 채 재시도하게 된다.
+        throw new Error(error.response?.data?.message ?? error.message);
       }
       throw new Error(String(error));
     }
@@ -367,6 +376,67 @@ class ApiClient {
       method: "POST",
       data: period,
     });
+  }
+
+  /**
+   * GET /toss-stock/search — 종목 검색.
+   * 토스에는 검색 API 가 없어 서버가 유니버스를 들고 직접 찾는다(외부 호출 0회).
+   */
+  async searchTossStocks(
+    query: string,
+    limit = 20,
+    config: AxiosRequestConfig = {}
+  ): Promise<TossStockSearchResult[]> {
+    return this.request<TossStockSearchResult[]>(
+      `/toss-stock/search?query=${encodeURIComponent(query)}&limit=${limit}`,
+      config
+    );
+  }
+
+  /** GET /toss-stock/orderable — 주문 화면을 채울 값 한 벌(현재가·상하한가·잔고·매도가능수량). */
+  async getTossOrderable(
+    owner: string,
+    symbol: string,
+    side: TossOrderSide,
+    config: AxiosRequestConfig = {}
+  ): Promise<TossOrderable> {
+    return this.request<TossOrderable>(
+      `/toss-stock/orderable?owner=${encodeURIComponent(owner)}` +
+        `&symbol=${encodeURIComponent(symbol)}&side=${side}`,
+      config
+    );
+  }
+
+  /** GET /toss-stock/orders/open — 체결 대기 중인 주문. ADMIN 만 호출할 수 있다. */
+  async getTossOpenOrders(owner: string, config: AxiosRequestConfig = {}): Promise<TossOpenOrder[]> {
+    return this.request<TossOpenOrder[]>(
+      `/toss-stock/orders/open?owner=${encodeURIComponent(owner)}`,
+      config
+    );
+  }
+
+  /**
+   * POST /toss-stock/orders — 주문 접수.
+   *
+   * `_retry: true` 를 미리 박는 것이 핵심이다. 응답 인터셉터는 401 을 만나면 토큰을 새로 받아
+   * **원 요청을 그대로 다시 보내는데**, 조회에서는 무해한 그 동작이 주문에서는 두 번째 주문이 된다.
+   * 이미 true 면 인터셉터가 재발급 없이 에러를 그대로 통과시킨다(토큰이 만료됐다면 사용자가
+   * 다시 시도하게 되고, 그때는 `clientOrderId` 가 멱등성을 보장한다).
+   */
+  async placeTossOrder(request: TossPlaceOrderRequest): Promise<TossOrderResult> {
+    return this.request<TossOrderResult>("/toss-stock/orders", {
+      method: "POST",
+      data: request,
+      _retry: true,
+    } as AxiosRequestConfig);
+  }
+
+  /** POST /toss-stock/orders/{orderId}/cancel — 미체결 주문 취소. */
+  async cancelTossOrder(owner: string, orderId: string): Promise<{ orderId: string }> {
+    return this.request<{ orderId: string }>(
+      `/toss-stock/orders/${encodeURIComponent(orderId)}/cancel`,
+      { method: "POST", data: { owner } }
+    );
   }
 
   // Notification APIs

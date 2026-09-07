@@ -51,7 +51,7 @@ export const Header = () => {
             {/* 데스크톱 메뉴 */}
             {!isMobile && (
               <div className="flex items-center space-x-4">
-                {/* 주식 현황 메뉴 - FAMILY, ADMIN 권한만 표시 */}
+                {/* 한국투자증권 메뉴 - FAMILY, ADMIN 권한만 표시 */}
                 {(member?.role === 'FAMILY' || member?.role === 'ADMIN') && (
                   <Button 
                     variant="outline" 
@@ -162,7 +162,7 @@ export const Header = () => {
               </div>
             </div>
 
-            {/* 주식 현황 메뉴 - FAMILY, ADMIN 권한만 표시 */}
+            {/* 한국투자증권 메뉴 - FAMILY, ADMIN 권한만 표시 */}
             {(member?.role === 'FAMILY' || member?.role === 'ADMIN') && (
               <Button 
                 variant="outline" 

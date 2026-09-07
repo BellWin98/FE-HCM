@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { TossAccountOwner, TossPortfolio } from '@/types/tossStock';
+import type {
+  TossAccountOwner,
+  TossOrderSide,
+  TossPortfolio,
+  TossStockSearchResult,
+} from '@/types/tossStock';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -11,6 +16,10 @@ import { cn } from '@/lib/utils';
 import OwnerSegmentControl from '@/components/tossStock/OwnerSegmentControl';
 import TossStockAssetsTab from '@/components/tossStock/TossStockAssetsTab';
 import TossStockProfitTab from '@/components/tossStock/TossStockProfitTab';
+import TossStockSearchSheet from '@/components/tossStock/TossStockSearchSheet';
+import TossOrderSheet, { type TossOrderTarget } from '@/components/tossStock/TossOrderSheet';
+import { useTossAccess } from '@/hooks/useTossAccess';
+import { useTossOpenOrders } from '@/hooks/useTossOpenOrders';
 
 type StockTab = 'assets' | 'profit';
 
@@ -31,6 +40,20 @@ const TossStockPortfolioPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<StockTab>('assets');
+
+  /*
+    주문·검색 시트의 상태는 <b>페이지</b>가 들고 있다.
+    보유 종목 항목 안에서 렌더하면 목록이 리렌더될 때 항목이 언마운트되면서 열려 있던 시트가
+    함께 사라진다 — 이 저장소의 팝오버/다이얼로그가 이미 겪은 함정과 같은 이유다.
+  */
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [orderTarget, setOrderTarget] = useState<TossOrderTarget | null>(null);
+  const [orderSide, setOrderSide] = useState<TossOrderSide>('BUY');
+  const [orderOpen, setOrderOpen] = useState(false);
+
+  // 주문 권한은 조회 권한과 기준이 다르다(조회는 toss_access, 주문은 ADMIN).
+  const { canTrade } = useTossAccess();
+  const openOrders = useTossOpenOrders(selectedOwner ?? '', canTrade && Boolean(selectedOwner));
 
   // 연동된 계좌 목록을 먼저 받아 첫 번째 소유자를 선택한다.
   useEffect(() => {
@@ -89,6 +112,51 @@ const TossStockPortfolioPage = () => {
     setPortfolio(null);
   };
   const handleTabChange = (value: string) => setActiveTab(value as StockTab);
+
+  /** 검색에서 고른 종목으로 바로 주문 시트를 연다. 기본은 매수 — 안 가진 걸 팔 수는 없다. */
+  const handleSearchSelect = (stock: TossStockSearchResult) => {
+    setOrderTarget({
+      symbol: stock.symbol,
+      name: stock.name,
+      marketCountry: stock.marketCountry,
+      securityType: stock.securityType,
+      locSupported: stock.locSupported,
+    });
+    setOrderSide('BUY');
+    setOrderOpen(true);
+  };
+
+  /** 보유 종목의 매수·매도. 종목 정보는 이미 화면에 있으니 다시 조회하지 않는다. */
+  const handleTradeHolding = (symbol: string, side: TossOrderSide) => {
+    const holding = portfolio?.holdings.find((item) => item.symbol === symbol);
+    if (!holding) return;
+
+    setOrderTarget({
+      symbol: holding.symbol,
+      name: holding.name,
+      marketCountry: holding.marketCountry,
+      // 보유 응답에는 종목 유형이 없다. 주문 시트가 여는 `/orderable` 이 정확한 값을 채워 준다 —
+      // 여기 기본값은 그때까지 호가 단위를 계산하기 위한 것이다.
+      securityType: 'STOCK',
+      locSupported: holding.marketCountry === 'US',
+    });
+    setOrderSide(side);
+    setOrderOpen(true);
+  };
+
+  /** 주문이 접수되면 미체결 목록과 자산을 함께 새로 받는다. */
+  const handleOrderPlaced = () => {
+    toast({ title: '주문이 접수되었습니다.' });
+    openOrders.reload();
+    fetchPortfolio();
+  };
+
+  const handleCancelOrder = (orderId: string) => {
+    openOrders.cancel(orderId).catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : '주문을 취소하지 못했습니다.';
+      toast({ title: '취소 실패', description: message, variant: 'destructive' });
+    });
+  };
 
   const renderBody = () => {
     if (loading && !portfolio) {
@@ -157,6 +225,12 @@ const TossStockPortfolioPage = () => {
               portfolio={portfolio}
               onRefresh={fetchPortfolio}
               loading={loading}
+              canTrade={canTrade}
+              openOrders={openOrders.orders}
+              onCancelOrder={handleCancelOrder}
+              cancelingOrderId={openOrders.cancelingOrderId}
+              onOpenSearch={() => setSearchOpen(true)}
+              onTradeHolding={handleTradeHolding}
             />
           </TabsContent>
           <TabsContent value="profit" className="mt-0">
@@ -180,6 +254,27 @@ const TossStockPortfolioPage = () => {
           {renderBody()}
         </div>
       </div>
+
+      {/* 시트는 목록 바깥, 페이지 레벨에 둔다 — 목록 리렌더에 함께 언마운트되지 않게. */}
+      {canTrade && (
+        <>
+          <TossStockSearchSheet
+            open={searchOpen}
+            onOpenChange={setSearchOpen}
+            onSelect={handleSearchSelect}
+          />
+          {selectedOwner && (
+            <TossOrderSheet
+              open={orderOpen}
+              onOpenChange={setOrderOpen}
+              owner={selectedOwner}
+              target={orderTarget}
+              initialSide={orderSide}
+              onOrderPlaced={handleOrderPlaced}
+            />
+          )}
+        </>
+      )}
     </Layout>
   );
 };

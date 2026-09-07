@@ -30,6 +30,11 @@ export const useTossAccess = () => {
   return {
     // 조회 실패는 권한 없음으로 취급한다 — 계좌 정보이므로 판정할 수 없으면 열지 않는다.
     hasAccess: !isError && (data?.hasAccess ?? false),
+    /**
+     * 주문 버튼·검색 진입을 그릴지. 조회 권한과 기준이 달라 서버가 따로 내려 준다.
+     * 표시 제어일 뿐이다 — 이 값을 조작해도 주문 엔드포인트가 403 을 낸다.
+     */
+    canTrade: !isError && (data?.canTrade ?? false),
     isPending: isAuthenticated && isPending,
     isError,
   };
