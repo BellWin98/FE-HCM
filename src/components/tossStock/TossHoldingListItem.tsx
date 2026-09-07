@@ -84,6 +84,12 @@ interface TossHoldingListItemProps {
    * 줄을 펼치는 것만으로 부르면, 판단만 하고 닫는 대부분의 경우에 계좌 전체 주문 조회가 헛돈다.
    */
   onLoadTrades?: () => void;
+  /**
+   * 매수/매도 요청. <b>주문 시트를 여기서 렌더하지 않고 콜백만 올린다</b> —
+   * 목록이 리렌더될 때 이 항목이 언마운트되면 열려 있던 시트가 함께 사라지기 때문이다.
+   * 시트는 페이지가 들고 있어야 한다.
+   */
+  onTrade?: (side: 'BUY' | 'SELL') => void;
 }
 
 /**
@@ -101,6 +107,7 @@ const TossHoldingListItem: React.FC<TossHoldingListItemProps> = ({
   tradesEstimated = false,
   tradesStatus = 'loaded',
   onLoadTrades,
+  onTrade,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [showCosts, setShowCosts] = useState(false);
@@ -436,6 +443,29 @@ const TossHoldingListItem: React.FC<TossHoldingListItemProps> = ({
           )}
         </div>
       </Disclosure>
+
+      {/*
+        ⑤ 매수·매도. 이미 펼쳐서 판단을 마친 자리에 둔다 — 접힌 줄에 두면 스크롤 중 오탭이 나고,
+        여기까지 왔다는 것 자체가 이 종목을 들여다봤다는 뜻이다.
+      */}
+      {onTrade && (
+        <div className={cn('grid grid-cols-2 gap-2 border-t pt-4', STOCK_BORDER)}>
+          <button
+            type="button"
+            onClick={() => onTrade('BUY')}
+            className="min-h-[48px] rounded-lg bg-red-500 text-sm font-semibold text-white active:bg-red-600"
+          >
+            매수
+          </button>
+          <button
+            type="button"
+            onClick={() => onTrade('SELL')}
+            className="min-h-[48px] rounded-lg bg-blue-500 text-sm font-semibold text-white active:bg-blue-600"
+          >
+            매도
+          </button>
+        </div>
+      )}
     </div>
   );
 

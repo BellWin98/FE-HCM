@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import type { TossPortfolio, TossTrade } from '@/types/tossStock';
+import type { TossOpenOrder, TossOrderSide, TossPortfolio, TossTrade } from '@/types/tossStock';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, ArrowUpDown } from 'lucide-react';
+import { RefreshCw, ArrowUpDown, Search } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -12,6 +12,7 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTossTradeHistory } from '@/hooks/useTossTradeHistory';
 import TossHoldingListItem from './TossHoldingListItem';
+import TossOpenOrdersSection from './TossOpenOrdersSection';
 import TossCurrencySegment, { type TossSegmentOption } from './TossCurrencySegment';
 import TossPortfolioHero from './TossPortfolioHero';
 import { cn } from '@/lib/utils';
@@ -49,12 +50,30 @@ interface TossStockAssetsTabProps {
   portfolio: TossPortfolio;
   onRefresh: () => void;
   loading: boolean;
+  /**
+   * 주문 UI 를 그릴지. 서버가 내려주는 값이며 <b>표시 제어일 뿐</b>이다 —
+   * 조작해도 주문 엔드포인트가 403 을 낸다.
+   */
+  canTrade?: boolean;
+  openOrders?: TossOpenOrder[];
+  onCancelOrder?: (orderId: string) => void;
+  cancelingOrderId?: string | null;
+  /** 종목 검색 시트 열기. 시트 자체는 페이지가 들고 있다. */
+  onOpenSearch?: () => void;
+  /** 보유 종목의 매수/매도. 주문 시트도 페이지가 들고 있다. */
+  onTradeHolding?: (symbol: string, side: TossOrderSide) => void;
 }
 
 const TossStockAssetsTab: React.FC<TossStockAssetsTabProps> = ({
   portfolio,
   onRefresh,
   loading,
+  canTrade = false,
+  openOrders = [],
+  onCancelOrder,
+  cancelingOrderId = null,
+  onOpenSearch,
+  onTradeHolding,
 }) => {
   const isMobile = useIsMobile();
   const [costBasis, setCostBasis] = useState<TossCostBasis>('preCost');
@@ -121,6 +140,18 @@ const TossStockAssetsTab: React.FC<TossStockAssetsTabProps> = ({
   return (
     <div className={cn('space-y-4 sm:space-y-6', isMobile && 'pb-6')}>
       {/*
+        미체결 주문은 이 화면에서 가장 시간에 민감한 정보다. 아래로 밀리면 사용자는 자기 주문이
+        살아 있는지 모른 채 같은 주문을 한 번 더 낸다. 건수가 0이면 섹션 자체가 그려지지 않는다.
+      */}
+      {canTrade && onCancelOrder && (
+        <TossOpenOrdersSection
+          orders={openOrders}
+          onCancel={onCancelOrder}
+          cancelingOrderId={cancelingOrderId}
+        />
+      )}
+
+      {/*
         데이터 기준 시각과 환율.
         환율은 금액 환산에 쓰지 않지만, 해외 종목을 달러로 읽는 동안 크기를 가늠할 잣대는 있어야 한다.
       */}
@@ -130,16 +161,30 @@ const TossStockAssetsTab: React.FC<TossStockAssetsTabProps> = ({
           {portfolio.usdKrwRate != null &&
             ` · ${formatExchangeRate(portfolio.usdKrwRate)}${rateChangeMark}`}
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="min-h-[36px]"
-          onClick={onRefresh}
-          disabled={loading}
-          aria-label="새로고침"
-        >
-          <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* 보유하지 않은 종목을 사려면 먼저 찾을 수 있어야 한다. */}
+          {canTrade && onOpenSearch && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="min-h-[36px]"
+              onClick={onOpenSearch}
+              aria-label="종목 검색"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="min-h-[36px]"
+            onClick={onRefresh}
+            disabled={loading}
+            aria-label="새로고침"
+          >
+            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+          </Button>
+        </div>
       </div>
 
       <TossCurrencySegment segments={segments} value={activeSegment} onChange={setSegment} />
@@ -182,6 +227,11 @@ const TossStockAssetsTab: React.FC<TossStockAssetsTabProps> = ({
               trades={tradesBySymbol.get(holding.symbol) ?? EMPTY_TRADES}
               tradesEstimated={tradeHistory.estimated}
               tradesStatus={tradeHistory.status}
+              onTrade={
+                canTrade && onTradeHolding
+                  ? (side) => onTradeHolding(holding.symbol, side)
+                  : undefined
+              }
             />
           ))
         )}

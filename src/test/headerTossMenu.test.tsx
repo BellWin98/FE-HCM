@@ -66,7 +66,7 @@ beforeEach(() => {
 describe('Header — 토스증권 메뉴', () => {
   it('토스 접근 권한이 있으면 메뉴를 보여준다', async () => {
     signIn();
-    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: true, canTrade: false });
 
     renderHeader();
 
@@ -75,7 +75,7 @@ describe('Header — 토스증권 메뉴', () => {
 
   it('토스 접근 권한이 없으면 메뉴를 숨긴다', async () => {
     signIn();
-    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: false });
+    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: false, canTrade: false });
 
     renderHeader();
 
@@ -85,18 +85,19 @@ describe('Header — 토스증권 메뉴', () => {
 
   it('FAMILY 역할만으로는 메뉴가 보이지 않는다 — 판정은 서버 응답만 본다', async () => {
     signIn('FAMILY');
-    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: false });
+    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: false, canTrade: false });
 
     renderHeader();
 
     // 한국투자증권 메뉴는 여전히 FAMILY 기준이라 그대로 보인다.
-    expect(await screen.findByRole('button', { name: '주식 현황' })).toBeInTheDocument();
+    // (버튼 라벨은 '주식 현황'에서 '한국투자증권'으로 바뀌었다 — Header.tsx 의 주석만 옛 이름으로 남아 있다.)
+    expect(await screen.findByRole('button', { name: '한국투자증권' })).toBeInTheDocument();
     expect(tossMenu()).not.toBeInTheDocument();
   });
 
   it('메뉴를 누르면 토스 화면으로 이동한다', async () => {
     signIn();
-    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: true, canTrade: false });
 
     renderHeader();
     await userEvent.click(await screen.findByRole('button', { name: '토스증권' }));

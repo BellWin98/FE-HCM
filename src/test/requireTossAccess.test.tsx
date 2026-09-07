@@ -73,7 +73,7 @@ beforeEach(() => {
 describe('RequireTossAccess', () => {
   it('권한이 있으면 토스 화면을 그린다', async () => {
     signIn();
-    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: true, canTrade: false });
 
     renderGuard();
 
@@ -82,7 +82,7 @@ describe('RequireTossAccess', () => {
 
   it('권한이 없으면 대시보드로 돌려보낸다', async () => {
     signIn();
-    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: false });
+    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: false, canTrade: false });
 
     renderGuard();
 
@@ -92,7 +92,7 @@ describe('RequireTossAccess', () => {
 
   it('FAMILY 역할만으로는 통과하지 못한다 — 판정은 서버 응답만 본다', async () => {
     signIn('FAMILY');
-    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: false });
+    vi.mocked(api.getTossAccess).mockResolvedValue({ hasAccess: false, canTrade: false });
 
     renderGuard();
 

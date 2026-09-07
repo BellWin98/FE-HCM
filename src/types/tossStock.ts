@@ -151,6 +151,13 @@ export interface TossRealizedProfitPeriod {
  */
 export interface TossAccessStatus {
   hasAccess: boolean;
+  /**
+   * 주문 실행 권한. 조회(`hasAccess`)와 기준이 다르다 — 조회는 `toss_access` 를 받은 가족 전원,
+   * 주문은 ADMIN 만이다. "가족 자산을 볼 수 있다"와 "남의 계좌로 주문을 낼 수 있다"는 다른 권한이다.
+   *
+   * 이 값은 **화면 표시 제어용**이다. 조작해도 주문 엔드포인트가 403 을 낸다.
+   */
+  canTrade: boolean;
 }
 
 /** 관리자 화면에서 보는 "토스 접근이 부여된 회원" 한 명. */
@@ -162,4 +169,124 @@ export interface TossAccessGrant {
   /** 부여한 관리자의 id. 마이그레이션으로 승계된 행은 null 이다. */
   grantedBy: number | null;
   grantedAt: string;
+}
+
+/* ────────────────────────── 주문 ────────────────────────── */
+
+export type TossOrderSide = 'BUY' | 'SELL';
+/** 토스에 보내는 호가 유형. LOC 은 별도 유형이 아니라 `LIMIT` + `timeInForce: 'CLS'` 다. */
+export type TossOrderType = 'LIMIT' | 'MARKET';
+export type TossTimeInForce = 'DAY' | 'CLS';
+
+/**
+ * 화면에서 고르는 주문 방식.
+ *
+ * 토스 API 의 (orderType, timeInForce) 두 값을 화면에서는 한 개의 선택지로 다룬다 —
+ * 사용자는 "지정가/시장가/LOC" 중 하나를 고르는 것이지 두 축을 조합하지 않는다.
+ * `LOC` 는 미국 종목에서만 고를 수 있다.
+ */
+export type TossOrderMode = 'LIMIT' | 'MARKET' | 'LOC';
+
+export type TossSecurityType = 'STOCK' | 'ETF' | 'ETN' | 'REIT' | (string & {});
+
+/** 검색 결과 한 건. 현재가는 담지 않는다 — 시세는 종목을 고른 뒤 한 번만 받는다. */
+export interface TossStockSearchResult {
+  symbol: string;
+  name: string;
+  market: string;
+  marketCountry: TossMarketCountry;
+  currency: TossCurrency;
+  securityType: TossSecurityType;
+  /** LOC 선택지를 그릴지. 토스는 종가 주문을 미국 지정가에만 허용한다. */
+  locSupported: boolean;
+}
+
+/**
+ * 주문 화면을 채우는 값 한 벌.
+ *
+ * 실패한 항목은 `null` 로 온다. 0 으로 바꿔 그리지 말 것 —
+ * "0원"과 "알 수 없음"은 다른 사실이고, 잔고를 0으로 보여 주는 건 거짓말이다.
+ */
+export interface TossOrderable {
+  symbol: string;
+  name: string;
+  marketCountry: TossMarketCountry;
+  currency: TossCurrency;
+  securityType: TossSecurityType;
+  locSupported: boolean;
+  lastPrice: number | null;
+  /** 국내 종목만. 미국은 가격 제한이 없어 항상 null 이다. */
+  upperLimitPrice: number | null;
+  lowerLimitPrice: number | null;
+  /** 매수 화면에서만 채워진다. */
+  cashBuyingPower: number | null;
+  /** 매도 화면에서만 채워진다. */
+  sellableQuantity: number | null;
+}
+
+/** 주문 시트가 들고 있는 입력 상태. 이 값이 바뀌면 멱등키를 새로 발급해야 한다. */
+export interface TossOrderDraft {
+  symbol: string;
+  name: string;
+  marketCountry: TossMarketCountry;
+  currency: TossCurrency;
+  securityType: TossSecurityType;
+  locSupported: boolean;
+  side: TossOrderSide;
+  mode: TossOrderMode;
+  /** 문자열로 들고 있는다 — 입력 중인 "70000." 같은 상태를 숫자로 바꾸면 커서가 튄다. */
+  quantity: string;
+  price: string;
+}
+
+export interface TossPlaceOrderRequest {
+  owner: string;
+  symbol: string;
+  side: TossOrderSide;
+  orderType: TossOrderType;
+  timeInForce?: TossTimeInForce;
+  quantity: string;
+  price?: string;
+  /**
+   * 멱등키. **프론트가 만든다** — 서버가 만들면 재시도마다 값이 달라져 멱등성이 사라진다.
+   * 토스 기준 10분 유효. 같은 키로 내용만 다른 주문을 보내면 422 가 난다.
+   */
+  clientOrderId: string;
+  /** 1억원 이상 주문에 필요한 사용자 확인. */
+  confirmHighValueOrder?: boolean;
+}
+
+export interface TossOrderResult {
+  orderId: string;
+  clientOrderId: string;
+}
+
+export type TossOpenOrderStatus =
+  | 'PENDING'
+  | 'PARTIAL_FILLED'
+  | 'PENDING_CANCEL'
+  | 'PENDING_REPLACE'
+  | (string & {});
+
+/** 체결을 기다리는 주문 한 건. */
+export interface TossOpenOrder {
+  orderId: string;
+  symbol: string;
+  /** 주문 응답에 종목명이 없어 서버가 따로 채운다. 조회 실패 시 심볼이 들어온다. */
+  name: string;
+  side: TossOrderSide;
+  orderType: TossOrderType;
+  timeInForce: TossTimeInForce;
+  /** `LIMIT` + `CLS` 조합. 서버가 미리 풀어 주므로 화면이 다시 판정하지 않는다. */
+  loc: boolean;
+  status: TossOpenOrderStatus;
+  currency: TossCurrency;
+  /** 시장가 주문은 null. 0 으로 그리면 "0원에 주문"으로 읽힌다. */
+  price: number | null;
+  quantity: number;
+  filledQuantity: number;
+  remainingQuantity: number;
+  orderedAt: string;
+  /** 취소 버튼을 그릴지. 이미 취소 요청이 나간 주문에는 false 다. */
+  cancelable: boolean;
 }
