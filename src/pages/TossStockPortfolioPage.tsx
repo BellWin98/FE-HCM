@@ -107,6 +107,11 @@ const TossStockPortfolioPage = () => {
   }, [fetchPortfolio]);
 
   const handleOwnerChange = (owner: string) => {
+    // 같은 계좌면 아무것도 하지 않는다. 아래에서 자산을 비우는 것은 "곧 다시 받아온다"는 전제
+    // 위에 있는데, selectedOwner 가 그대로면 조회 effect(의존성이 selectedOwner 다)가 다시 돌지
+    // 않아 빈 화면에 갇힌다.
+    if (owner === selectedOwner) return;
+
     // 계좌를 바꾸면 이전 사람의 자산이 잠시 남아 보이지 않도록 즉시 비운다.
     setSelectedOwner(owner);
     setPortfolio(null);
