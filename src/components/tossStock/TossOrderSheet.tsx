@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Minus, Plus, AlertTriangle, Loader2 } from 'lucide-react';
+import { Minus, Plus, X, AlertTriangle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { STOCK_BORDER, STOCK_TEXT_MUTED } from '@/lib/stockTheme';
 import { formatMoney, formatQuantity } from '@/lib/tossFormat';
@@ -87,6 +87,10 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
    * 의존성에 넣으면 사용자가 입력을 지우는 행위 자체가 effect 를 다시 실행시켜 곧바로 되채워진다.
    */
   const prefilledSymbolRef = useRef<string | null>(null);
+
+  // 지우기 버튼을 누른 뒤 곧바로 다시 입력할 수 있도록 포커스를 돌려준다(모바일에서 키보드가 닫히지 않는다).
+  const priceInputRef = useRef<HTMLInputElement>(null);
+  const quantityInputRef = useRef<HTMLInputElement>(null);
 
   const { orderable, status } = useTossOrderable(owner, open ? (target?.symbol ?? null) : null, side);
 
@@ -174,6 +178,16 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
     // 그때는 현재가를 기준으로 삼아 다시 현재가 근처로 돌아올 길을 남긴다.
     const base = price === '' ? (orderable?.lastPrice ?? 0) : priceValue;
     setPrice(String(stepPrice(base, marketCountry, securityType, direction)));
+  };
+
+  const handleClearPrice = (): void => {
+    setPrice('');
+    priceInputRef.current?.focus();
+  };
+
+  const handleClearQuantity = (): void => {
+    setQuantity('');
+    quantityInputRef.current?.focus();
   };
 
   const handleMax = (): void => {
@@ -300,13 +314,28 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
             <Button type="button" variant="outline" size="icon" aria-label="가격 내리기" onClick={() => handleStepPrice('down')}>
               <Minus className="h-4 w-4" />
             </Button>
-            <Input
-              id="toss-order-price"
-              inputMode="decimal"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              className="min-h-[48px] text-right tabular-nums"
-            />
+            <div className="relative min-w-0 flex-1">
+              <Input
+                id="toss-order-price"
+                ref={priceInputRef}
+                inputMode="decimal"
+                // 이전에 넣은 값이 브라우저 자동완성으로 떠오르면 잘못 고르기 쉽다.
+                autoComplete="off"
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                className="min-h-[48px] pr-10 text-right tabular-nums"
+              />
+              {price !== '' && (
+                <button
+                  type="button"
+                  aria-label="가격 지우기"
+                  onClick={handleClearPrice}
+                  className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
             <Button type="button" variant="outline" size="icon" aria-label="가격 올리기" onClick={() => handleStepPrice('up')}>
               <Plus className="h-4 w-4" />
             </Button>
@@ -333,14 +362,28 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
             최대
           </button>
         </div>
-        <Input
-          id="toss-order-quantity"
-          inputMode="numeric"
-          value={quantity}
-          onChange={(event) => setQuantity(event.target.value.replace(/[^0-9]/g, ''))}
-          placeholder="0"
-          className="min-h-[48px] text-right tabular-nums"
-        />
+        <div className="relative">
+          <Input
+            id="toss-order-quantity"
+            ref={quantityInputRef}
+            inputMode="numeric"
+            autoComplete="off"
+            value={quantity}
+            onChange={(event) => setQuantity(event.target.value.replace(/[^0-9]/g, ''))}
+            placeholder="0"
+            className="min-h-[48px] pr-10 text-right tabular-nums"
+          />
+          {quantity !== '' && (
+            <button
+              type="button"
+              aria-label="수량 지우기"
+              onClick={handleClearQuantity}
+              className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
         {side === 'BUY' ? (
           <p className={cn('text-xs tabular-nums', STOCK_TEXT_MUTED)}>
             주문가능금액 {orderable?.cashBuyingPower != null ? money(orderable.cashBuyingPower) : '—'}

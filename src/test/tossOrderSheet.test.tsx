@@ -350,3 +350,53 @@ describe('제출', () => {
     expect(await screen.findByLabelText('금액을 확인했습니다')).toBeInTheDocument();
   });
 });
+
+describe('입력 지우기', () => {
+  it('가격 지우기 버튼을 누르면 가격 입력이 비워진다', async () => {
+    // 자동 채움된 현재가를 한 자리씩 지우게 두지 않는다.
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    const priceInput = await screen.findByLabelText('주문 가격');
+
+    await user.click(screen.getByRole('button', { name: '가격 지우기' }));
+
+    expect(priceInput).toHaveValue('');
+  });
+
+  it('가격이 비어 있으면 지우기 버튼을 그리지 않는다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    const priceInput = await screen.findByLabelText('주문 가격');
+
+    await user.clear(priceInput);
+
+    expect(screen.queryByRole('button', { name: '가격 지우기' })).not.toBeInTheDocument();
+  });
+
+  it('수량 지우기 버튼을 누르면 수량 입력이 비워진다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    const quantityInput = screen.getByLabelText('주문 수량');
+    await user.type(quantityInput, '10');
+
+    await user.click(screen.getByRole('button', { name: '수량 지우기' }));
+
+    expect(quantityInput).toHaveValue('');
+  });
+
+  it('수량이 비어 있으면 지우기 버튼을 그리지 않는다', async () => {
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+
+    expect(screen.queryByRole('button', { name: '수량 지우기' })).not.toBeInTheDocument();
+  });
+
+  it('수량·가격 입력은 브라우저가 이전 입력값을 제안하지 않게 한다', async () => {
+    // 남의 계좌 화면에서 내가 전에 넣은 수량이 자동완성으로 튀어나오면 오입력의 지름길이다.
+    renderSheet(krTarget);
+
+    expect(await screen.findByLabelText('주문 가격')).toHaveAttribute('autocomplete', 'off');
+    expect(screen.getByLabelText('주문 수량')).toHaveAttribute('autocomplete', 'off');
+  });
+});
