@@ -24,13 +24,20 @@ const OwnerSegmentControl: React.FC<OwnerSegmentControlProps> = ({ owners, value
     >
       {owners.map((owner) => {
         const selected = owner.owner === value;
+        // 이미 선택된 탭은 변경 이벤트를 내보내지 않는다. 바뀐 게 없는데 알리면 받는 쪽이
+        // "계좌가 바뀌었다"고 믿고 화면을 비우는데, 실제로는 다시 받아올 계기가 없어 빈 화면만 남는다.
+        const handleClick = (): void => {
+          if (selected) return;
+          onChange(owner.owner);
+        };
+
         return (
           <button
             key={owner.owner}
             type="button"
             role="tab"
             aria-selected={selected}
-            onClick={() => onChange(owner.owner)}
+            onClick={handleClick}
             className={cn(
               'flex-1 min-h-[44px] px-4 py-2 text-sm font-medium transition-colors',
               selected
