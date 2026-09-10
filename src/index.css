@@ -147,12 +147,22 @@
   .pb-safe-bottom {
     padding-bottom: 4rem;
   }
+  /*
+    화면에 고정된(fixed) 요소는 <main> 의 pb-safe 가 미치지 않는다.
+    iOS 홈 인디케이터에 가리지 않도록 bottom 자체를 안전 영역만큼 띄운다.
+  */
+  .bottom-safe {
+    bottom: 1rem;
+  }
   @supports (padding: max(1px, env(safe-area-inset-bottom))) {
     .pb-safe {
       padding-bottom: max(2rem, env(safe-area-inset-bottom));
     }
     .pb-safe-bottom {
       padding-bottom: max(4rem, calc(env(safe-area-inset-bottom) + 2rem));
+    }
+    .bottom-safe {
+      bottom: max(1rem, calc(env(safe-area-inset-bottom) + 0.5rem));
     }
   }
 
