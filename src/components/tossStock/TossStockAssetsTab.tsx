@@ -137,8 +137,9 @@ const TossStockAssetsTab: React.FC<TossStockAssetsTabProps> = ({
     ? (RATE_CHANGE_MARK[portfolio.usdKrwRateChangeType] ?? '')
     : '';
 
+  // 하단 여백은 화면에 고정된 새로고침 버튼이 마지막 보유 종목을 가리지 않도록 비워 둔 자리다.
   return (
-    <div className={cn('space-y-4 sm:space-y-6', isMobile && 'pb-6')}>
+    <div className="space-y-4 sm:space-y-6 pb-24">
       {/*
         미체결 주문은 이 화면에서 가장 시간에 민감한 정보다. 아래로 밀리면 사용자는 자기 주문이
         살아 있는지 모른 채 같은 주문을 한 번 더 낸다. 건수가 0이면 섹션 자체가 그려지지 않는다.
@@ -174,16 +175,6 @@ const TossStockAssetsTab: React.FC<TossStockAssetsTabProps> = ({
               <Search className="h-4 w-4" />
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="min-h-[36px]"
-            onClick={onRefresh}
-            disabled={loading}
-            aria-label="새로고침"
-          >
-            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-          </Button>
         </div>
       </div>
 
@@ -238,9 +229,23 @@ const TossStockAssetsTab: React.FC<TossStockAssetsTabProps> = ({
       </div>
 
       {/*
-        바닥의 "수익분석" 버튼은 상단 탭과 목적지가 같아 없앴고, 새로고침은 종목이 늘어나면
-        도달할 수 없는 위치라 헤더로 옮겼다.
+        바닥의 "수익분석" 버튼은 상단 탭과 목적지가 같아 없앴다.
+
+        새로고침은 헤더에 두었다가 화면에 고정된 플로팅 버튼으로 옮겼다 — 헤더는 보유 종목을 보려고
+        스크롤을 내린 순간 화면 밖으로 사라져서, 값을 다시 받으려면 맨 위까지 되돌아가야 했다.
+        z-40 은 의도적이다: 목록 위에는 뜨되(탭바가 z-30), 주문·검색 시트(Radix 오버레이 z-50)가
+        열리면 그 아래로 깔려 시트를 가리지 않는다. 이 버튼을 자산 탭 <b>안에</b> 두는 것도 의도적이다 —
+        비활성 TabsContent 는 언마운트되므로 수익분석 탭에서는 저절로 사라진다(그 탭은 기간을 골라
+        조회하는 화면이라 "새로고침"의 의미가 다르다).
       */}
+      <Button
+        onClick={onRefresh}
+        disabled={loading}
+        aria-label="새로고침"
+        className="fixed right-4 bottom-safe z-40 h-14 w-14 rounded-full shadow-lg"
+      >
+        <RefreshCw className={cn('h-5 w-5', loading && 'animate-spin')} />
+      </Button>
     </div>
   );
 };

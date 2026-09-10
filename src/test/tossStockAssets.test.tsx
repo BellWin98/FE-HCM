@@ -520,3 +520,44 @@ describe('토스 자산 탭 — 환율 표기', () => {
     expect(within(stamp).queryByText(/USD|\$1 =/)).toBeNull();
   });
 });
+
+/**
+ * 새로고침 버튼의 위치.
+ *
+ * 목록 위 헤더에 두면 보유 종목을 보려고 스크롤을 내린 순간 화면 밖으로 사라져, 값을 다시 받으려면
+ * 맨 위까지 되돌아가야 한다. 그래서 스크롤과 무관하게 떠 있는 우하단 플로팅 버튼으로 옮겼다.
+ *
+ * 여기서 검사하는 것은 "떠 있는가"(jsdom 은 레이아웃을 계산하지 않으므로 클래스로 확인)와
+ * <b>버튼이 하나뿐인가</b>이다 — 헤더에 남겨 두고 플로팅까지 더하면 같은 동작을 하는 버튼이 둘이 된다.
+ */
+describe('토스 자산 탭 — 새로고침 버튼', () => {
+  it('스크롤과 무관하게 떠 있도록 화면에 고정한다', () => {
+    renderTab(mixedPortfolio());
+
+    const refresh = screen.getByLabelText('새로고침');
+    expect(refresh.className).toContain('fixed');
+    expect(refresh.className).toContain('bottom-safe');
+  });
+
+  it('같은 동작을 하는 버튼을 둘로 늘리지 않는다', () => {
+    renderTab(mixedPortfolio());
+
+    expect(screen.getAllByLabelText('새로고침')).toHaveLength(1);
+  });
+
+  it('누르면 새로고침을 요청한다', async () => {
+    const user = userEvent.setup();
+    const onRefresh = vi.fn();
+    render(<TossStockAssetsTab portfolio={mixedPortfolio()} onRefresh={onRefresh} loading={false} />);
+
+    await user.click(screen.getByLabelText('새로고침'));
+
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('조회 중에는 다시 누를 수 없다', () => {
+    render(<TossStockAssetsTab portfolio={mixedPortfolio()} onRefresh={vi.fn()} loading />);
+
+    expect(screen.getByLabelText('새로고침')).toBeDisabled();
+  });
+});
