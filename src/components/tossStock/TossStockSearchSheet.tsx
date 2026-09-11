@@ -41,6 +41,25 @@ const TossStockSearchSheet: React.FC<TossStockSearchSheetProps> = ({
     onOpenChange(false);
   };
 
+  /**
+   * 입력창 포커스는 슬라이드 애니메이션이 <b>끝난 뒤</b>에 준다.
+   *
+   * Radix 는 열리는 프레임에 첫 포커스 요소(이 입력창)로 자동 포커스하는데, 그 순간 시트는 아직
+   * `translateY(100%)` 로 화면 아래에 있다. 모바일 브라우저는 키보드를 띄우며 "화면 밖" 위치의
+   * 입력창을 보여 주려고 뷰포트를 크게 밀어 올리고, 애니메이션이 끝나 시트만 제자리로 돌아오면
+   * 시트 전체가 화면 위로 튀어 올라가 입력창이 잘린다(iOS Safari 는 키보드가 떠도 vh 를 줄이지
+   * 않아 특히 그렇다). `preventScroll` 은 같은 이유로 남은 스크롤 보정까지 막는다.
+   */
+  const handleOpenAutoFocus = (event: Event): void => {
+    event.preventDefault();
+  };
+
+  const handleAnimationEnd = (event: React.AnimationEvent<HTMLDivElement>): void => {
+    // 로딩 스켈레톤(animate-pulse) 같은 자식의 animationend 가 버블링돼 올라온다.
+    if (event.target !== event.currentTarget) return;
+    inputRef.current?.focus({ preventScroll: true });
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent, stock: TossStockSearchResult): void => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -119,7 +138,12 @@ const TossStockSearchSheet: React.FC<TossStockSearchSheetProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+      <SheetContent
+        side="bottom"
+        className="h-[85vh] overflow-y-auto"
+        onOpenAutoFocus={handleOpenAutoFocus}
+        onAnimationEnd={handleAnimationEnd}
+      >
         <SheetHeader className="text-left">
           <SheetTitle>종목 검색</SheetTitle>
         </SheetHeader>
