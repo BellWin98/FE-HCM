@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TossStockSearchResult } from '@/types/tossStock';
@@ -130,5 +130,36 @@ describe('TossStockSearchSheet', () => {
     await user.type(input, 'AAPL');
 
     expect(await screen.findByRole('option')).toHaveTextContent('US');
+  });
+});
+
+describe('TossStockSearchSheet 포커스', () => {
+  /**
+   * 시트가 열리는 프레임에 입력창이 포커스되면 모바일 키보드가 아직 화면 밖(translateY 100%)에 있는
+   * 입력창을 보여 주려고 뷰포트를 밀어 올린다. 애니메이션이 끝난 뒤 시트만 제자리로 돌아와
+   * 화면 위로 튀어 올라간 채 남는다 — 포커스는 슬라이드가 끝난 뒤에만 준다.
+   */
+  it('열리는 순간에는 입력창에 포커스를 주지 않는다', () => {
+    const { input } = renderSheet();
+
+    expect(input).not.toHaveFocus();
+  });
+
+  it('슬라이드 애니메이션이 끝나면 입력창에 포커스를 준다', () => {
+    const { input } = renderSheet();
+    const content = screen.getByRole('dialog');
+
+    fireEvent.animationEnd(content);
+
+    expect(input).toHaveFocus();
+  });
+
+  it('자식 요소의 애니메이션 종료로는 포커스를 주지 않는다', () => {
+    const { input } = renderSheet();
+
+    // 로딩 스켈레톤(animate-pulse) 같은 자식의 animationend 가 버블링돼 올라온다.
+    fireEvent.animationEnd(screen.getByRole('heading', { name: '종목 검색' }));
+
+    expect(input).not.toHaveFocus();
   });
 });
