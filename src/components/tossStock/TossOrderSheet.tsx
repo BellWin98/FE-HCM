@@ -238,12 +238,59 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
     LOC: 'LOC',
   };
 
+  /**
+   * 매수↔매도 전환. 가격은 유지하지만 수량은 비운다 —
+   * 매수 수량의 기준(주문가능금액)과 매도 수량의 기준(매도가능수량)이 달라, 넘어온 값은 대개 틀린 값이다.
+   * 같은 쪽을 다시 누른 것은 전환이 아니므로 건드리지 않는다.
+   */
+  const handleSelectSide = (value: TossOrderSide): void => {
+    if (value === side) return;
+    setSide(value);
+    setQuantity('');
+  };
+
   const handleStepPrice = (direction: 'up' | 'down'): void => {
     // 입력을 비워 둔 상태에서 누르면 0 에서 한 칸(국내 기준 1원)이 되어 쓸모가 없다.
     // 자동 채움을 한 번만 하도록 바꾼 뒤로는 비어 있는 상태가 정상적으로 존재하므로,
     // 그때는 현재가를 기준으로 삼아 다시 현재가 근처로 돌아올 길을 남긴다.
     const base = price === '' ? (orderable?.lastPrice ?? 0) : priceValue;
     setPrice(String(stepPrice(base, marketCountry, securityType, direction)));
+  };
+
+  /**
+   * 수량 스테퍼의 상한. 매도는 가진 것보다 많이 팔 수 없으니 매도가능수량에서 멈춘다.
+   * 매수는 상한이 없다 — 주문가능금액은 가격에 따라 달라지므로 서버 검증에 맡긴다.
+   * 매도가능수량을 아직 못 받았으면(null) 상한 없이 둔다.
+   */
+  const quantityCeiling =
+    side === 'SELL' && orderable?.sellableQuantity != null
+      ? floorQuantity(orderable.sellableQuantity, fractionalQuantityAllowed)
+      : null;
+  const canStepQuantityUp = quantityCeiling == null || quantityValue < quantityCeiling;
+
+  /**
+   * 매도 수량이 상한을 넘으면 상한으로 끌어내린다.
+   * 직접 입력할 때뿐 아니라 매도가능수량이 뒤늦게 도착하는 경우도 같은 규칙이므로
+   * 입력 핸들러가 아니라 effect 로 잡는다(전환 시에는 {@link handleSelectSide} 가 수량을 비운다).
+   */
+  useEffect(() => {
+    if (quantityCeiling == null || quantityValue <= quantityCeiling) return;
+    setQuantity(String(quantityCeiling));
+  }, [quantityCeiling, quantityValue]);
+
+  /**
+   * 수량을 1주씩 움직인다. 소수점 수량(미국 종목)이라도 한 칸은 1주다 — 0.5 → 1.5.
+   * 아래로는 0, 위로는 {@link quantityCeiling} 에서 멈춘다.
+   * 부동소수점 잡음(1.1 - 1 = 0.10000000000000009)은 {@link floorQuantity} 가 걷어낸다.
+   */
+  const handleStepQuantity = (direction: 'up' | 'down'): void => {
+    if (direction === 'down') {
+      setQuantity(String(floorQuantity(Math.max(0, quantityValue - 1), fractionalQuantityAllowed)));
+      return;
+    }
+    if (!canStepQuantityUp) return;
+    const next = quantityCeiling == null ? quantityValue + 1 : Math.min(quantityValue + 1, quantityCeiling);
+    setQuantity(String(floorQuantity(next, fractionalQuantityAllowed)));
   };
 
   const handleClearPrice = (): void => {
@@ -268,7 +315,19 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
     }
   };
 
-  const formValid = quantityValue > 0 && (!isLimitLike || priceValue > 0);
+  /**
+   * 지정가 매수로 살 수 있는 최대 수량. 주문가능금액을 입력 가격으로 나눈 값이라 가격이 바뀌면 함께 바뀐다.
+   * 시장가는 체결가를 모르니 계산하지 않는다(서버가 거른다). {@link handleMax} 와 같은 계산이다.
+   */
+  const buyableQuantity =
+    side === 'BUY' && isLimitLike && priceValue > 0 && orderable?.cashBuyingPower != null
+      ? floorQuantity(orderable.cashBuyingPower / priceValue, fractionalQuantityAllowed)
+      : null;
+  // 매수는 매도와 달리 값을 끌어내리지 않는다 — 가격을 고치는 중에 수량이 제멋대로 바뀌면 더 헷갈린다.
+  // 대신 확인 버튼을 잠그고 이유를 보여 준다.
+  const exceedsBuyingPower = buyableQuantity != null && quantityValue > buyableQuantity;
+
+  const formValid = quantityValue > 0 && (!isLimitLike || priceValue > 0) && !exceedsBuyingPower;
 
   const handleSubmit = async (): Promise<void> => {
     if (!target) return;
@@ -372,7 +431,7 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
             type="button"
             role="radio"
             aria-checked={side === value}
-            onClick={() => setSide(value)}
+            onClick={() => handleSelectSide(value)}
             className={cn(
               'min-h-[48px] text-sm font-semibold transition-colors',
               side === value
@@ -473,33 +532,62 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
             최대
           </button>
         </div>
-        <div className="relative">
-          <Input
-            id="toss-order-quantity"
-            ref={quantityInputRef}
-            inputMode={fractionalQuantityAllowed ? 'decimal' : 'numeric'}
-            autoComplete="off"
-            value={quantity}
-            maxLength={NUMBER_INPUT_MAX_LENGTH}
-            onChange={(event) => setQuantity(sanitizeNumberInput(event.target.value, quantityScale))}
-            placeholder="0"
-            className="min-h-[48px] pr-10 text-right tabular-nums"
-          />
-          {quantity !== '' && (
-            <button
-              type="button"
-              aria-label="수량 지우기"
-              onClick={handleClearQuantity}
-              className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="수량 내리기"
+            disabled={quantityValue <= 0}
+            onClick={() => handleStepQuantity('down')}
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+          <div className="relative min-w-0 flex-1">
+            <Input
+              id="toss-order-quantity"
+              ref={quantityInputRef}
+              inputMode={fractionalQuantityAllowed ? 'decimal' : 'numeric'}
+              autoComplete="off"
+              value={quantity}
+              maxLength={NUMBER_INPUT_MAX_LENGTH}
+              onChange={(event) => setQuantity(sanitizeNumberInput(event.target.value, quantityScale))}
+              placeholder="0"
+              className="min-h-[48px] pr-10 text-right tabular-nums"
+            />
+            {quantity !== '' && (
+              <button
+                type="button"
+                aria-label="수량 지우기"
+                onClick={handleClearQuantity}
+                className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="수량 올리기"
+            disabled={!canStepQuantityUp}
+            onClick={() => handleStepQuantity('up')}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
         {side === 'BUY' ? (
-          <p className={cn('text-xs tabular-nums', STOCK_TEXT_MUTED)}>
-            주문가능금액 {orderable?.cashBuyingPower != null ? money(orderable.cashBuyingPower) : '—'}
-          </p>
+          <>
+            <p className={cn('text-xs tabular-nums', STOCK_TEXT_MUTED)}>
+              주문가능금액 {orderable?.cashBuyingPower != null ? money(orderable.cashBuyingPower) : '—'}
+            </p>
+            {exceedsBuyingPower && (
+              <p role="alert" className="text-xs tabular-nums text-red-600 dark:text-red-400">
+                주문가능금액을 초과했어요 (최대 {formatQuantity(buyableQuantity)}주)
+              </p>
+            )}
+          </>
         ) : (
           <p className={cn('text-xs tabular-nums', STOCK_TEXT_MUTED)}>
             매도가능수량{' '}
