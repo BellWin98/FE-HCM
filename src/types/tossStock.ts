@@ -222,6 +222,19 @@ export interface TossOrderable {
   cashBuyingPower: number | null;
   /** 매도 화면에서만 채워진다. */
   sellableQuantity: number | null;
+  /**
+   * 현재 보유수량. **보유하지 않은 종목이면 null** (조회 실패도 null) — 화면은 이때 평단 행을 아예 그리지 않는다.
+   * 매도가능수량과 다르다: 미체결 매도에 묶인 수량까지 포함한 총량이라 매수 후 평균단가 계산에 쓴다.
+   */
+  holdingQuantity: number | null;
+  /** 보유 평균단가. `holdingQuantity` 와 함께 null 이거나 함께 채워진다. */
+  averagePurchasePrice: number | null;
+  /**
+   * 매도 비용률(소수비율, 예: 0.00165 = 매도금액의 0.165%). 서버가 토스의 보유 종목 비용 추정치
+   * (수수료+세금)를 평가금액으로 나눠 만든다. 세후 예상 손익은 이 비율 × 매도금액을 뺀 값이다.
+   * 미보유·산출 불가면 null — 그때는 세전 값만 보여준다.
+   */
+  sellCostRate: number | null;
 }
 
 /** 주문 시트가 들고 있는 입력 상태. 이 값이 바뀌면 멱등키를 새로 발급해야 한다. */

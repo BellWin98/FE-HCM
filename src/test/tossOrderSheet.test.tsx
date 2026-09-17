@@ -49,8 +49,15 @@ const orderable = (overrides: Partial<TossOrderable> = {}): TossOrderable => ({
   lowerLimitPrice: 49000,
   cashBuyingPower: 5_000_000,
   sellableQuantity: null,
+  holdingQuantity: null,
+  averagePurchasePrice: null,
+  sellCostRate: null,
   ...overrides,
 });
+
+/** 보유 중인 종목: 100주, 평단 65,000원. 현재가 70,000원이 가격에 자동으로 채워진다. */
+const heldOrderable = (overrides: Partial<TossOrderable> = {}): TossOrderable =>
+  orderable({ holdingQuantity: 100, averagePurchasePrice: 65000, sellableQuantity: 100, ...overrides });
 
 beforeEach(() => {
   vi.mocked(api.getTossOrderable).mockReset();
@@ -214,6 +221,117 @@ describe('입력 검증', () => {
   });
 });
 
+describe('보유 종목 예상값', () => {
+  it('보유하지 않은 종목에는 평균단가 관련 행을 그리지 않는다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    await user.type(screen.getByLabelText('주문 수량'), '10');
+
+    expect(screen.queryByText('보유 평균단가')).not.toBeInTheDocument();
+    expect(screen.queryByText('매수 후 예상 평균단가')).not.toBeInTheDocument();
+    expect(screen.queryByText('예상 손익')).not.toBeInTheDocument();
+  });
+
+  it('보유 종목을 매수하면 평균단가와 매수 후 예상 평균단가를 보여준다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(heldOrderable());
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+
+    // 입력 전에는 평단만 보이고 예상값은 비어 있다.
+    expect(await screen.findByText('보유 평균단가')).toBeInTheDocument();
+    expect(screen.getByText('₩65,000')).toBeInTheDocument();
+    expect(screen.getByText('매수 후 예상 평균단가')).toBeInTheDocument();
+
+    // (65,000 × 100 + 70,000 × 50) / 150 = 66,667
+    await user.type(screen.getByLabelText('주문 수량'), '50');
+    expect(screen.getByText('₩66,667')).toBeInTheDocument();
+  });
+
+  it('보유 종목을 매도하면 평균단가와 예상 손익·수익률을 보여준다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(heldOrderable());
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    await user.click(screen.getByRole('radio', { name: '매도' }));
+    await screen.findByText('보유 평균단가');
+
+    // (70,000 − 65,000) × 10 = +50,000, 5,000 / 65,000 = +7.69%
+    await user.type(screen.getByLabelText('주문 수량'), '10');
+    expect(screen.getByText('예상 손익')).toBeInTheDocument();
+    expect(screen.getByText('+₩50,000 (+7.69%)')).toBeInTheDocument();
+    expect(screen.queryByText('매수 후 예상 평균단가')).not.toBeInTheDocument();
+    // 비용률이 없으면 세후 행은 그리지 않고 제외 사실만 적는다.
+    expect(screen.queryByText('세후 예상 손익')).not.toBeInTheDocument();
+    expect(screen.getByText('수수료·세금 제외')).toBeInTheDocument();
+  });
+
+  it('비용률이 있으면 수수료·세금을 뺀 세후 예상 손익도 보여준다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(heldOrderable({ sellCostRate: 0.00165 }));
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    await user.click(screen.getByRole('radio', { name: '매도' }));
+    await screen.findByText('보유 평균단가');
+
+    // 매도금액 700,000 × 0.00165 = 1,155 → 50,000 − 1,155 = 48,845, / 650,000 = +7.51%
+    await user.type(screen.getByLabelText('주문 수량'), '10');
+    expect(screen.getByText('+₩50,000 (+7.69%)')).toBeInTheDocument();
+    expect(screen.getByText('세후 예상 손익')).toBeInTheDocument();
+    expect(screen.getByText('+₩48,845 (+7.51%)')).toBeInTheDocument();
+    expect(screen.getByText(/수수료·세금 약 ₩1,155/)).toBeInTheDocument();
+    expect(screen.queryByText('수수료·세금 제외')).not.toBeInTheDocument();
+  });
+
+  it('시장가에서는 예상 평균단가·예상 손익을 그리지 않는다 — 체결가를 모른다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(heldOrderable());
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByText('보유 평균단가');
+    await user.click(screen.getByRole('radio', { name: '시장가' }));
+    await user.type(screen.getByLabelText('주문 수량'), '10');
+
+    expect(screen.getByText('보유 평균단가')).toBeInTheDocument();
+    expect(screen.queryByText('매수 후 예상 평균단가')).not.toBeInTheDocument();
+    expect(screen.queryByText('예상 손익')).not.toBeInTheDocument();
+  });
+
+  it('확인 화면에도 같은 예상값을 보여준다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(heldOrderable());
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByText('보유 평균단가');
+    await fillAndConfirm(user, '50');
+
+    expect(screen.getByText('매수 후 예상 평균단가')).toBeInTheDocument();
+    expect(screen.getByText('₩66,667')).toBeInTheDocument();
+  });
+
+  it('미국 종목은 달러로 표시한다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(
+      heldOrderable({
+        symbol: 'AAPL',
+        marketCountry: 'US',
+        currency: 'USD',
+        locSupported: true,
+        lastPrice: 200,
+        upperLimitPrice: null,
+        lowerLimitPrice: null,
+        holdingQuantity: 1.5,
+        averagePurchasePrice: 150,
+      })
+    );
+    const user = userEvent.setup();
+    renderSheet(usTarget);
+    await screen.findByText('보유 평균단가');
+
+    // (150 × 1.5 + 200 × 0.5) / 2 = 162.5
+    await user.type(screen.getByLabelText('주문 수량'), '0.5');
+    expect(screen.getByText('$162.50')).toBeInTheDocument();
+  });
+});
+
 describe('확인 단계', () => {
   it('확인 단계를 거치지 않고는 주문이 나가지 않는다', async () => {
     const user = userEvent.setup();
@@ -348,6 +466,81 @@ describe('제출', () => {
     await user.click(screen.getByRole('button', { name: '주문하기' }));
 
     expect(await screen.findByLabelText('금액을 확인했습니다')).toBeInTheDocument();
+  });
+});
+
+describe('입력 제한', () => {
+  const usOrderable = () =>
+    orderable({
+      symbol: 'AAPL',
+      marketCountry: 'US',
+      currency: 'USD',
+      locSupported: true,
+      lastPrice: 200,
+      upperLimitPrice: null,
+      lowerLimitPrice: null,
+    });
+
+  it('가격 입력은 숫자만 받는다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    const priceInput = await screen.findByLabelText('주문 가격');
+
+    await user.clear(priceInput);
+    await user.type(priceInput, '7a0,0-0e0');
+
+    expect(priceInput).toHaveValue('70000');
+  });
+
+  it('국내 종목 가격은 소수점을 받지 않는다 — 원화 호가는 정수다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    const priceInput = await screen.findByLabelText('주문 가격');
+
+    await user.clear(priceInput);
+    await user.type(priceInput, '700.5');
+
+    expect(priceInput).toHaveValue('7005');
+  });
+
+  it('미국 종목 가격은 소수점 넷째 자리까지만 받는다 — 1달러 미만 호가 단위가 0.0001 이다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(usOrderable());
+    const user = userEvent.setup();
+    renderSheet(usTarget);
+    const priceInput = await screen.findByLabelText('주문 가격');
+
+    await user.clear(priceInput);
+    await user.type(priceInput, '0.123456');
+
+    expect(priceInput).toHaveValue('0.1234');
+  });
+
+  it('수량 입력은 숫자만 받는다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    const quantityInput = screen.getByLabelText('주문 수량');
+
+    await user.type(quantityInput, '1a0.5');
+
+    expect(quantityInput).toHaveValue('105');
+  });
+
+  it('가격과 수량 입력은 자릿수 상한이 있다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    const priceInput = await screen.findByLabelText('주문 가격');
+    const quantityInput = screen.getByLabelText('주문 수량');
+
+    expect(priceInput).toHaveAttribute('maxlength', '12');
+    expect(quantityInput).toHaveAttribute('maxlength', '12');
+
+    await user.clear(priceInput);
+    await user.type(priceInput, '1234567890123456');
+    await user.type(quantityInput, '1234567890123456');
+
+    expect(priceInput).toHaveValue('123456789012');
+    expect(quantityInput).toHaveValue('123456789012');
   });
 });
 
