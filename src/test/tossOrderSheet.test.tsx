@@ -210,6 +210,151 @@ describe('입력 검증', () => {
     expect(screen.getByLabelText('주문 가격')).toHaveValue('70100');
   });
 
+  it('수량 스테퍼는 1주씩 움직인다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+
+    await user.type(screen.getByLabelText('주문 수량'), '5');
+    await user.click(screen.getByRole('button', { name: '수량 올리기' }));
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('6');
+
+    await user.click(screen.getByRole('button', { name: '수량 내리기' }));
+    await user.click(screen.getByRole('button', { name: '수량 내리기' }));
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('4');
+  });
+
+  it('수량이 비어 있으면 올리기는 1 이 되고 내리기는 눌리지 않는다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+
+    expect(screen.getByRole('button', { name: '수량 내리기' })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: '수량 올리기' }));
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('1');
+  });
+
+  it('소수점 수량도 1주 단위로 움직이고 0 아래로 내려가지 않는다', async () => {
+    const user = userEvent.setup();
+    renderSheet(usTarget);
+    await screen.findByLabelText('주문 가격');
+
+    await user.type(screen.getByLabelText('주문 수량'), '0.5');
+    await user.click(screen.getByRole('button', { name: '수량 올리기' }));
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('1.5');
+
+    await user.click(screen.getByRole('button', { name: '수량 내리기' }));
+    await user.click(screen.getByRole('button', { name: '수량 내리기' }));
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('0');
+  });
+
+  it('매도할 때 수량 올리기는 매도가능수량에서 멈춘다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(heldOrderable({ sellableQuantity: 100 }));
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    await user.click(screen.getByRole('radio', { name: '매도' }));
+    await screen.findByText(/매도가능수량/);
+
+    await user.type(screen.getByLabelText('주문 수량'), '99');
+    await user.click(screen.getByRole('button', { name: '수량 올리기' }));
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('100');
+    expect(screen.getByRole('button', { name: '수량 올리기' })).toBeDisabled();
+  });
+
+  it('매도할 때 매도가능수량보다 많이 입력하면 매도가능수량으로 맞춘다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(heldOrderable({ sellableQuantity: 100 }));
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    await user.click(screen.getByRole('radio', { name: '매도' }));
+    await screen.findByText(/매도가능수량/);
+
+    await user.type(screen.getByLabelText('주문 수량'), '150');
+
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('100');
+  });
+
+  it('매수/매도를 바꾸면 수량은 비운다 — 가격과 달리 두 쪽의 기준이 다르다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+
+    await user.type(screen.getByLabelText('주문 수량'), '150');
+    await user.click(screen.getByRole('radio', { name: '매도' }));
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('');
+
+    await user.type(screen.getByLabelText('주문 수량'), '30');
+    await user.click(screen.getByRole('radio', { name: '매수' }));
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('');
+  });
+
+  it('이미 선택된 쪽을 다시 눌러도 수량은 그대로다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+
+    await user.type(screen.getByLabelText('주문 수량'), '10');
+    await user.click(screen.getByRole('radio', { name: '매수' }));
+
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('10');
+  });
+
+  it('매수할 때는 수량 올리기에 상한이 없다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(heldOrderable({ sellableQuantity: 100 }));
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+
+    await user.type(screen.getByLabelText('주문 수량'), '100');
+    await user.click(screen.getByRole('button', { name: '수량 올리기' }));
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('101');
+  });
+
+  it('매수 수량이 주문가능금액을 넘으면 확인 단계로 넘어갈 수 없다', async () => {
+    // 5,000,000 / 70,000 = 71.4… → 최대 71주
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+
+    await user.type(screen.getByLabelText('주문 수량'), '72');
+
+    expect(screen.getByRole('button', { name: '매수 확인' })).toBeDisabled();
+    expect(screen.getByText(/주문가능금액을 초과/)).toHaveTextContent('최대 71주');
+
+    await user.clear(screen.getByLabelText('주문 수량'));
+    await user.type(screen.getByLabelText('주문 수량'), '71');
+
+    expect(screen.getByRole('button', { name: '매수 확인' })).toBeEnabled();
+    expect(screen.queryByText(/주문가능금액을 초과/)).not.toBeInTheDocument();
+  });
+
+  it('가격을 올리면 같은 수량이라도 주문가능금액을 넘을 수 있다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    const priceInput = await screen.findByLabelText('주문 가격');
+
+    await user.type(screen.getByLabelText('주문 수량'), '71');
+    expect(screen.getByRole('button', { name: '매수 확인' })).toBeEnabled();
+
+    await user.clear(priceInput);
+    await user.type(priceInput, '71000');
+
+    expect(screen.getByRole('button', { name: '매수 확인' })).toBeDisabled();
+  });
+
+  it('시장가 매수는 체결가를 모르므로 수량 상한을 걸지 않는다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    await user.click(screen.getByRole('radio', { name: '시장가' }));
+
+    await user.type(screen.getByLabelText('주문 수량'), '1000');
+
+    expect(screen.getByRole('button', { name: '매수 확인' })).toBeEnabled();
+  });
+
   it('예상 주문금액을 수량 × 가격으로 보여준다', async () => {
     const user = userEvent.setup();
     renderSheet(krTarget);
@@ -379,6 +524,11 @@ describe('확인 단계', () => {
 });
 
 describe('고액 주문', () => {
+  // 주문가능금액이 모자라면 확인 단계로 못 넘어가므로, 고액 주문 시나리오는 잔고를 넉넉히 둔다.
+  beforeEach(() => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(orderable({ cashBuyingPower: 200_000_000 }));
+  });
+
   it('1억원 이상이면 확인 체크박스 없이 제출할 수 없다', async () => {
     const user = userEvent.setup();
     renderSheet(krTarget);
