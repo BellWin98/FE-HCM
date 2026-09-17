@@ -28,6 +28,34 @@ const HIGH_VALUE_THRESHOLD_KRW = 100_000_000;
  */
 const SUBMIT_ARM_DELAY_MS = 800;
 
+/**
+ * 소수점 수량 자릿수. 토스가 소수점 매매를 허용하는 것은 미국 종목뿐이고, 보유 수량 표시
+ * ({@link formatQuantity})와 같은 자릿수로 맞춘다 — 화면에 보이는 수량은 그대로 입력할 수 있어야 한다.
+ */
+const FRACTIONAL_QUANTITY_SCALE = 6;
+
+/**
+ * 수량을 허용 자릿수에서 <b>내린다</b>. 반올림하면 매도가능수량보다 큰 값이 되어 토스가 거부한다.
+ * `2.345 * 1e6` 처럼 부동소수점 잡음이 낀 값을 그대로 내리면 한 칸 아래로 떨어질 수 있어,
+ * 먼저 유효숫자 15자리로 정리한 뒤 내린다.
+ */
+const floorQuantity = (value: number, fractional: boolean): number => {
+  if (!fractional) return Math.floor(value);
+  const factor = 10 ** FRACTIONAL_QUANTITY_SCALE;
+  return Math.floor(Number((value * factor).toPrecision(15))) / factor;
+};
+
+/**
+ * 수량 입력에서 허용되지 않는 문자를 걷어낸다.
+ * 소수점을 허용할 때도 소수점은 하나만, 자릿수는 {@link FRACTIONAL_QUANTITY_SCALE} 까지만 남긴다.
+ */
+const sanitizeQuantity = (raw: string, fractional: boolean): string => {
+  if (!fractional) return raw.replace(/[^0-9]/g, '');
+  const [whole = '', ...decimals] = raw.replace(/[^0-9.]/g, '').split('.');
+  if (decimals.length === 0) return whole;
+  return `${whole}.${decimals.join('').slice(0, FRACTIONAL_QUANTITY_SCALE)}`;
+};
+
 export interface TossOrderTarget {
   symbol: string;
   name: string;
@@ -99,6 +127,8 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
   const securityType = target?.securityType ?? 'STOCK';
   // LOC 은 토스가 미국 지정가에만 허용한다. 국내 종목에서는 아예 그리지 않는다(비활성이 아니라 미렌더).
   const locSupported = orderable?.locSupported ?? target?.locSupported ?? false;
+  // 소수점 수량은 미국 종목에만 허용된다. 국내 종목은 입력 단계에서 정수만 받는다(서버도 다시 거른다).
+  const fractionalQuantityAllowed = marketCountry === 'US';
 
   const quantityValue = Number(quantity) || 0;
   const priceValue = Number(price) || 0;
@@ -192,11 +222,13 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
 
   const handleMax = (): void => {
     if (side === 'SELL') {
-      if (orderable?.sellableQuantity != null) setQuantity(String(Math.floor(orderable.sellableQuantity)));
+      if (orderable?.sellableQuantity != null) {
+        setQuantity(String(floorQuantity(orderable.sellableQuantity, fractionalQuantityAllowed)));
+      }
       return;
     }
     if (orderable?.cashBuyingPower != null && priceValue > 0) {
-      setQuantity(String(Math.floor(orderable.cashBuyingPower / priceValue)));
+      setQuantity(String(floorQuantity(orderable.cashBuyingPower / priceValue, fractionalQuantityAllowed)));
     }
   };
 
@@ -366,10 +398,10 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
           <Input
             id="toss-order-quantity"
             ref={quantityInputRef}
-            inputMode="numeric"
+            inputMode={fractionalQuantityAllowed ? 'decimal' : 'numeric'}
             autoComplete="off"
             value={quantity}
-            onChange={(event) => setQuantity(event.target.value.replace(/[^0-9]/g, ''))}
+            onChange={(event) => setQuantity(sanitizeQuantity(event.target.value, fractionalQuantityAllowed))}
             placeholder="0"
             className="min-h-[48px] pr-10 text-right tabular-nums"
           />
