@@ -13,7 +13,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Minus, Plus, X, AlertTriangle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { STOCK_BORDER, STOCK_TEXT_MUTED } from '@/lib/stockTheme';
-import { formatMoney, formatQuantity } from '@/lib/tossFormat';
+import { formatMoney, formatQuantity, formatSignedMoney } from '@/lib/tossFormat';
+import { formatPercentage, getProfitLossColor } from '@/lib/stockFormat';
+import { estimateBuyAveragePrice, estimateSellProfit, type TossHeldPosition } from '@/lib/tossOrderEstimate';
 import { createClientOrderId } from '@/lib/tossOrderId';
 import { stepPrice } from '@/lib/tossTick';
 import { useTossOrderable } from '@/hooks/useTossOrderable';
@@ -46,14 +48,28 @@ const floorQuantity = (value: number, fractional: boolean): number => {
 };
 
 /**
- * 수량 입력에서 허용되지 않는 문자를 걷어낸다.
- * 소수점을 허용할 때도 소수점은 하나만, 자릿수는 {@link FRACTIONAL_QUANTITY_SCALE} 까지만 남긴다.
+ * 미국 종목 가격의 소수 자릿수. 1달러 미만 호가 단위가 0.0001 이라 넷째 자리까지 의미가 있다
+ * (`tossTick` 의 US_DECIMALS_BELOW_ONE_DOLLAR 와 같은 값). 국내 종목은 원 단위 정수다.
  */
-const sanitizeQuantity = (raw: string, fractional: boolean): string => {
-  if (!fractional) return raw.replace(/[^0-9]/g, '');
-  const [whole = '', ...decimals] = raw.replace(/[^0-9.]/g, '').split('.');
-  if (decimals.length === 0) return whole;
-  return `${whole}.${decimals.join('').slice(0, FRACTIONAL_QUANTITY_SCALE)}`;
+const US_PRICE_SCALE = 4;
+
+/**
+ * 가격·수량 입력의 최대 글자 수(소수점 포함).
+ * 실제 주문이 닿을 수 없는 자릿수인데 `inputMode` 만으로는 길이를 막지 못한다 —
+ * 붙여넣기나 키를 누르고 있으면 끝없이 들어가고, 그 값으로 예상 금액을 곱하면 화면에 쓰레기 숫자가 뜬다.
+ */
+const NUMBER_INPUT_MAX_LENGTH = 12;
+
+/**
+ * 숫자 입력에서 허용되지 않는 문자를 걷어낸다.
+ * `inputMode="decimal"` 은 모바일 키보드 모양만 바꿀 뿐 입력을 막지 않는다(데스크톱·붙여넣기는 무엇이든 들어온다).
+ * 소수점을 허용할 때도 소수점은 하나만, 소수 자릿수는 `scale` 까지만 남기고, 전체 길이는 상한에서 자른다.
+ */
+const sanitizeNumberInput = (raw: string, scale: number): string => {
+  const digitsOnly = raw.replace(scale > 0 ? /[^0-9.]/g : /[^0-9]/g, '');
+  const [whole = '', ...decimals] = digitsOnly.split('.');
+  const joined = decimals.length === 0 ? whole : `${whole}.${decimals.join('').slice(0, scale)}`;
+  return joined.slice(0, NUMBER_INPUT_MAX_LENGTH);
 };
 
 export interface TossOrderTarget {
@@ -129,11 +145,31 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
   const locSupported = orderable?.locSupported ?? target?.locSupported ?? false;
   // 소수점 수량은 미국 종목에만 허용된다. 국내 종목은 입력 단계에서 정수만 받는다(서버도 다시 거른다).
   const fractionalQuantityAllowed = marketCountry === 'US';
+  const quantityScale = fractionalQuantityAllowed ? FRACTIONAL_QUANTITY_SCALE : 0;
+  // 가격도 마찬가지다 — 원화 호가는 정수, 달러 호가는 소수다.
+  const priceScale = marketCountry === 'US' ? US_PRICE_SCALE : 0;
 
   const quantityValue = Number(quantity) || 0;
   const priceValue = Number(price) || 0;
   const isLimitLike = mode === 'LIMIT' || mode === 'LOC';
   const estimatedAmount = isLimitLike ? quantityValue * priceValue : 0;
+
+  /**
+   * 보유 중인 종목일 때만 값이 있다. 서버는 미보유·조회 실패 모두 null 로 주고, 이 화면은 그 둘을
+   * 구분하지 않는다 — 예상값은 참고 정보라 없으면 조용히 빼는 것이 맞고, 0 으로 그리면 거짓말이 된다.
+   */
+  const held: TossHeldPosition | null =
+    orderable?.holdingQuantity != null &&
+    orderable.holdingQuantity > 0 &&
+    orderable.averagePurchasePrice != null
+      ? { quantity: orderable.holdingQuantity, averagePrice: orderable.averagePurchasePrice }
+      : null;
+  // 시장가는 체결가를 모르므로 예상값을 계산하지 않는다(예상 주문금액과 같은 규칙).
+  const buyEstimate = held && isLimitLike && side === 'BUY' ? estimateBuyAveragePrice(held, priceValue, quantityValue) : null;
+  const sellEstimate =
+    held && isLimitLike && side === 'SELL'
+      ? estimateSellProfit(held, priceValue, quantityValue, orderable?.sellCostRate ?? null)
+      : null;
 
   // 화면이 1억을 넘겼다고 판단하면 먼저 확인을 받는다. 판단이 빗나가도(USD 주문 등)
   // 토스가 400 으로 알려 주므로 그때 같은 체크박스를 드러낸다.
@@ -277,11 +313,53 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
 
   const sideLabel = side === 'BUY' ? '매수' : '매도';
 
-  const summaryRow = (label: string, value: React.ReactNode) => (
+  const summaryRow = (label: string, value: React.ReactNode, valueClassName?: string) => (
     <div className="flex items-baseline justify-between gap-3 py-2">
       <span className={cn('text-sm', STOCK_TEXT_MUTED)}>{label}</span>
-      <span className="text-right font-medium tabular-nums text-gray-900 dark:text-gray-100">{value}</span>
+      <span className={cn('text-right font-medium tabular-nums text-gray-900 dark:text-gray-100', valueClassName)}>
+        {value}
+      </span>
     </div>
+  );
+
+  /**
+   * 보유 종목의 평단과 이 주문의 예상값. 폼 단계와 확인 단계에 같은 내용을 그린다.
+   * 보유하지 않은 종목이면 아무것도 그리지 않는다.
+   */
+  /** "+₩50,000 (+7.69%)". 수익률을 낼 수 없으면(평단 0) 금액만. */
+  const signedWithRate = (amount: number, rate: number | null): string =>
+    `${formatSignedMoney(amount, currency)}${rate != null ? ` (${formatPercentage(rate)})` : ''}`;
+
+  // 비용률을 못 받았으면 세후 행 대신 "제외" 사실을 적는다 — 세전 값이 세후처럼 읽히면 안 된다.
+  const sellCostKnown = orderable?.sellCostRate != null;
+
+  const holdingRows = held && (
+    <>
+      {summaryRow('보유 평균단가', money(held.averagePrice))}
+      {isLimitLike && side === 'BUY' && summaryRow('매수 후 예상 평균단가', buyEstimate != null ? money(buyEstimate) : '—')}
+      {isLimitLike && side === 'SELL' && (
+        <>
+          {summaryRow(
+            '예상 손익',
+            sellEstimate ? signedWithRate(sellEstimate.profitLoss, sellEstimate.profitLossRate) : '—',
+            sellEstimate ? getProfitLossColor(sellEstimate.profitLoss) : undefined
+          )}
+          {sellCostKnown &&
+            summaryRow(
+              '세후 예상 손익',
+              sellEstimate?.profitLossAfterCost != null
+                ? signedWithRate(sellEstimate.profitLossAfterCost, sellEstimate.profitLossRateAfterCost)
+                : '—',
+              sellEstimate?.profitLossAfterCost != null ? getProfitLossColor(sellEstimate.profitLossAfterCost) : undefined
+            )}
+          <p className={cn('text-xs tabular-nums', STOCK_TEXT_MUTED)}>
+            {sellCostKnown
+              ? `수수료·세금 약 ${sellEstimate?.cost != null ? money(sellEstimate.cost) : '—'} · 토스 추정치 기준`
+              : '수수료·세금 제외'}
+          </p>
+        </>
+      )}
+    </>
   );
 
   const formStep = (
@@ -350,11 +428,12 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
               <Input
                 id="toss-order-price"
                 ref={priceInputRef}
-                inputMode="decimal"
+                inputMode={priceScale > 0 ? 'decimal' : 'numeric'}
                 // 이전에 넣은 값이 브라우저 자동완성으로 떠오르면 잘못 고르기 쉽다.
                 autoComplete="off"
                 value={price}
-                onChange={(event) => setPrice(event.target.value)}
+                maxLength={NUMBER_INPUT_MAX_LENGTH}
+                onChange={(event) => setPrice(sanitizeNumberInput(event.target.value, priceScale))}
                 className="min-h-[48px] pr-10 text-right tabular-nums"
               />
               {price !== '' && (
@@ -401,7 +480,8 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
             inputMode={fractionalQuantityAllowed ? 'decimal' : 'numeric'}
             autoComplete="off"
             value={quantity}
-            onChange={(event) => setQuantity(sanitizeQuantity(event.target.value, fractionalQuantityAllowed))}
+            maxLength={NUMBER_INPUT_MAX_LENGTH}
+            onChange={(event) => setQuantity(sanitizeNumberInput(event.target.value, quantityScale))}
             placeholder="0"
             className="min-h-[48px] pr-10 text-right tabular-nums"
           />
@@ -436,6 +516,7 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
 
       <div className={cn('border-t pt-4', STOCK_BORDER)}>
         {isLimitLike && summaryRow('예상 주문금액', money(estimatedAmount))}
+        {holdingRows}
         <Button
           type="button"
           className="mt-2 min-h-[52px] w-full text-base"
@@ -469,6 +550,7 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
                 '매도가능수량',
                 orderable?.sellableQuantity != null ? `${formatQuantity(orderable.sellableQuantity)}주` : '—'
               )}
+          {holdingRows}
         </div>
       </div>
 
