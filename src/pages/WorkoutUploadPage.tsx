@@ -12,10 +12,11 @@ import { WorkoutSuccessDialog } from '@/components/WorkoutSuccessDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { clearWorkoutTimer, getMeasuredWorkout, MAX_WORKOUT_MINUTES, readWorkoutTimer, type MeasuredWorkout } from '@/lib/workoutTimer';
 import { WORKOUT_TYPES, WorkoutResponse, WorkoutRoomDetail, WorkoutType } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { CalendarIcon, Loader2, Upload, X } from 'lucide-react';
+import { CalendarIcon, Camera, ImageIcon, Loader2, Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -25,17 +26,25 @@ const toDateOnly = (date) => {
 const today = toDateOnly(new Date());
 const sevenDaysAgo = toDateOnly(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000));
 
+// 대시보드에서 운동 종료를 눌러 측정을 마친 기록만 쓴다. 아직 운동 중이면 채우지 않는다.
+const readFinishedWorkout = (): MeasuredWorkout | null => {
+  const timer = readWorkoutTimer();
+  if (!timer || timer.endedAt === null) return null;
+  return getMeasuredWorkout(timer);
+};
+
 export const WorkoutUploadPage = () => {
   const { member } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const routeState = location.state as { currentWorkoutRoom?: WorkoutRoomDetail } | null;
+  const [measuredWorkout] = useState<MeasuredWorkout | null>(readFinishedWorkout);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [workoutDate, setWorkoutDate] = useState<Date>(new Date());
+  const [workoutDate, setWorkoutDate] = useState<Date>(() => measuredWorkout?.workoutDate ?? new Date());
   const [workoutTypes, setWorkoutTypes] = useState<WorkoutType[]>([]);
   const [customWorkoutType, setCustomWorkoutType] = useState<string>('');
-  const [duration, setDuration] = useState<string>('');
+  const [duration, setDuration] = useState<string>(() => measuredWorkout?.duration?.toString() ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -225,6 +234,7 @@ export const WorkoutUploadPage = () => {
       };
 
       const data = await api.uploadWorkout(workoutData, selectedImages) as WorkoutResponse;
+      clearWorkoutTimer();
 
       setTotalWorkoutDays(data.memberTotalWorkoutDays);
 
@@ -321,14 +331,18 @@ export const WorkoutUploadPage = () => {
                       </div>
                       <div className="flex gap-2 justify-center">
                         {imagePreviews.length < 3 && (
-                          <label
-                            htmlFor="image-upload"
-                            className="cursor-pointer"
-                          >
-                            <Button type="button" variant="outline" asChild>
-                              <span>사진 추가</span>
-                            </Button>
-                          </label>
+                          <>
+                            <label htmlFor="camera-upload" className="cursor-pointer">
+                              <Button type="button" variant="outline" asChild>
+                                <span><Camera className="mr-1 h-4 w-4" />카메라로 촬영</span>
+                              </Button>
+                            </label>
+                            <label htmlFor="image-upload" className="cursor-pointer">
+                              <Button type="button" variant="outline" asChild>
+                                <span><ImageIcon className="mr-1 h-4 w-4" />앨범에서 선택</span>
+                              </Button>
+                            </label>
+                          </>
                         )}
                         <Button
                           type="button"
@@ -351,13 +365,19 @@ export const WorkoutUploadPage = () => {
                     <div className="space-y-4">
                       <Upload className="h-12 w-12 mx-auto text-gray-400" />
                       <div>
-                        <label
-                          htmlFor="image-upload"
-                          className="cursor-pointer text-blue-600 hover:text-blue-500"
-                        >
-                          클릭해서 사진 선택
-                        </label>
-                        <p className="text-sm text-gray-500">
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          <label htmlFor="camera-upload" className="cursor-pointer">
+                            <Button type="button" asChild>
+                              <span><Camera className="mr-1 h-4 w-4" />카메라로 촬영</span>
+                            </Button>
+                          </label>
+                          <label htmlFor="image-upload" className="cursor-pointer">
+                            <Button type="button" variant="outline" asChild>
+                              <span><ImageIcon className="mr-1 h-4 w-4" />앨범에서 선택</span>
+                            </Button>
+                          </label>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-3">
                           또는 파일을 드래그해서 업로드하세요
                         </p>
                         <br/>
@@ -367,6 +387,15 @@ export const WorkoutUploadPage = () => {
                       </div>
                     </div>
                   )}
+                  {/* capture 가 있으면 폰에서 선택지 없이 바로 후면 카메라가 열린다. */}
+                  <input
+                    id="camera-upload"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    capture="environment"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
                   <input
                     id="image-upload"
                     type="file"
@@ -498,9 +527,19 @@ export const WorkoutUploadPage = () => {
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                 />
-                <p className="text-xs text-gray-500 px-3">
-                  최소 10분, 최대 720분(12시간)까지 입력 가능합니다.
-                </p>
+                {measuredWorkout?.exceededMax ? (
+                  <p className="text-xs text-amber-600 px-3">
+                    종료를 잊으셨나요? 측정 시간이 {MAX_WORKOUT_MINUTES}분을 넘어 비워 두었어요. 실제 운동 시간을 직접 입력해주세요.
+                  </p>
+                ) : measuredWorkout ? (
+                  <p className="text-xs text-gray-500 px-3">
+                    운동 측정으로 채운 시간이에요. 필요하면 고칠 수 있어요.
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 px-3">
+                    최소 10분, 최대 720분(12시간)까지 입력 가능합니다.
+                  </p>
+                )}
               </div>
 
               {error && (
