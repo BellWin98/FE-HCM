@@ -31,7 +31,7 @@ const HIGH_VALUE_THRESHOLD_KRW = 100_000_000;
 const SUBMIT_ARM_DELAY_MS = 800;
 
 /**
- * 소수점 수량 자릿수. 토스가 소수점 매매를 허용하는 것은 미국 종목뿐이고, 보유 수량 표시
+ * 소수점 수량 자릿수. 토스가 소수점 수량을 허용하는 것은 미국 종목 시장가 매도뿐이고, 보유 수량 표시
  * ({@link formatQuantity})와 같은 자릿수로 맞춘다 — 화면에 보이는 수량은 그대로 입력할 수 있어야 한다.
  */
 const FRACTIONAL_QUANTITY_SCALE = 6;
@@ -143,8 +143,9 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
   const securityType = target?.securityType ?? 'STOCK';
   // LOC 은 토스가 미국 지정가에만 허용한다. 국내 종목에서는 아예 그리지 않는다(비활성이 아니라 미렌더).
   const locSupported = orderable?.locSupported ?? target?.locSupported ?? false;
-  // 소수점 수량은 미국 종목에만 허용된다. 국내 종목은 입력 단계에서 정수만 받는다(서버도 다시 거른다).
-  const fractionalQuantityAllowed = marketCountry === 'US';
+  // 소수점 수량은 미국 종목 시장가 매도(MARKET + SELL)에만 허용된다(토스 스펙 — 그 외는 400).
+  // 소수점 매수는 수량이 아니라 금액 주문의 몫이다. 나머지는 입력 단계에서 정수만 받는다(서버도 다시 거른다).
+  const fractionalQuantityAllowed = marketCountry === 'US' && mode === 'MARKET' && side === 'SELL';
   const quantityScale = fractionalQuantityAllowed ? FRACTIONAL_QUANTITY_SCALE : 0;
   // 가격도 마찬가지다 — 원화 호가는 정수, 달러 호가는 소수다.
   const priceScale = marketCountry === 'US' ? US_PRICE_SCALE : 0;
@@ -279,7 +280,7 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
   }, [quantityCeiling, quantityValue]);
 
   /**
-   * 수량을 1주씩 움직인다. 소수점 수량(미국 종목)이라도 한 칸은 1주다 — 0.5 → 1.5.
+   * 수량을 1주씩 움직인다. 소수점 수량(미국 종목 시장가 매도)이라도 한 칸은 1주다 — 0.5 → 1.5.
    * 아래로는 0, 위로는 {@link quantityCeiling} 에서 멈춘다.
    * 부동소수점 잡음(1.1 - 1 = 0.10000000000000009)은 {@link floorQuantity} 가 걷어낸다.
    */
@@ -292,6 +293,16 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
     const next = quantityCeiling == null ? quantityValue + 1 : Math.min(quantityValue + 1, quantityCeiling);
     setQuantity(String(floorQuantity(next, fractionalQuantityAllowed)));
   };
+
+  /**
+   * 시장가 매도에서 다른 유형·방향으로 바뀌면 소수점 수량을 정수로 내린다.
+   * 그대로 두면 화면에는 1.5주가 보이는데 토스는 400 을 준다. 버리지 않고 내리는 이유는
+   * 정수 부분은 여전히 유효한 의도이기 때문이다(방향 전환은 {@link handleSelectSide} 가 수량을 비운다).
+   */
+  useEffect(() => {
+    if (fractionalQuantityAllowed || Number.isInteger(quantityValue)) return;
+    setQuantity(String(Math.floor(quantityValue)));
+  }, [fractionalQuantityAllowed, quantityValue]);
 
   const handleClearPrice = (): void => {
     setPrice('');
@@ -577,6 +588,9 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
             <Plus className="h-4 w-4" />
           </Button>
         </div>
+        {marketCountry === 'US' && !fractionalQuantityAllowed && (
+          <p className={cn('text-xs', STOCK_TEXT_MUTED)}>소수점 수량은 시장가 매도에서만 주문할 수 있어요</p>
+        )}
         {side === 'BUY' ? (
           <>
             <p className={cn('text-xs tabular-nums', STOCK_TEXT_MUTED)}>

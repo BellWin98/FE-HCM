@@ -393,7 +393,7 @@ const TossStockProfitTab: React.FC<TossStockProfitTabProps> = ({ owner }) => {
           >
             <Info className="h-4 w-4 shrink-0 mt-0.5" />
             <span>
-              주문 이력보다 앞서 매수한 종목이 있어 일부 손익은 보유 평균단가를 기준으로 한 추정치입니다.
+              주문 내역에 잡히지 않는 거래(이력보다 앞선 매수, 시간외 종가 주문, 액면분할 등)가 있어 일부 손익은 추정치입니다.
             </span>
           </div>
         )}
