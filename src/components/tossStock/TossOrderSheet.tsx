@@ -15,20 +15,23 @@ import { cn } from '@/lib/utils';
 import { STOCK_BORDER, STOCK_TEXT_MUTED } from '@/lib/stockTheme';
 import { formatMoney, formatQuantity, formatSignedMoney } from '@/lib/tossFormat';
 import { formatPercentage, getProfitLossColor } from '@/lib/stockFormat';
-import { estimateBuyAveragePrice, estimateSellProfit, type TossHeldPosition } from '@/lib/tossOrderEstimate';
+import {
+  estimateBuyAveragePrice,
+  estimateCommission,
+  estimateSellProfit,
+  type TossHeldPosition,
+} from '@/lib/tossOrderEstimate';
 import { createClientOrderId } from '@/lib/tossOrderId';
 import { stepPrice } from '@/lib/tossTick';
+import {
+  HIGH_VALUE_THRESHOLD_KRW,
+  NUMBER_INPUT_MAX_LENGTH,
+  SUBMIT_ARM_DELAY_MS,
+  US_PRICE_SCALE,
+  sanitizeNumberInput,
+} from '@/lib/tossOrderInput';
 import { useTossOrderable } from '@/hooks/useTossOrderable';
 import { api } from '@/lib/api';
-
-/** 1억원 이상 주문은 토스가 별도 확인 플래그를 요구한다. */
-const HIGH_VALUE_THRESHOLD_KRW = 100_000_000;
-
-/**
- * 확인 화면에 들어온 직후 제출 버튼을 잠가 두는 시간.
- * 모바일에서 "확인"을 누른 손가락이 그대로 같은 자리의 "주문하기"에 떨어지는 사고를 막는다.
- */
-const SUBMIT_ARM_DELAY_MS = 800;
 
 /**
  * 소수점 수량 자릿수. 토스가 소수점 수량을 허용하는 것은 미국 종목 시장가 매도뿐이고, 보유 수량 표시
@@ -45,31 +48,6 @@ const floorQuantity = (value: number, fractional: boolean): number => {
   if (!fractional) return Math.floor(value);
   const factor = 10 ** FRACTIONAL_QUANTITY_SCALE;
   return Math.floor(Number((value * factor).toPrecision(15))) / factor;
-};
-
-/**
- * 미국 종목 가격의 소수 자릿수. 1달러 미만 호가 단위가 0.0001 이라 넷째 자리까지 의미가 있다
- * (`tossTick` 의 US_DECIMALS_BELOW_ONE_DOLLAR 와 같은 값). 국내 종목은 원 단위 정수다.
- */
-const US_PRICE_SCALE = 4;
-
-/**
- * 가격·수량 입력의 최대 글자 수(소수점 포함).
- * 실제 주문이 닿을 수 없는 자릿수인데 `inputMode` 만으로는 길이를 막지 못한다 —
- * 붙여넣기나 키를 누르고 있으면 끝없이 들어가고, 그 값으로 예상 금액을 곱하면 화면에 쓰레기 숫자가 뜬다.
- */
-const NUMBER_INPUT_MAX_LENGTH = 12;
-
-/**
- * 숫자 입력에서 허용되지 않는 문자를 걷어낸다.
- * `inputMode="decimal"` 은 모바일 키보드 모양만 바꿀 뿐 입력을 막지 않는다(데스크톱·붙여넣기는 무엇이든 들어온다).
- * 소수점을 허용할 때도 소수점은 하나만, 소수 자릿수는 `scale` 까지만 남기고, 전체 길이는 상한에서 자른다.
- */
-const sanitizeNumberInput = (raw: string, scale: number): string => {
-  const digitsOnly = raw.replace(scale > 0 ? /[^0-9.]/g : /[^0-9]/g, '');
-  const [whole = '', ...decimals] = digitsOnly.split('.');
-  const joined = decimals.length === 0 ? whole : `${whole}.${decimals.join('').slice(0, scale)}`;
-  return joined.slice(0, NUMBER_INPUT_MAX_LENGTH);
 };
 
 export interface TossOrderTarget {
@@ -403,6 +381,17 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
   // 비용률을 못 받았으면 세후 행 대신 "제외" 사실을 적는다 — 세전 값이 세후처럼 읽히면 안 된다.
   const sellCostKnown = orderable?.sellCostRate != null;
 
+  /**
+   * 예상 수수료 행. 지정가·LOC 만 — 시장가는 체결가를 몰라 주문금액을 낼 수 없다(예상 주문금액과 같은 규칙).
+   * 보유 종목 매도처럼 토스 비용 추정치(수수료+세금)가 이미 있으면 그리지 않는다 — 같은 비용을 두 줄로 나누면
+   * 둘을 더해 읽는다. 그 외 매도는 세금이 빠진 값이라 "세금 별도"를 붙인다.
+   */
+  const commission = isLimitLike ? estimateCommission(estimatedAmount, orderable?.commissionRate ?? null) : null;
+  const commissionRow =
+    commission != null &&
+    !(side === 'SELL' && held && sellCostKnown) &&
+    summaryRow(side === 'BUY' ? '예상 수수료' : '예상 수수료 (세금 별도)', money(commission));
+
   const holdingRows = held && (
     <>
       {summaryRow('보유 평균단가', money(held.averagePrice))}
@@ -618,6 +607,7 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
 
       <div className={cn('border-t pt-4', STOCK_BORDER)}>
         {isLimitLike && summaryRow('예상 주문금액', money(estimatedAmount))}
+        {commissionRow}
         {holdingRows}
         <Button
           type="button"
@@ -643,6 +633,7 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
           {isLimitLike
             ? summaryRow('예상 주문금액', money(estimatedAmount))
             : summaryRow('예상 주문금액', '시장가 — 체결 시점 가격')}
+          {commissionRow}
           {side === 'BUY'
             ? summaryRow(
                 '주문가능금액',

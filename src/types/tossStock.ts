@@ -235,6 +235,11 @@ export interface TossOrderable {
    * 미보유·산출 불가면 null — 그때는 세전 값만 보여준다.
    */
   sellCostRate: number | null;
+  /**
+   * 이 계좌에서 종목 시장에 오늘 적용되는 매매 수수료율(소수비율, 예: 0.00015 = 0.015%).
+   * 주문금액에 곱해 예상 수수료를 낸다. **세금은 포함하지 않는다.** 조회 실패·유효한 요율 없음이면 null.
+   */
+  commissionRate: number | null;
 }
 
 /** 주문 시트가 들고 있는 입력 상태. 이 값이 바뀌면 멱등키를 새로 발급해야 한다. */
@@ -302,4 +307,24 @@ export interface TossOpenOrder {
   orderedAt: string;
   /** 취소 버튼을 그릴지. 이미 취소 요청이 나간 주문에는 false 다. */
   cancelable: boolean;
+  /** 정정 버튼을 그릴지. 정정·취소 요청이 이미 나간 주문에는 false 다. */
+  modifiable: boolean;
+}
+
+/**
+ * 주문 정정 요청. 국내는 수량 필수(정정 후 수량), 미국은 **가격만** 정정할 수 있어 수량을 보내지 않는다.
+ * `symbol` 은 서버가 국내/미국 규칙을 고르는 데 쓴다.
+ */
+export interface TossModifyOrderRequest {
+  owner: string;
+  symbol: string;
+  orderType: TossOrderType;
+  quantity?: string;
+  price?: string;
+  confirmHighValueOrder?: boolean;
+}
+
+/** 정정 결과. `orderId` 는 정정으로 **새로 발급된** 주문번호다(원주문 번호와 다르다). */
+export interface TossModifyOrderResult {
+  orderId: string;
 }

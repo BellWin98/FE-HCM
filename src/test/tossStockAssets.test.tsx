@@ -561,3 +561,46 @@ describe('토스 자산 탭 — 새로고침 버튼', () => {
     expect(screen.getByLabelText('새로고침')).toBeDisabled();
   });
 });
+
+describe('토스 자산 탭 — 미체결 주문 정정', () => {
+  // 정정 시트는 페이지가 들고 있다(목록 리렌더에 함께 언마운트되지 않게). 탭은 버튼과 페이지를 잇기만 한다.
+  it('미체결 주문의 정정 버튼이 페이지의 정정 핸들러로 이어진다', async () => {
+    const onModifyOrder = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <TossStockAssetsTab
+        portfolio={domesticOnlyPortfolio()}
+        onRefresh={vi.fn()}
+        loading={false}
+        canTrade
+        openOrders={[
+          {
+            orderId: 'o-1',
+            symbol: '005930',
+            name: '삼성전자',
+            side: 'BUY',
+            orderType: 'LIMIT',
+            timeInForce: 'DAY',
+            loc: false,
+            status: 'PENDING',
+            currency: 'KRW',
+            price: 70000,
+            quantity: 10,
+            filledQuantity: 0,
+            remainingQuantity: 10,
+            orderedAt: '2026-10-22T09:30:00+09:00',
+            cancelable: true,
+            modifiable: true,
+          },
+        ]}
+        onCancelOrder={vi.fn()}
+        onModifyOrder={onModifyOrder}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: '정정' }));
+
+    expect(onModifyOrder).toHaveBeenCalledWith(expect.objectContaining({ orderId: 'o-1' }));
+  });
+});
+

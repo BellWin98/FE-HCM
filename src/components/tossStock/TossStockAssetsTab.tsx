@@ -58,6 +58,8 @@ interface TossStockAssetsTabProps {
   openOrders?: TossOpenOrder[];
   onCancelOrder?: (orderId: string) => void;
   cancelingOrderId?: string | null;
+  /** 미체결 주문 정정 시트 열기. 시트 자체는 페이지가 들고 있다. */
+  onModifyOrder?: (order: TossOpenOrder) => void;
   /** 종목 검색 시트 열기. 시트 자체는 페이지가 들고 있다. */
   onOpenSearch?: () => void;
   /** 보유 종목의 매수/매도. 주문 시트도 페이지가 들고 있다. */
@@ -72,6 +74,7 @@ const TossStockAssetsTab: React.FC<TossStockAssetsTabProps> = ({
   openOrders = [],
   onCancelOrder,
   cancelingOrderId = null,
+  onModifyOrder,
   onOpenSearch,
   onTradeHolding,
 }) => {
@@ -149,6 +152,7 @@ const TossStockAssetsTab: React.FC<TossStockAssetsTabProps> = ({
           orders={openOrders}
           onCancel={onCancelOrder}
           cancelingOrderId={cancelingOrderId}
+          onModify={onModifyOrder}
         />
       )}
 

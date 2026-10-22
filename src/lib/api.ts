@@ -26,6 +26,8 @@ import type {
   TossAccessGrant,
   TossAccessStatus,
   TossAccountOwner,
+  TossModifyOrderRequest,
+  TossModifyOrderResult,
   TossOpenOrder,
   TossOrderResult,
   TossOrderSide,
@@ -425,6 +427,20 @@ class ApiClient {
    */
   async placeTossOrder(request: TossPlaceOrderRequest): Promise<TossOrderResult> {
     return this.request<TossOrderResult>("/toss-stock/orders", {
+      method: "POST",
+      data: request,
+      _retry: true,
+    } as AxiosRequestConfig);
+  }
+
+  /**
+   * POST /toss-stock/orders/{orderId}/modify — 미체결 주문 정정. 응답의 주문번호는 **새로 발급된** 것이다.
+   *
+   * 주문과 같은 이유로 `_retry: true` 를 박는다 — 정정에는 멱등키가 없어서, 인터셉터가 원 요청을 그대로
+   * 다시 보내면 첫 요청이 이미 닿은 경우 `already-modified` 가 돌아와 성공한 정정이 실패로 보인다.
+   */
+  async modifyTossOrder(orderId: string, request: TossModifyOrderRequest): Promise<TossModifyOrderResult> {
+    return this.request<TossModifyOrderResult>(`/toss-stock/orders/${encodeURIComponent(orderId)}/modify`, {
       method: "POST",
       data: request,
       _retry: true,

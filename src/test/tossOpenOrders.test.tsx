@@ -27,6 +27,7 @@ const order = (overrides: Partial<TossOpenOrder> = {}): TossOpenOrder => ({
   remainingQuantity: 10,
   orderedAt: '2026-09-07T09:30:00+09:00',
   cancelable: true,
+  modifiable: true,
   ...overrides,
 });
 
@@ -116,5 +117,36 @@ describe('TossOpenOrdersSection', () => {
     renderSection([order()], 'o-1');
 
     expect(screen.getByRole('button', { name: '취소 중' })).toBeDisabled();
+  });
+
+  describe('정정', () => {
+    const renderWithModify = (orders: TossOpenOrder[]) => {
+      const onModify = vi.fn();
+      render(
+        <TossOpenOrdersSection orders={orders} onCancel={vi.fn()} cancelingOrderId={null} onModify={onModify} />
+      );
+      return { onModify };
+    };
+
+    it('정정할 수 있는 주문에는 정정 버튼을 그리고, 누르면 그 주문으로 정정을 연다', async () => {
+      const user = userEvent.setup();
+      const { onModify } = renderWithModify([order()]);
+
+      await user.click(screen.getByRole('button', { name: '정정' }));
+
+      expect(onModify).toHaveBeenCalledWith(expect.objectContaining({ orderId: 'o-1' }));
+    });
+
+    it('정정·취소 요청이 이미 나간 주문에는 정정 버튼을 그리지 않는다', () => {
+      renderWithModify([order({ modifiable: false, cancelable: false, status: 'PENDING_REPLACE' })]);
+
+      expect(screen.queryByRole('button', { name: '정정' })).not.toBeInTheDocument();
+    });
+
+    it('정정 핸들러를 받지 않으면 정정 버튼을 그리지 않는다', () => {
+      renderSection([order()]);
+
+      expect(screen.queryByRole('button', { name: '정정' })).not.toBeInTheDocument();
+    });
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateBuyAveragePrice, estimateSellProfit } from '@/lib/tossOrderEstimate';
+import { estimateBuyAveragePrice, estimateCommission, estimateSellProfit } from '@/lib/tossOrderEstimate';
 
 /**
  * 주문 시트의 예상값.
@@ -64,5 +64,20 @@ describe('매도 예상 손익', () => {
   it('주문 수량이나 가격이 없으면 null 이다', () => {
     expect(estimateSellProfit({ quantity: 100, averagePrice: 65000 }, 0, 10)).toBeNull();
     expect(estimateSellProfit({ quantity: 100, averagePrice: 65000 }, 72000, 0)).toBeNull();
+  });
+});
+
+describe('estimateCommission', () => {
+  // 계좌 수수료율 × 주문금액. 보유 비용 추정치가 없는 매수·미보유 종목에도 예상 수수료를 보여 준다.
+  it('주문금액에 수수료율을 곱한다', () => {
+    expect(estimateCommission(700_000, 0.00015)).toBeCloseTo(105);
+  });
+
+  it('수수료율을 모르면 null 이다 — 0 으로 주면 "수수료 없음"으로 읽힌다', () => {
+    expect(estimateCommission(700_000, null)).toBeNull();
+  });
+
+  it('주문금액이 아직 없으면 null 이다', () => {
+    expect(estimateCommission(0, 0.00015)).toBeNull();
   });
 });
