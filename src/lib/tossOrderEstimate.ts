@@ -67,3 +67,12 @@ export const estimateSellProfit = (
       profitLossAfterCost != null && purchaseAmount > 0 ? (profitLossAfterCost / purchaseAmount) * 100 : null,
   };
 };
+
+/**
+ * 예상 수수료 = 주문금액 × 계좌 수수료율. 세금은 포함하지 않는다(수수료율 API 에는 세율이 없다).
+ * 수수료율을 모르거나 주문금액이 아직 없으면 null — 0 을 돌려주면 "수수료 없음"으로 그려진다.
+ */
+export const estimateCommission = (orderAmount: number, commissionRate: number | null): number | null => {
+  if (commissionRate == null || orderAmount <= 0) return null;
+  return orderAmount * commissionRate;
+};

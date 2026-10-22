@@ -19,6 +19,11 @@ interface TossOpenOrdersSectionProps {
   orders: TossOpenOrder[];
   onCancel: (orderId: string) => void;
   cancelingOrderId: string | null;
+  /**
+   * 정정 시트를 연다. 시트는 페이지가 들고 있어야 한다(주문 시트와 같은 이유 — 목록이 리렌더될 때
+   * 항목 안의 시트는 함께 언마운트된다). 주지 않으면 정정 버튼을 그리지 않는다.
+   */
+  onModify?: (order: TossOpenOrder) => void;
 }
 
 /**
@@ -34,6 +39,7 @@ const TossOpenOrdersSection: React.FC<TossOpenOrdersSectionProps> = ({
   orders,
   onCancel,
   cancelingOrderId,
+  onModify,
 }) => {
   const [expanded, setExpanded] = useState(true);
   const [pendingCancel, setPendingCancel] = useState<TossOpenOrder | null>(null);
@@ -103,22 +109,40 @@ const TossOpenOrdersSection: React.FC<TossOpenOrdersSectionProps> = ({
                   </p>
                 </div>
 
-                {order.cancelable ? (
-                  <button
-                    type="button"
-                    onClick={() => setPendingCancel(order)}
-                    disabled={cancelingOrderId === order.orderId}
-                    className={cn(
-                      'min-h-[36px] shrink-0 rounded-md border px-3 text-sm font-medium',
-                      'text-gray-700 disabled:opacity-50 dark:text-gray-300',
-                      STOCK_BORDER
-                    )}
-                  >
-                    {cancelingOrderId === order.orderId ? '취소 중' : '취소'}
-                  </button>
-                ) : (
-                  <span className={cn('shrink-0 text-xs', STOCK_TEXT_MUTED)}>취소 요청됨</span>
-                )}
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {onModify && order.modifiable && (
+                    <button
+                      type="button"
+                      onClick={() => onModify(order)}
+                      disabled={cancelingOrderId === order.orderId}
+                      className={cn(
+                        'min-h-[36px] shrink-0 rounded-md border px-3 text-sm font-medium',
+                        'text-gray-700 disabled:opacity-50 dark:text-gray-300',
+                        STOCK_BORDER
+                      )}
+                    >
+                      정정
+                    </button>
+                  )}
+                  {order.cancelable ? (
+                    <button
+                      type="button"
+                      onClick={() => setPendingCancel(order)}
+                      disabled={cancelingOrderId === order.orderId}
+                      className={cn(
+                        'min-h-[36px] shrink-0 rounded-md border px-3 text-sm font-medium',
+                        'text-gray-700 disabled:opacity-50 dark:text-gray-300',
+                        STOCK_BORDER
+                      )}
+                    >
+                      {cancelingOrderId === order.orderId ? '취소 중' : '취소'}
+                    </button>
+                  ) : (
+                    <span className={cn('shrink-0 text-xs', STOCK_TEXT_MUTED)}>
+                      {order.status === 'PENDING_REPLACE' ? '정정 요청됨' : '취소 요청됨'}
+                    </span>
+                  )}
+                </div>
               </li>
             );
           })}

@@ -52,6 +52,7 @@ const orderable = (overrides: Partial<TossOrderable> = {}): TossOrderable => ({
   holdingQuantity: null,
   averagePurchasePrice: null,
   sellCostRate: null,
+  commissionRate: null,
   ...overrides,
 });
 
@@ -938,5 +939,82 @@ describe('소수점 수량', () => {
     await user.click(screen.getByRole('button', { name: '최대' }));
 
     expect(screen.getByLabelText('주문 수량')).toHaveValue('12');
+  });
+});
+
+describe('예상 수수료', () => {
+  // 보유 비용 추정치(수수료+세금)는 보유 종목 매도에만 있다. 계좌 수수료율이 있으면 매수·미보유 종목에도
+  // 예상 수수료를 보여 줄 수 있다. 세율은 없으므로 세금은 넣지 않는다.
+
+  it('지정가 매수는 주문금액 × 수수료율로 예상 수수료를 보여준다', async () => {
+    // 10주 × ₩70,000 = ₩700,000, × 0.015% = ₩105
+    vi.mocked(api.getTossOrderable).mockResolvedValue(orderable({ commissionRate: 0.00015 }));
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    await user.type(screen.getByLabelText('주문 수량'), '10');
+
+    expect(screen.getByText('예상 수수료')).toBeInTheDocument();
+    expect(screen.getByText('₩105')).toBeInTheDocument();
+  });
+
+  it('확인 화면에도 예상 수수료를 보여준다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(orderable({ commissionRate: 0.00015 }));
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await fillAndConfirm(user, '10');
+
+    expect(screen.getByText('예상 수수료')).toBeInTheDocument();
+    expect(screen.getByText('₩105')).toBeInTheDocument();
+  });
+
+  it('수수료율을 모르면 예상 수수료 행을 그리지 않는다', async () => {
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    await user.type(screen.getByLabelText('주문 수량'), '10');
+
+    expect(screen.queryByText(/예상 수수료/)).not.toBeInTheDocument();
+  });
+
+  it('시장가는 체결가를 모르므로 예상 수수료를 그리지 않는다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(orderable({ commissionRate: 0.00015 }));
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    await user.click(screen.getByRole('radio', { name: '시장가' }));
+    await user.type(screen.getByLabelText('주문 수량'), '10');
+
+    expect(screen.queryByText(/예상 수수료/)).not.toBeInTheDocument();
+  });
+
+  it('보유 비용 추정치가 없는 매도는 세금 별도로 예상 수수료를 보여준다', async () => {
+    // 세금이 빠진 값을 "수수료·세금"처럼 읽히게 두면 안 된다.
+    vi.mocked(api.getTossOrderable).mockResolvedValue(
+      orderable({ commissionRate: 0.00015, sellableQuantity: 50 })
+    );
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+    await user.click(screen.getByRole('radio', { name: '매도' }));
+    await user.type(screen.getByLabelText('주문 수량'), '10');
+
+    expect(screen.getByText('예상 수수료 (세금 별도)')).toBeInTheDocument();
+    expect(screen.getByText('₩105')).toBeInTheDocument();
+  });
+
+  it('보유 비용 추정치가 있는 매도는 기존 수수료·세금 안내만 보여준다', async () => {
+    // 같은 비용을 두 줄로 나눠 그리면 둘을 더해 읽는다.
+    vi.mocked(api.getTossOrderable).mockResolvedValue(
+      heldOrderable({ commissionRate: 0.00015, sellCostRate: 0.00165 })
+    );
+    const user = userEvent.setup();
+    renderSheet(krTarget);
+    await screen.findByText('보유 평균단가');
+    await user.click(screen.getByRole('radio', { name: '매도' }));
+    await user.type(screen.getByLabelText('주문 수량'), '10');
+
+    expect(screen.queryByText(/예상 수수료/)).not.toBeInTheDocument();
+    expect(screen.getByText(/수수료·세금 약/)).toBeInTheDocument();
   });
 });

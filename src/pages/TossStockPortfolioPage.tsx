@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type {
   TossAccountOwner,
+  TossOpenOrder,
   TossOrderSide,
   TossPortfolio,
   TossStockSearchResult,
@@ -18,6 +19,7 @@ import TossStockAssetsTab from '@/components/tossStock/TossStockAssetsTab';
 import TossStockProfitTab from '@/components/tossStock/TossStockProfitTab';
 import TossStockSearchSheet from '@/components/tossStock/TossStockSearchSheet';
 import TossOrderSheet, { type TossOrderTarget } from '@/components/tossStock/TossOrderSheet';
+import TossOrderModifySheet from '@/components/tossStock/TossOrderModifySheet';
 import { useTossAccess } from '@/hooks/useTossAccess';
 import { useTossOpenOrders } from '@/hooks/useTossOpenOrders';
 
@@ -50,6 +52,8 @@ const TossStockPortfolioPage = () => {
   const [orderTarget, setOrderTarget] = useState<TossOrderTarget | null>(null);
   const [orderSide, setOrderSide] = useState<TossOrderSide>('BUY');
   const [orderOpen, setOrderOpen] = useState(false);
+  const [modifyTarget, setModifyTarget] = useState<TossOpenOrder | null>(null);
+  const [modifyOpen, setModifyOpen] = useState(false);
 
   // 주문 권한은 조회 권한과 기준이 다르다(조회는 toss_access, 주문은 ADMIN).
   const { canTrade } = useTossAccess();
@@ -156,6 +160,17 @@ const TossStockPortfolioPage = () => {
     fetchPortfolio();
   };
 
+  const handleModifyOrder = (order: TossOpenOrder) => {
+    setModifyTarget(order);
+    setModifyOpen(true);
+  };
+
+  /** 정정된 주문은 새 주문번호로 바뀐다 — 미체결 목록을 다시 받아야 이후 취소·재정정이 맞는 번호로 나간다. */
+  const handleOrderModified = () => {
+    toast({ title: '주문이 정정되었습니다.' });
+    openOrders.reload();
+  };
+
   const handleCancelOrder = (orderId: string) => {
     openOrders.cancel(orderId).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : '주문을 취소하지 못했습니다.';
@@ -234,6 +249,7 @@ const TossStockPortfolioPage = () => {
               openOrders={openOrders.orders}
               onCancelOrder={handleCancelOrder}
               cancelingOrderId={openOrders.cancelingOrderId}
+              onModifyOrder={handleModifyOrder}
               onOpenSearch={() => setSearchOpen(true)}
               onTradeHolding={handleTradeHolding}
             />
@@ -276,6 +292,15 @@ const TossStockPortfolioPage = () => {
               target={orderTarget}
               initialSide={orderSide}
               onOrderPlaced={handleOrderPlaced}
+            />
+          )}
+          {selectedOwner && (
+            <TossOrderModifySheet
+              open={modifyOpen}
+              onOpenChange={setModifyOpen}
+              owner={selectedOwner}
+              order={modifyTarget}
+              onModified={handleOrderModified}
             />
           )}
         </>
