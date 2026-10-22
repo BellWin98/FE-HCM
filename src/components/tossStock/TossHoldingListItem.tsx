@@ -359,7 +359,7 @@ const TossHoldingListItem: React.FC<TossHoldingListItemProps> = ({
 
       {/* ④ 거래 내역. 여는 순간에야 계좌 전체 주문을 불러온다. */}
       <Disclosure label="거래 내역" open={showTrades} onToggle={handleToggleTrades}>
-        {/* 주문 이력보다 앞서 매수한 종목은 원가를 보유 평균단가로 메운다 — 그 사실을 밝힌다. */}
+        {/* 원가가 불완전한 매도(이력보다 앞선 매수, 보유 수량과 어긋난 재생)가 섞여 있으면 그 사실을 밝힌다. */}
         {tradesEstimated && hasTrades && (
           <div
             className={cn(
@@ -368,7 +368,7 @@ const TossHoldingListItem: React.FC<TossHoldingListItemProps> = ({
             )}
           >
             <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-            <span>주문 이력보다 앞서 매수한 종목이 있어 일부 손익은 추정치입니다.</span>
+            <span>주문 내역에 잡히지 않는 거래(이력보다 앞선 매수, 시간외 종가 주문, 액면분할 등)가 있어 일부 손익은 추정치입니다.</span>
           </div>
         )}
         {/* 정렬 토글은 정렬할 것이 있을 때만. 빈 화면에 컨트롤만 떠 있으면 데이터가 있는 줄 안다. */}

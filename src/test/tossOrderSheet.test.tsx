@@ -239,6 +239,9 @@ describe('입력 검증', () => {
     const user = userEvent.setup();
     renderSheet(usTarget);
     await screen.findByLabelText('주문 가격');
+    // 소수점 수량은 미국 종목 시장가 매도에서만 입력할 수 있다.
+    await user.click(screen.getByRole('radio', { name: '매도' }));
+    await user.click(screen.getByRole('radio', { name: '시장가' }));
 
     await user.type(screen.getByLabelText('주문 수량'), '0.5');
     await user.click(screen.getByRole('button', { name: '수량 올리기' }));
@@ -471,9 +474,9 @@ describe('보유 종목 예상값', () => {
     renderSheet(usTarget);
     await screen.findByText('보유 평균단가');
 
-    // (150 × 1.5 + 200 × 0.5) / 2 = 162.5
-    await user.type(screen.getByLabelText('주문 수량'), '0.5');
-    expect(screen.getByText('$162.50')).toBeInTheDocument();
+    // (150 × 1.5 + 200 × 1) / 2.5 = 170
+    await user.type(screen.getByLabelText('주문 수량'), '1');
+    expect(screen.getByText('$170.00')).toBeInTheDocument();
   });
 });
 
@@ -745,6 +748,10 @@ describe('입력 지우기', () => {
 });
 
 describe('소수점 수량', () => {
+  // 토스는 소수점 수량을 미국 종목 시장가 매도(MARKET + SELL)에만 허용한다.
+  // 그 외 조합은 400 invalid-request 이고, 소수점 매수는 수량이 아니라 금액 주문의 몫이다.
+  const FRACTIONAL_HINT = '소수점 수량은 시장가 매도에서만 주문할 수 있어요';
+
   const usOrderable = (overrides: Partial<TossOrderable> = {}) =>
     orderable({
       symbol: 'AAPL',
@@ -754,27 +761,95 @@ describe('소수점 수량', () => {
       locSupported: true,
       lastPrice: 200,
       cashBuyingPower: 1000,
+      sellableQuantity: 5,
       ...overrides,
     });
 
-  it('미국 종목은 소수점 수량을 입력해 그대로 주문한다', async () => {
+  const selectMarketSell = async (user: ReturnType<typeof userEvent.setup>): Promise<void> => {
+    await user.click(screen.getByRole('radio', { name: '매도' }));
+    await user.click(screen.getByRole('radio', { name: '시장가' }));
+  };
+
+  it('미국 종목 시장가 매도는 소수점 수량을 입력해 그대로 주문한다', async () => {
     vi.mocked(api.getTossOrderable).mockResolvedValue(usOrderable());
     const user = userEvent.setup();
     renderSheet(usTarget);
     await screen.findByLabelText('주문 가격');
+    await selectMarketSell(user);
 
     const quantityInput = screen.getByLabelText('주문 수량');
     expect(quantityInput).toHaveAttribute('inputmode', 'decimal');
     await user.type(quantityInput, '1.5');
     expect(quantityInput).toHaveValue('1.5');
 
-    await user.click(screen.getByRole('button', { name: '매수 확인' }));
+    await user.click(screen.getByRole('button', { name: '매도 확인' }));
     await waitFor(() => expect(screen.getByRole('button', { name: '주문하기' })).toBeEnabled());
     await user.click(screen.getByRole('button', { name: '주문하기' }));
 
     await waitFor(() =>
-      expect(api.placeTossOrder).toHaveBeenCalledWith(expect.objectContaining({ quantity: '1.5' }))
+      expect(api.placeTossOrder).toHaveBeenCalledWith(
+        expect.objectContaining({ side: 'SELL', orderType: 'MARKET', quantity: '1.5' })
+      )
     );
+  });
+
+  it('미국 종목 지정가 매수는 소수점을 입력해도 정수만 남는다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(usOrderable());
+    const user = userEvent.setup();
+    renderSheet(usTarget);
+    await screen.findByLabelText('주문 가격');
+
+    const quantityInput = screen.getByLabelText('주문 수량');
+    expect(quantityInput).toHaveAttribute('inputmode', 'numeric');
+    await user.type(quantityInput, '1.5');
+
+    expect(quantityInput).toHaveValue('15');
+  });
+
+  it('미국 종목 시장가 매수도 소수점 수량을 받지 않는다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(usOrderable());
+    const user = userEvent.setup();
+    renderSheet(usTarget);
+    await screen.findByLabelText('주문 가격');
+    await user.click(screen.getByRole('radio', { name: '시장가' }));
+
+    const quantityInput = screen.getByLabelText('주문 수량');
+    await user.type(quantityInput, '1.5');
+
+    expect(quantityInput).toHaveValue('15');
+  });
+
+  it('시장가 매도에서 지정가로 바꾸면 소수점 수량을 정수로 내린다', async () => {
+    // 그대로 두면 화면에는 1.5주가 보이는데 토스는 400 을 준다.
+    vi.mocked(api.getTossOrderable).mockResolvedValue(usOrderable());
+    const user = userEvent.setup();
+    renderSheet(usTarget);
+    await screen.findByLabelText('주문 가격');
+    await selectMarketSell(user);
+    await user.type(screen.getByLabelText('주문 수량'), '1.5');
+
+    await user.click(screen.getByRole('radio', { name: '지정가' }));
+
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('1');
+  });
+
+  it('미국 종목에서 소수점 수량이 막힌 주문 유형이면 이유를 알려 준다', async () => {
+    vi.mocked(api.getTossOrderable).mockResolvedValue(usOrderable());
+    const user = userEvent.setup();
+    renderSheet(usTarget);
+    await screen.findByLabelText('주문 가격');
+
+    expect(screen.getByText(FRACTIONAL_HINT)).toBeInTheDocument();
+
+    await selectMarketSell(user);
+    expect(screen.queryByText(FRACTIONAL_HINT)).not.toBeInTheDocument();
+  });
+
+  it('국내 종목에는 소수점 안내를 띄우지 않는다', async () => {
+    renderSheet(krTarget);
+    await screen.findByLabelText('주문 가격');
+
+    expect(screen.queryByText(FRACTIONAL_HINT)).not.toBeInTheDocument();
   });
 
   it('미국 종목의 소수점 수량은 여섯째 자리까지만 받는다', async () => {
@@ -782,6 +857,7 @@ describe('소수점 수량', () => {
     const user = userEvent.setup();
     renderSheet(usTarget);
     await screen.findByLabelText('주문 가격');
+    await selectMarketSell(user);
 
     const quantityInput = screen.getByLabelText('주문 수량');
     await user.type(quantityInput, '1.23456789');
@@ -794,6 +870,7 @@ describe('소수점 수량', () => {
     const user = userEvent.setup();
     renderSheet(usTarget);
     await screen.findByLabelText('주문 가격');
+    await selectMarketSell(user);
 
     const quantityInput = screen.getByLabelText('주문 수량');
     await user.type(quantityInput, '1.2.5');
@@ -814,8 +891,20 @@ describe('소수점 수량', () => {
     expect(quantityInput).toHaveValue('15');
   });
 
-  it('미국 종목 매도의 최대 버튼은 보유 소수점 수량을 그대로 채운다', async () => {
+  it('미국 종목 시장가 매도의 최대 버튼은 보유 소수점 수량을 그대로 채운다', async () => {
     // 내림해 버리면 0.7주 보유자는 "최대"를 눌러도 0주가 되어 전량 매도를 할 수 없다.
+    vi.mocked(api.getTossOrderable).mockResolvedValue(usOrderable({ sellableQuantity: 2.345 }));
+    const user = userEvent.setup();
+    renderSheet(usTarget);
+    await screen.findByLabelText('주문 가격');
+    await selectMarketSell(user);
+
+    await user.click(screen.getByRole('button', { name: '최대' }));
+
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('2.345');
+  });
+
+  it('미국 종목 지정가 매도의 최대 버튼은 정수로 내린다', async () => {
     vi.mocked(api.getTossOrderable).mockResolvedValue(usOrderable({ sellableQuantity: 2.345 }));
     const user = userEvent.setup();
     renderSheet(usTarget);
@@ -824,11 +913,11 @@ describe('소수점 수량', () => {
     await user.click(screen.getByRole('radio', { name: '매도' }));
     await user.click(screen.getByRole('button', { name: '최대' }));
 
-    expect(screen.getByLabelText('주문 수량')).toHaveValue('2.345');
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('2');
   });
 
-  it('미국 종목 매수의 최대 버튼은 주문가능금액을 소수점 수량으로 채운다', async () => {
-    // $1,000 ÷ $200 = 5 지만 $1,000 ÷ $300 = 3.333333… 이므로 여섯째 자리에서 내린다.
+  it('미국 종목 지정가 매수의 최대 버튼은 주문가능금액을 정수 수량으로 내린다', async () => {
+    // $1,000 ÷ $300 = 3.333… → 3주. 소수점 매수는 금액 주문이라 수량으로는 낼 수 없다.
     vi.mocked(api.getTossOrderable).mockResolvedValue(usOrderable({ lastPrice: 300 }));
     const user = userEvent.setup();
     renderSheet(usTarget);
@@ -836,7 +925,7 @@ describe('소수점 수량', () => {
 
     await user.click(screen.getByRole('button', { name: '최대' }));
 
-    expect(screen.getByLabelText('주문 수량')).toHaveValue('3.333333');
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('3');
   });
 
   it('국내 종목 매도의 최대 버튼은 정수로 내린다', async () => {
