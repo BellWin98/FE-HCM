@@ -12,6 +12,8 @@ export default defineConfig(({ mode }) => ({
       // cleanupOutdatedCaches 는 최상위가 아니라 workbox 옵션이다. 최상위에 두면 조용히 무시된다.
       workbox: {
         cleanupOutdatedCaches: true,
+        // Android 공유 시트(POST /notes/share)를 받아 캐시에 맡기는 조각. public/share-target-sw.js 참고.
+        importScripts: ['share-target-sw.js'],
       },
       includeAssets: ['favicon.ico', 'robots.txt', 'icons/*', 'firebase-messaging-sw.js'],
       devOptions: {
@@ -26,10 +28,17 @@ export default defineConfig(({ mode }) => ({
         display: 'standalone',             // 브라우저 UI 제거(앱처럼)
         background_color: '#ffffff',
         theme_color: '#111827',
+        // POST 는 서비스워커(public/share-target-sw.js)가 가로채 보관한 뒤 /notes/share?shared=1 로 보낸다.
         share_target: {
           action: '/notes/share',
-          method: 'GET',
-          params: { title: 'title', text: 'text', url: 'url' },
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url',
+            files: [{ name: 'files', accept: ['image/*'] }],
+          },
         },
         icons: [
           {
