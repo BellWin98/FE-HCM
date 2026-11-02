@@ -20,8 +20,7 @@ import { KNOWLEDGE_CATEGORIES, KNOWLEDGE_CATEGORY_LABELS } from '@/types/knowled
 import type { KnowledgeCategory, KnowledgeNoteInput } from '@/types/knowledgeNote';
 import type { QuickNoteOpenOptions } from '@/contexts/QuickNoteContext';
 
-const SOURCE_REQUIRED_MESSAGE = '출처(링크 또는 텍스트)를 입력하세요';
-const CONTENT_REQUIRED_MESSAGE = '내용을 입력하세요';
+const CONTENT_REQUIRED_MESSAGE = '내용 또는 이미지를 입력하세요';
 const SAVE_FAILED_MESSAGE = '메모를 저장하지 못했습니다.';
 
 /** 모바일 키보드의 자동완성·자동 고침 제안을 끈다. */
@@ -65,7 +64,8 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
     if (note) {
       return {
         category: note.category,
-        content: note.content,
+        content: note.content ?? '',
+        imageUrls: note.images,
         sourceUrl: note.sourceUrl ?? '',
         sourceText: note.sourceText ?? '',
         tags: note.tags,
@@ -80,6 +80,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
     return {
       category: prefill?.category ?? last?.category ?? 'DEV',
       content: prefill?.content ?? '',
+      imageUrls: [] as string[],
       sourceUrl: (prefillHasSource ? prefill?.sourceUrl : last?.sourceUrl) ?? '',
       sourceText: (prefillHasSource ? prefill?.sourceText : last?.sourceText) ?? '',
       tags: prefill?.tags ?? [],
@@ -95,12 +96,13 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
   const [content, setContent] = useState(initial.content);
   const [sourceUrl, setSourceUrl] = useState(initial.sourceUrl);
   const [sourceText, setSourceText] = useState(initial.sourceText);
+  // 첨부 이미지 목록. 수정할 때 기존 이미지를 그대로 다시 보내야 서버에서 지워지지 않는다.
+  const [imageUrls] = useState<string[]>(initial.imageUrls);
   const [tags, setTags] = useState<string[]>(initial.tags);
   const [tagDraft, setTagDraft] = useState('');
   const [stock, setStock] = useState<SelectedStock | null>(initial.stock);
   const [stockNotice, setStockNotice] = useState(false);
   const [stockSheetOpen, setStockSheetOpen] = useState(false);
-  const [sourceError, setSourceError] = useState<string | null>(null);
   const [contentError, setContentError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const composingRef = useRef(false);
@@ -167,19 +169,15 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
     const url = sourceUrl.trim();
     const text = sourceText.trim();
     const body = content.trim();
-    if (!url && !text) {
-      setSourceError(SOURCE_REQUIRED_MESSAGE);
-      return;
-    }
-    if (!body) {
+    if (!body && imageUrls.length === 0) {
       setContentError(CONTENT_REQUIRED_MESSAGE);
       return;
     }
 
     const input: KnowledgeNoteInput = {
       category,
-      content: body,
-      imageUrls: [],
+      ...(body ? { content: body } : {}),
+      imageUrls,
       ...(url ? { sourceUrl: url } : {}),
       ...(text ? { sourceText: text } : {}),
       tags: mergeTags(tags, tagDraft.split(',')),
@@ -316,10 +314,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
           placeholder="https://"
           {...NO_SUGGESTION_PROPS}
           value={sourceUrl}
-          onChange={(event) => {
-            setSourceUrl(event.target.value);
-            setSourceError(null);
-          }}
+          onChange={(event) => setSourceUrl(event.target.value)}
         />
         <Label htmlFor="knowledge-note-source-text" className="sr-only">
           출처 텍스트
@@ -331,14 +326,8 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
           value={sourceText}
           onChange={(event) => {
             setSourceText(event.target.value);
-            setSourceError(null);
           }}
         />
-        {sourceError && (
-          <p role="alert" className="text-sm text-destructive">
-            {sourceError}
-          </p>
-        )}
       </div>
 
       <div className="grid gap-1.5">
