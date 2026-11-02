@@ -198,10 +198,11 @@ describe('KnowledgeNotesPage', () => {
     await user.click(within(dialog).getByRole('button', { name: '삭제' }));
 
     await waitFor(() => expect(api.deleteKnowledgeNote).toHaveBeenCalledWith(1));
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('메모를 삭제했습니다.'));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
-  it('삭제에 실패하면 에러 토스트를 보인다', async () => {
+  it('삭제에 실패하면 토스트 대신 화면에 알린다', async () => {
     const user = userEvent.setup();
     vi.mocked(api.deleteKnowledgeNote).mockRejectedValue(new Error('fail'));
     renderPage();
@@ -211,7 +212,8 @@ describe('KnowledgeNotesPage', () => {
     const dialog = await screen.findByRole('alertdialog');
     await user.click(within(dialog).getByRole('button', { name: '삭제' }));
 
-    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    expect(await screen.findByRole('alert')).toHaveTextContent('메모를 삭제하지 못했습니다.');
+    expect(toast.error).not.toHaveBeenCalled();
     expect(toast.success).not.toHaveBeenCalled();
   });
 

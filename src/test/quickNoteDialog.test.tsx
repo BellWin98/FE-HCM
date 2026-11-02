@@ -100,6 +100,17 @@ describe('빠른 메모 다이얼로그', () => {
     expect(screen.getByRole('heading', { name: '빠른 메모' })).toBeInTheDocument();
   });
 
+  it('입력 칸은 자동완성·자동 고침을 끈다', async () => {
+    await open();
+    await screen.findByRole('textbox', { name: '내용' });
+    for (const name of ['내용', '출처 링크', '출처 텍스트', '태그']) {
+      const field = screen.getByRole('textbox', { name });
+      expect(field).toHaveAttribute('autocomplete', 'off');
+      expect(field).toHaveAttribute('autocorrect', 'off');
+      expect(field).toHaveAttribute('spellcheck', 'false');
+    }
+  });
+
   it('권한이 없으면 열리지 않는다', async () => {
     vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false });
     renderDialog();
@@ -181,7 +192,7 @@ describe('빠른 메모 다이얼로그', () => {
       category: 'REAL_ESTATE',
       sourceText: '유튜브',
     });
-    expect(toast.success).toHaveBeenCalledWith('메모를 저장했습니다.');
+    expect(toast.success).not.toHaveBeenCalled();
 
     await userEvent.click(screen.getByRole('button', { name: '열기' }));
     expect(await screen.findByRole('radio', { name: '부동산' })).toBeChecked();
@@ -343,12 +354,11 @@ describe('빠른 메모 다이얼로그', () => {
     await userEvent.type(screen.getByRole('textbox', { name: '출처 텍스트' }), '책');
     await userEvent.click(screen.getByRole('button', { name: '저장' }));
 
-    await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith(
-        '메모를 저장하지 못했습니다.',
-        expect.objectContaining({ description: '내용은 2000자 이하여야 합니다' })
-      )
+    expect(await screen.findByText('메모를 저장하지 못했습니다. 내용은 2000자 이하여야 합니다')).toHaveAttribute(
+      'role',
+      'alert'
     );
+    expect(toast.error).not.toHaveBeenCalled();
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '내용' })).toHaveValue('메모');
     expect(onClosed).not.toHaveBeenCalled();

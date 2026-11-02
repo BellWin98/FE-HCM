@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { KnowledgeNoteCard } from '@/components/knowledge/KnowledgeNoteCard';
@@ -50,11 +49,7 @@ const KnowledgeNotesPage = () => {
   const deleteMutation = useMutation({
     mutationFn: (note: KnowledgeNote) => api.deleteKnowledgeNote(note.id),
     onSuccess: () => {
-      toast.success('메모를 삭제했습니다.');
       queryClient.invalidateQueries({ queryKey: KNOWLEDGE_NOTES_QUERY_KEY });
-    },
-    onError: () => {
-      toast.error('메모를 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.');
     },
   });
 
@@ -85,6 +80,9 @@ const KnowledgeNotesPage = () => {
           type="search"
           aria-label="메모 검색"
           placeholder="메모 검색"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
           value={keywordInput}
           onChange={(e) => setKeywordInput(e.target.value)}
         />
@@ -124,6 +122,12 @@ const KnowledgeNotesPage = () => {
             {stockName}
             <X className="ml-1 h-3 w-3" aria-hidden="true" />
           </Button>
+        )}
+
+        {deleteMutation.isError && (
+          <p role="alert" className="text-sm text-destructive">
+            메모를 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.
+          </p>
         )}
 
         {isPending ? (

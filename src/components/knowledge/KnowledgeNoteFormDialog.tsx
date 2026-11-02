@@ -11,7 +11,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import TossStockSearchSheet from '@/components/tossStock/TossStockSearchSheet';
 import { api } from '@/lib/api';
-import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
 import { KNOWLEDGE_NOTES_QUERY_KEY } from '@/hooks/useKnowledgeAccess';
@@ -23,6 +22,9 @@ import type { QuickNoteOpenOptions } from '@/contexts/QuickNoteContext';
 const SOURCE_REQUIRED_MESSAGE = '출처(링크 또는 텍스트)를 입력하세요';
 const CONTENT_REQUIRED_MESSAGE = '내용을 입력하세요';
 const SAVE_FAILED_MESSAGE = '메모를 저장하지 못했습니다.';
+
+/** 모바일 키보드의 자동완성·자동 고침 제안을 끈다. */
+const NO_SUGGESTION_PROPS = { autoComplete: 'off', autoCorrect: 'off', spellCheck: false } as const;
 
 interface SelectedStock {
   symbol: string;
@@ -95,6 +97,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
   const [stockSheetOpen, setStockSheetOpen] = useState(false);
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [contentError, setContentError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const composingRef = useRef(false);
 
   const mutation = useMutation({
@@ -177,10 +180,10 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
       ...(category === 'STOCK' && stock ? { stockSymbol: stock.symbol, stockName: stock.name } : {}),
     };
 
+    setSaveError(null);
     mutation.mutate(input, {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: KNOWLEDGE_NOTES_QUERY_KEY });
-        toast.success('메모를 저장했습니다.');
         // 수정은 "방금 쓴 맥락" 이 아니므로 다음 빠른 메모의 기본값을 바꾸지 않는다.
         if (!note) {
           saveLastContext({
@@ -192,9 +195,8 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
         onDone();
       },
       onError: (error) => {
-        toast.error(SAVE_FAILED_MESSAGE, {
-          description: error instanceof Error && error.message ? error.message : undefined,
-        });
+        const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
+        setSaveError(`${SAVE_FAILED_MESSAGE}${detail}`);
       },
     });
   };
@@ -268,6 +270,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
           ref={contentRef}
           value={content}
           rows={5}
+          {...NO_SUGGESTION_PROPS}
           onChange={(event) => {
             setContent(event.target.value);
             setContentError(null);
@@ -301,6 +304,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
           type="url"
           inputMode="url"
           placeholder="https://"
+          {...NO_SUGGESTION_PROPS}
           value={sourceUrl}
           onChange={(event) => {
             setSourceUrl(event.target.value);
@@ -313,6 +317,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
         <Input
           id="knowledge-note-source-text"
           placeholder="책, 영상, 사람 등 링크가 없는 출처"
+          {...NO_SUGGESTION_PROPS}
           value={sourceText}
           onChange={(event) => {
             setSourceText(event.target.value);
@@ -351,6 +356,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
         <Input
           id="knowledge-note-tags"
           placeholder="쉼표 또는 Enter 로 추가"
+          {...NO_SUGGESTION_PROPS}
           value={tagDraft}
           onChange={(event) => handleTagChange(event.target.value)}
           onKeyDown={handleTagKeyDown}
@@ -369,6 +375,11 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
       <Button type="submit" disabled={mutation.isPending}>
         저장
       </Button>
+      {saveError && (
+        <p role="alert" className="text-sm text-destructive">
+          {saveError}
+        </p>
+      )}
 
       {category === 'STOCK' && (
         <TossStockSearchSheet
