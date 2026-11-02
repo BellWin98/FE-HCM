@@ -38,6 +38,12 @@ import type {
   TossRealizedProfitPeriod,
   TossStockSearchResult,
 } from "@/types/tossStock";
+import type {
+  KnowledgeAccessStatus,
+  KnowledgeNote,
+  KnowledgeNoteInput,
+  KnowledgeNoteSearchParams,
+} from "@/types/knowledgeNote";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
@@ -452,6 +458,43 @@ class ApiClient {
     return this.request<{ orderId: string }>(
       `/toss-stock/orders/${encodeURIComponent(orderId)}/cancel`,
       { method: "POST", data: { owner } }
+    );
+  }
+
+  // Knowledge Note APIs
+  async getKnowledgeAccess(config: AxiosRequestConfig = {}): Promise<KnowledgeAccessStatus> {
+    return this.request<KnowledgeAccessStatus>("/knowledge-notes/access", config);
+  }
+
+  /** GET /knowledge-notes — 비어 있는 조건은 쿼리에서 뺀다. */
+  async searchKnowledgeNotes(params: KnowledgeNoteSearchParams = {}): Promise<PageResponse<KnowledgeNote>> {
+    const searchParams = new URLSearchParams();
+    if (params.keyword) searchParams.append("keyword", params.keyword);
+    if (params.category) searchParams.append("category", params.category);
+    if (params.stockSymbol) searchParams.append("stockSymbol", params.stockSymbol);
+    if (params.page !== undefined) searchParams.append("page", String(params.page));
+    if (params.size !== undefined) searchParams.append("size", String(params.size));
+    const query = searchParams.toString();
+    return this.request<PageResponse<KnowledgeNote>>(`/knowledge-notes${query ? `?${query}` : ""}`);
+  }
+
+  async createKnowledgeNote(input: KnowledgeNoteInput): Promise<KnowledgeNote> {
+    return this.request<KnowledgeNote>("/knowledge-notes", { method: "POST", data: input });
+  }
+
+  async updateKnowledgeNote(id: number, input: KnowledgeNoteInput): Promise<KnowledgeNote> {
+    return this.request<KnowledgeNote>(`/knowledge-notes/${id}`, { method: "PUT", data: input });
+  }
+
+  async deleteKnowledgeNote(id: number): Promise<void> {
+    await this.request<void>(`/knowledge-notes/${id}`, { method: "DELETE" });
+  }
+
+  /** GET /knowledge-notes/stock-counts?symbols=A,B — 종목코드별 메모 개수. */
+  async getKnowledgeNoteStockCounts(symbols: string[]): Promise<Record<string, number>> {
+    if (symbols.length === 0) return {};
+    return this.request<Record<string, number>>(
+      `/knowledge-notes/stock-counts?symbols=${symbols.map(encodeURIComponent).join(",")}`
     );
   }
 
