@@ -179,6 +179,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
     const input: KnowledgeNoteInput = {
       category,
       content: body,
+      imageUrls: [],
       ...(url ? { sourceUrl: url } : {}),
       ...(text ? { sourceText: text } : {}),
       tags: mergeTags(tags, tagDraft.split(',')),

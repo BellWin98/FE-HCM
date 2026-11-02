@@ -44,6 +44,7 @@ const savedNote: KnowledgeNote = {
   id: 9,
   category: 'DEV',
   content: '저장됨',
+  images: [],
   sourceUrl: null,
   sourceText: '책',
   tags: [],
@@ -152,6 +153,7 @@ describe('빠른 메모 다이얼로그', () => {
         content: '메모 내용',
         sourceText: '클린 코드',
         tags: ['리팩터링', '테스트'],
+        imageUrls: [],
       })
     );
   });
@@ -168,6 +170,7 @@ describe('빠른 메모 다이얼로그', () => {
         content: '메모',
         sourceUrl: 'https://example.com',
         tags: [],
+        imageUrls: [],
       })
     );
   });
@@ -325,6 +328,7 @@ describe('빠른 메모 다이얼로그', () => {
         content: '메모',
         sourceText: '리포트',
         tags: [],
+        imageUrls: [],
       })
     );
   });
@@ -341,6 +345,7 @@ describe('빠른 메모 다이얼로그', () => {
         content: '실적',
         sourceText: '리포트',
         tags: [],
+        imageUrls: [],
         stockSymbol: '005930',
         stockName: '삼성전자',
       })
@@ -389,6 +394,7 @@ describe('빠른 메모 다이얼로그', () => {
         content: '원본 수정',
         sourceText: '출처',
         tags: ['a'],
+        imageUrls: [],
       })
     );
     expect(api.createKnowledgeNote).not.toHaveBeenCalled();

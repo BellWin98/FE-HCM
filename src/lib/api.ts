@@ -486,6 +486,14 @@ class ApiClient {
     return this.request<KnowledgeNote>(`/knowledge-notes/${id}`, { method: "PUT", data: input });
   }
 
+  /** POST /knowledge-notes/images — 메모에 붙일 이미지를 올리고 URL 목록을 받는다. */
+  async uploadKnowledgeNoteImages(files: File[]): Promise<string[]> {
+    const formData = new FormData();
+    files.forEach((file) => formData.append("files", file));
+    const result = await this.uploadFile<{ urls: string[] }>("/knowledge-notes/images", formData);
+    return result.urls;
+  }
+
   async deleteKnowledgeNote(id: number): Promise<void> {
     await this.request<void>(`/knowledge-notes/${id}`, { method: "DELETE" });
   }

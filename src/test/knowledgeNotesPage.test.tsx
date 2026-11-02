@@ -28,6 +28,7 @@ const makeNote = (over: Partial<KnowledgeNote> = {}): KnowledgeNote => ({
   id: 1,
   category: 'DEV',
   content: '첫 메모',
+  images: [],
   sourceUrl: null,
   sourceText: null,
   tags: [],
