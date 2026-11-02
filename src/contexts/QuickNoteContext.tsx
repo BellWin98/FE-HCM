@@ -50,6 +50,13 @@ export const QuickNoteProvider = ({ children }: { children: ReactNode }) => {
     optionsRef.current.onClosed?.();
   }, []);
 
+  // FAB 을 연달아 누르면 폼이 다시 마운트되어 쓰던 내용이 사라지므로, 이미 열려 있으면 무시한다.
+  // openQuickNote 자체는 열린 채로 다른 메모를 여는 경우가 있어 막지 않는다.
+  const handleFabClick = (): void => {
+    if (open) return;
+    openQuickNote();
+  };
+
   const value = useMemo(() => ({ openQuickNote }), [openQuickNote]);
 
   return (
@@ -57,7 +64,7 @@ export const QuickNoteProvider = ({ children }: { children: ReactNode }) => {
       {children}
       {hasAccess && (
         <>
-          <QuickNoteFab onClick={() => openQuickNote()} />
+          <QuickNoteFab onClick={handleFabClick} />
           <KnowledgeNoteFormDialog
             open={open}
             onOpenChange={handleOpenChange}

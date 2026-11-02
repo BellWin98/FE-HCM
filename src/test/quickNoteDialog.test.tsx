@@ -1,8 +1,8 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Member } from '@/types';
 import type { KnowledgeNote } from '@/types/knowledgeNote';
 
@@ -191,6 +191,7 @@ describe('빠른 메모 다이얼로그', () => {
     expect(JSON.parse(localStorage.getItem(CONTEXT_KEY) ?? 'null')).toEqual({
       category: 'REAL_ESTATE',
       sourceText: '유튜브',
+      savedAt: expect.any(Number),
     });
     expect(toast.success).not.toHaveBeenCalled();
 
@@ -203,7 +204,7 @@ describe('빠른 메모 다이얼로그', () => {
   it('prefill 은 마지막 컨텍스트보다 우선한다', async () => {
     localStorage.setItem(
       CONTEXT_KEY,
-      JSON.stringify({ category: 'DEV', sourceUrl: 'https://old.example.com' })
+      JSON.stringify({ category: 'DEV', sourceUrl: 'https://old.example.com', savedAt: Date.now() })
     );
     await open({ prefill: { category: 'ETC', sourceText: '앱 공유', content: '본문' } });
 
@@ -222,7 +223,7 @@ describe('빠른 메모 다이얼로그', () => {
   });
 
   it('"출처 지우기" 는 기억한 마지막 출처도 지워 다음에 다시 채우지 않는다', async () => {
-    localStorage.setItem(CONTEXT_KEY, JSON.stringify({ category: 'DEV', sourceText: '옛 출처' }));
+    localStorage.setItem(CONTEXT_KEY, JSON.stringify({ category: 'DEV', sourceText: '옛 출처', savedAt: Date.now() }));
     await open();
     expect(await screen.findByRole('textbox', { name: '출처 텍스트' })).toHaveValue('옛 출처');
 
@@ -415,6 +416,132 @@ describe('빠른 메모 다이얼로그', () => {
     await userEvent.keyboard('{Escape}');
 
     await waitFor(() => expect(onClosed).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe('빠른 메모 — 열 때', () => {
+  it('30분이 지난 마지막 출처는 채우지 않고 분야만 이어 간다', async () => {
+    localStorage.setItem(
+      CONTEXT_KEY,
+      JSON.stringify({ category: 'ETC', sourceText: '어제 본 영상', savedAt: Date.now() - 31 * 60 * 1000 })
+    );
+    await open();
+
+    expect(await screen.findByRole('radio', { name: '기타' })).toBeChecked();
+    expect(screen.getByRole('textbox', { name: '출처 텍스트' })).toHaveValue('');
+    expect(screen.queryByText('지난 메모의 출처')).not.toBeInTheDocument();
+  });
+
+  it('저장 시각이 없는 예전 기록의 출처도 채우지 않는다', async () => {
+    localStorage.setItem(CONTEXT_KEY, JSON.stringify({ category: 'ETC', sourceText: '옛 출처' }));
+    await open();
+
+    expect(await screen.findByRole('radio', { name: '기타' })).toBeChecked();
+    expect(screen.getByRole('textbox', { name: '출처 텍스트' })).toHaveValue('');
+  });
+
+  it('마지막 출처를 채웠으면 "지난 메모의 출처" 라고 알리고, 지우면 안내도 사라진다', async () => {
+    localStorage.setItem(CONTEXT_KEY, JSON.stringify({ category: 'DEV', sourceText: '책', savedAt: Date.now() }));
+    await open();
+
+    expect(await screen.findByText('지난 메모의 출처')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '출처 지우기' }));
+    expect(screen.queryByText('지난 메모의 출처')).not.toBeInTheDocument();
+  });
+
+  it('prefill 로 받은 출처에는 "지난 메모의 출처" 안내를 띄우지 않는다', async () => {
+    await open({ prefill: { sourceText: '앱 공유' } });
+
+    expect(await screen.findByRole('textbox', { name: '출처 텍스트' })).toHaveValue('앱 공유');
+    expect(screen.queryByText('지난 메모의 출처')).not.toBeInTheDocument();
+  });
+
+  it('내용 칸이 분야 선택보다 먼저 나온다', async () => {
+    await open();
+    const content = await screen.findByRole('textbox', { name: '내용' });
+    const category = screen.getByRole('radiogroup', { name: '분야' });
+
+    expect(content.compareDocumentPosition(category) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('FAB 은 다이얼로그를 연다고 알린다', async () => {
+    renderDialog();
+
+    expect(await screen.findByRole('button', { name: '빠른 메모' })).toHaveAttribute('aria-haspopup', 'dialog');
+  });
+
+  it('FAB 을 연달아 눌러도 쓰던 내용이 사라지지 않는다', async () => {
+    renderDialog();
+    const fab = await screen.findByRole('button', { name: '빠른 메모' });
+    fireEvent.click(fab);
+    await userEvent.type(await screen.findByRole('textbox', { name: '내용' }), '쓰던 메모');
+
+    fireEvent.click(fab);
+
+    expect(screen.getByRole('textbox', { name: '내용' })).toHaveValue('쓰던 메모');
+  });
+});
+
+describe('빠른 메모 — 모바일', () => {
+  class FakeVisualViewport extends EventTarget {
+    height = 800;
+    offsetTop = 0;
+  }
+  const originalViewport = window.visualViewport;
+  const originalInnerHeight = window.innerHeight;
+  const originalInnerWidth = window.innerWidth;
+  let viewport: FakeVisualViewport;
+
+  const showKeyboard = (): void => {
+    act(() => {
+      viewport.height = 450;
+      viewport.dispatchEvent(new Event('resize'));
+    });
+  };
+
+  beforeEach(() => {
+    viewport = new FakeVisualViewport();
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: originalViewport });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: originalInnerHeight });
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalInnerWidth });
+  });
+
+  it('키보드에 맞춰 위치가 바뀔 때 튀지 않도록 bottom 을 전환하고 열림 애니메이션을 줄인다', async () => {
+    await open();
+    const sheet = await screen.findByRole('dialog');
+
+    expect(sheet.className).toContain('transition-[bottom]');
+    expect(sheet.className).toContain('data-[state=open]:duration-300');
+    expect(sheet.className).not.toContain('data-[state=open]:duration-500');
+  });
+
+  it('키보드가 없으면 홈 인디케이터만큼 아래 여백을 두고, 키보드가 올라오면 뺀다', async () => {
+    await open();
+    const sheet = await screen.findByRole('dialog');
+    expect(sheet.className).toContain('pb-safe');
+
+    showKeyboard();
+    expect(sheet.className).not.toContain('pb-safe');
+  });
+
+  it('키보드가 올라와 있으면 FAB 을 숨긴다', async () => {
+    renderDialog();
+    expect(await screen.findByRole('button', { name: '빠른 메모' })).toBeInTheDocument();
+
+    showKeyboard();
+    expect(screen.queryByRole('button', { name: '빠른 메모' })).not.toBeInTheDocument();
+
+    act(() => {
+      viewport.height = 800;
+      viewport.dispatchEvent(new Event('resize'));
+    });
+    expect(screen.getByRole('button', { name: '빠른 메모' })).toBeInTheDocument();
   });
 });
 

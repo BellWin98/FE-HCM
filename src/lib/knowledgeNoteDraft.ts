@@ -6,6 +6,9 @@ export type KnowledgeLastContext = Pick<KnowledgeNoteInput, 'category' | 'source
 
 const STORAGE_KEY = 'hcm.knowledgeNote.lastContext';
 
+/** 이보다 오래된 출처는 다른 맥락일 가능성이 커서 다시 채우지 않는다. 분야는 계속 이어 간다. */
+const SOURCE_TTL_MS = 30 * 60 * 1000;
+
 const isCategory = (value: unknown): value is KnowledgeCategory =>
   typeof value === 'string' && (KNOWLEDGE_CATEGORIES as string[]).includes(value);
 
@@ -16,8 +19,11 @@ export const loadLastContext = (): KnowledgeLastContext | null => {
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     if (typeof parsed !== 'object' || parsed === null) return null;
-    const { category, sourceUrl, sourceText } = parsed as Record<string, unknown>;
+    const { category, sourceUrl, sourceText, savedAt } = parsed as Record<string, unknown>;
     if (!isCategory(category)) return null;
+    // 저장 시각이 없는 예전 기록은 언제 쓴 것인지 알 수 없으므로 오래된 것으로 본다.
+    const isFresh = typeof savedAt === 'number' && Date.now() - savedAt < SOURCE_TTL_MS;
+    if (!isFresh) return { category };
     return {
       category,
       ...(typeof sourceUrl === 'string' && sourceUrl ? { sourceUrl } : {}),
@@ -30,7 +36,7 @@ export const loadLastContext = (): KnowledgeLastContext | null => {
 
 export const saveLastContext = (context: KnowledgeLastContext): void => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(context));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...context, savedAt: Date.now() }));
   } catch {
     // 기억을 못 할 뿐 저장 자체에는 영향이 없다.
   }

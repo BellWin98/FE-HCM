@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import TossStockSearchSheet from '@/components/tossStock/TossStockSearchSheet';
 import { api } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
 import { KNOWLEDGE_NOTES_QUERY_KEY } from '@/hooks/useKnowledgeAccess';
@@ -69,11 +70,13 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
         sourceText: note.sourceText ?? '',
         tags: note.tags,
         stock: note.stockSymbol ? { symbol: note.stockSymbol, name: note.stockName ?? note.stockSymbol } : null,
+        sourceFromLast: false,
       };
     }
     const last = loadLastContext();
     // 출처는 링크·텍스트가 한 쌍이다 — prefill 이 한쪽만 줘도 마지막 출처의 나머지 한쪽을 섞지 않는다.
     const prefillHasSource = Boolean(prefill?.sourceUrl || prefill?.sourceText);
+    const lastHasSource = Boolean(last?.sourceUrl || last?.sourceText);
     return {
       category: prefill?.category ?? last?.category ?? 'DEV',
       content: prefill?.content ?? '',
@@ -83,6 +86,8 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
       stock: prefill?.stockSymbol
         ? { symbol: prefill.stockSymbol, name: prefill.stockName ?? prefill.stockSymbol }
         : null,
+      // 키보드에 가려 출처 칸이 안 보이는 채로 지난 출처가 붙어 저장되지 않도록 채웠다는 사실을 알린다.
+      sourceFromLast: !prefillHasSource && lastHasSource,
     };
   });
 
@@ -213,9 +218,30 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
   };
 
   const hasSource = Boolean(sourceUrl || sourceText);
+  const showLastSourceHint = initial.sourceFromLast && hasSource;
 
   return (
     <form onSubmit={handleFormSubmit} onKeyDown={handleFormKeyDown} className="grid gap-4">
+      <div className="grid gap-1.5">
+        <Label htmlFor="knowledge-note-content">내용</Label>
+        <Textarea
+          id="knowledge-note-content"
+          ref={contentRef}
+          value={content}
+          rows={5}
+          {...NO_SUGGESTION_PROPS}
+          onChange={(event) => {
+            setContent(event.target.value);
+            setContentError(null);
+          }}
+        />
+        {contentError && (
+          <p role="alert" className="text-sm text-destructive">
+            {contentError}
+          </p>
+        )}
+      </div>
+
       <RadioGroup
         aria-label="분야"
         value={category}
@@ -264,28 +290,11 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
       )}
 
       <div className="grid gap-1.5">
-        <Label htmlFor="knowledge-note-content">내용</Label>
-        <Textarea
-          id="knowledge-note-content"
-          ref={contentRef}
-          value={content}
-          rows={5}
-          {...NO_SUGGESTION_PROPS}
-          onChange={(event) => {
-            setContent(event.target.value);
-            setContentError(null);
-          }}
-        />
-        {contentError && (
-          <p role="alert" className="text-sm text-destructive">
-            {contentError}
-          </p>
-        )}
-      </div>
-
-      <div className="grid gap-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">출처</span>
+          <span className="flex items-baseline gap-2">
+            <span className="text-sm font-medium">출처</span>
+            {showLastSourceHint && <span className="text-xs text-muted-foreground">지난 메모의 출처</span>}
+          </span>
           <Button
             type="button"
             variant="ghost"
@@ -422,7 +431,13 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
             bottom: keyboardInset.bottom,
             ...(keyboardInset.height !== null ? { maxHeight: keyboardInset.height * 0.9 } : {}),
           }}
-          className="max-h-[90dvh] overflow-y-auto overscroll-contain"
+          // 열리자마자 내용 칸 포커스로 키보드가 올라오므로, 올라오는 애니메이션을 줄이고 bottom 변화는
+          // 부드럽게 따라가게 해 시트가 뚝 끊겨 튀어 오르지 않게 한다.
+          // 키보드가 없을 때만 홈 인디케이터만큼 아래 여백을 둔다(키보드 위에서는 필요 없다).
+          className={cn(
+            'max-h-[90dvh] overflow-y-auto overscroll-contain transition-[bottom] data-[state=open]:duration-300',
+            keyboardInset.bottom === 0 && 'pb-safe'
+          )}
         >
           <SheetHeader>
             <SheetTitle>{title}</SheetTitle>
