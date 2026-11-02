@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TossHolding, TossPortfolio } from '@/types/tossStock';
 
@@ -35,13 +36,17 @@ vi.mock('@/hooks/useKnowledgeAccess', () => ({
   KNOWLEDGE_NOTES_QUERY_KEY: ['knowledgeNotes'],
   useKnowledgeAccess: () => ({ hasAccess: false, isPending: false }),
 }));
-vi.mock('@/hooks/useKnowledgeStockCounts', () => ({ useKnowledgeStockCounts: () => ({}) }));
+const useKnowledgeStockCounts = vi.fn((): Record<string, number> => ({}));
+vi.mock('@/hooks/useKnowledgeStockCounts', () => ({
+  useKnowledgeStockCounts: () => useKnowledgeStockCounts(),
+}));
 
 const { api } = await import('@/lib/api');
 const TossStockAssetsTab = (await import('@/components/tossStock/TossStockAssetsTab')).default;
 
 beforeEach(() => {
   vi.mocked(api.getTossRealizedProfit).mockClear();
+  useKnowledgeStockCounts.mockReset().mockReturnValue({});
 });
 
 const holding = (overrides: Partial<TossHolding> = {}): TossHolding => ({
@@ -611,3 +616,16 @@ describe('토스 자산 탭 — 미체결 주문 정정', () => {
   });
 });
 
+describe('토스 자산 탭 — 종목 메모 개수 배지', () => {
+  it('종목별 메모 개수가 보유 종목 줄의 "메모 3" 배지로 이어진다', () => {
+    useKnowledgeStockCounts.mockReturnValue({ '005930': 3 });
+    render(
+      <MemoryRouter>
+        <TossStockAssetsTab portfolio={domesticOnlyPortfolio()} onRefresh={vi.fn()} loading={false} />
+      </MemoryRouter>
+    );
+
+    const badge = screen.getByRole('link', { name: '메모 3' });
+    expect(badge).toHaveAttribute('href', '/notes?stockSymbol=005930&stockName=%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90');
+  });
+});
