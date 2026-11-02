@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { RequireRole } from '@/components/RequireRole';
 import { RequireTossAccess } from '@/components/RequireTossAccess';
+import { RequireKnowledgeAccess } from '@/components/RequireKnowledgeAccess';
 import { QuickNoteProvider } from '@/contexts/QuickNoteContext';
 import { PwaUpdateBanner } from '@/components/common/PwaUpdateBanner';
 import { PwaInstallBanner } from '@/components/common/PwaInstallBanner';
@@ -24,6 +25,7 @@ import JoinedRoomsPage from './pages/JoinedRoomsPage';
 import StockPortfolioPage from './pages/StockPortfolioPage';
 import TossStockPortfolioPage from './pages/TossStockPortfolioPage';
 import MyPage from './pages/MyPage';
+import KnowledgeNotesPage from './pages/KnowledgeNotesPage';
 import AdminHomePage from './pages/admin/AdminHomePage';
 import AdminMembersPage from './pages/admin/AdminMembersPage';
 import AdminRoomsPage from './pages/admin/AdminRoomsPage';
@@ -116,6 +118,11 @@ const AppRoutes = () => (
       <ProtectedRoute>
         <MyPage />
       </ProtectedRoute>
+    } />
+    <Route path="/notes" element={
+      <RequireKnowledgeAccess>
+        <KnowledgeNotesPage />
+      </RequireKnowledgeAccess>
     } />
     <Route path="*" element={<NotFound />} />
   </Routes>
