@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Member, AuthContextType } from '@/types';
 import { api } from '@/lib/api';
 
@@ -19,6 +20,10 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  // 계정이 바뀌면 이전 사용자의 서버 상태(권한·메모 등)가 같은 탭에 남지 않도록 쿼리 캐시를 통째로 비운다.
+  const resetQueryCache = () => queryClient.clear();
 
   useEffect(() => {
     // 로컬 스토리지에서 사용자 정보 확인
@@ -40,6 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('member', JSON.stringify(loginMember));
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
+      resetQueryCache();
       setMember(loginMember);
     } catch (error) {
       throw new Error(error.message);
@@ -57,6 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const currentMember = await api.getCurrentUser() as Member;
 
       localStorage.setItem('member', JSON.stringify(currentMember));
+      resetQueryCache();
       setMember(currentMember);
     } catch (error) {
       localStorage.removeItem('member');
@@ -81,6 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('member', JSON.stringify(registeredMember));
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
+      resetQueryCache();
       setMember(registeredMember);
     } catch (error) {
       throw new Error(error.message);
@@ -124,6 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     // localStorage.clear();
+    resetQueryCache();
     setMember(null);
   };
 
