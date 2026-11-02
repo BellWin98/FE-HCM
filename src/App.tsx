@@ -26,6 +26,7 @@ import StockPortfolioPage from './pages/StockPortfolioPage';
 import TossStockPortfolioPage from './pages/TossStockPortfolioPage';
 import MyPage from './pages/MyPage';
 import KnowledgeNotesPage from './pages/KnowledgeNotesPage';
+import KnowledgeShareTargetPage from './pages/KnowledgeShareTargetPage';
 import AdminHomePage from './pages/admin/AdminHomePage';
 import AdminMembersPage from './pages/admin/AdminMembersPage';
 import AdminRoomsPage from './pages/admin/AdminRoomsPage';
@@ -124,6 +125,8 @@ const AppRoutes = () => (
         <KnowledgeNotesPage />
       </RequireKnowledgeAccess>
     } />
+    {/* 가드 없이 페이지가 직접 판정한다(Android 공유 시트 도착 화면) */}
+    <Route path="/notes/share" element={<KnowledgeShareTargetPage />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

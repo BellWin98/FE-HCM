@@ -26,6 +26,11 @@ export default defineConfig(({ mode }) => ({
         display: 'standalone',             // 브라우저 UI 제거(앱처럼)
         background_color: '#ffffff',
         theme_color: '#111827',
+        share_target: {
+          action: '/notes/share',
+          method: 'GET',
+          params: { title: 'title', text: 'text', url: 'url' },
+        },
         icons: [
           {
             src: '/icons/pwa-192x192.png',
