@@ -322,14 +322,15 @@ export const WorkoutUploadPage = () => {
                                 setSelectedImages(newImages);
                                 setImagePreviews(newPreviews);
                               }}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              aria-label={`운동 인증 사진 ${index + 1} 삭제`}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
                             >
                               <X className="h-4 w-4" />
                             </button>
                           </div>
                         ))}
                       </div>
-                      <div className="flex gap-2 justify-center">
+                      <div className="flex flex-wrap gap-2 justify-center">
                         {imagePreviews.length < 3 && (
                           <>
                             <label htmlFor="camera-upload" className="cursor-pointer">
