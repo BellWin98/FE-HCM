@@ -67,7 +67,7 @@ const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName:
         {shown.map((note) => (
           <li key={note.id} className="text-sm">
             <p className={cn('whitespace-pre-wrap break-words', !expanded && 'line-clamp-2')}>
-              {note.content}
+              {note.content ?? ''}
             </p>
             <span className="text-xs text-muted-foreground">{note.createdAt.slice(0, 10)}</span>
           </li>

@@ -28,6 +28,7 @@ const note = (id: number, content: string): KnowledgeNote => ({
   id,
   category: 'STOCK',
   content,
+  images: [],
   sourceUrl: null,
   sourceText: null,
   tags: [],

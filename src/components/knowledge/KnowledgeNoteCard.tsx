@@ -69,7 +69,7 @@ const NoteSource = ({ sourceUrl, sourceText }: NoteSourceProps) => {
 export const KnowledgeNoteCard = ({ note, onEdit, onDelete, onTagClick, onStockClick }: KnowledgeNoteCardProps) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [contentExpanded, setContentExpanded] = useState(false);
-  const collapsible = isLongContent(note.content);
+  const collapsible = isLongContent(note.content ?? '');
 
   return (
     <Card>
@@ -98,7 +98,7 @@ export const KnowledgeNoteCard = ({ note, onEdit, onDelete, onTagClick, onStockC
               collapsible && !contentExpanded && 'line-clamp-4'
             )}
           >
-            {note.content}
+            {note.content ?? ''}
           </p>
           {collapsible && (
             <button

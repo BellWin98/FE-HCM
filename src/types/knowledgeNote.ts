@@ -9,10 +9,15 @@ export const KNOWLEDGE_CATEGORY_LABELS: Record<KnowledgeCategory, string> = {
 
 export const KNOWLEDGE_CATEGORIES: KnowledgeCategory[] = ['DEV', 'REAL_ESTATE', 'STOCK', 'ETC'];
 
+export const MAX_NOTE_IMAGES = 5;
+
+export const ALLOWED_NOTE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
 export interface KnowledgeNote {
   id: number;
   category: KnowledgeCategory;
-  content: string;
+  content: string | null;
+  images: string[];
   sourceUrl: string | null;
   sourceText: string | null;
   tags: string[];
@@ -24,7 +29,8 @@ export interface KnowledgeNote {
 
 export interface KnowledgeNoteInput {
   category: KnowledgeCategory;
-  content: string;
+  content?: string;
+  imageUrls: string[];
   sourceUrl?: string;
   sourceText?: string;
   tags: string[];
