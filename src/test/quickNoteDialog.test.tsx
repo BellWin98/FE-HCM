@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Member } from '@/types';
 import type { KnowledgeNote } from '@/types/knowledgeNote';
+import { compressImage } from '@/lib/compressImage';
 
 vi.mock('@/lib/api', () => ({
   api: {
@@ -696,6 +697,42 @@ describe('빠른 메모 — 이미지 첨부', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getAllByRole('img')).toHaveLength(1);
     expect(api.createKnowledgeNote).not.toHaveBeenCalled();
+  });
+
+  it('압축 뒤에도 허용되지 않는 형식(HEIC)이면 올리지 않고 안내한다', async () => {
+    vi.mocked(compressImage).mockResolvedValueOnce(new File(['x'], 'a.heic', { type: 'image/heic' }));
+    await open();
+    await userEvent.upload(fileInput(), [png('a.png')]);
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('JPEG·PNG·WebP·GIF 이미지만 첨부할 수 있어요');
+    expect(api.uploadKnowledgeNoteImages).not.toHaveBeenCalled();
+    expect(api.createKnowledgeNote).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getAllByRole('img')).toHaveLength(1);
+  });
+
+  it('업로드 URL 개수가 파일 수와 다르면 메모를 만들지 않고 알린다', async () => {
+    vi.mocked(api.uploadKnowledgeNoteImages).mockResolvedValue(['https://cdn/a.png']);
+    await open();
+    await userEvent.upload(fileInput(), [png('a.png'), png('b.png')]);
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('메모를 저장하지 못했습니다.');
+    expect(api.createKnowledgeNote).not.toHaveBeenCalled();
+  });
+
+  it('저장 중에 붙여넣은 이미지는 첨부에 더하지 않는다', async () => {
+    vi.mocked(api.uploadKnowledgeNoteImages).mockReturnValue(new Promise(() => {}));
+    await open();
+    await userEvent.upload(fileInput(), [png('a.png')]);
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+    await waitFor(() => expect(api.uploadKnowledgeNoteImages).toHaveBeenCalled());
+    const content = screen.getByRole('textbox', { name: '내용' });
+
+    fireEvent.paste(content, { clipboardData: { files: [png('p.png')], items: [] } });
+
+    expect(screen.getAllByRole('img')).toHaveLength(1);
   });
 
   it('수정할 때 이미지를 한 장 빼고 저장하면 올리지 않고 남은 URL 만 보낸다', async () => {

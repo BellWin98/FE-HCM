@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 
 import NoteImageViewer from '@/components/knowledge/NoteImageViewer';
@@ -20,8 +20,17 @@ beforeAll(() => {
   );
 });
 
+// 닫을 때 실제 jsdom history.back() 이 popstate 를 흘려 다른 테스트로 새지 않게 항상 막아 둔다.
+beforeEach(() => {
+  vi.spyOn(window.history, 'back').mockImplementation(() => {});
+});
+
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+afterAll(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('NoteImageViewer', () => {

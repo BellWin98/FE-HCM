@@ -11,11 +11,22 @@ export const fitToMaxWidth = (
   return { width: maxWidth, height: Math.round(height * ratio) };
 };
 
+/** JPEG 는 투명을 못 담아 검게 나오므로 먼저 흰 바탕을 깐다. */
+const fillWhite = (
+  ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D,
+  width: number,
+  height: number,
+): void => {
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, width, height);
+};
+
 const encodeJpeg = async (bitmap: ImageBitmap, width: number, height: number): Promise<Blob | null> => {
   if (typeof OffscreenCanvas !== 'undefined') {
     const canvas = new OffscreenCanvas(width, height);
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
+    fillWhite(ctx, width, height);
     ctx.drawImage(bitmap, 0, 0, width, height);
     return canvas.convertToBlob({ type: 'image/jpeg', quality: JPEG_QUALITY });
   }
@@ -24,6 +35,7 @@ const encodeJpeg = async (bitmap: ImageBitmap, width: number, height: number): P
   canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
+  fillWhite(ctx, width, height);
   ctx.drawImage(bitmap, 0, 0, width, height);
   return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY));
 };

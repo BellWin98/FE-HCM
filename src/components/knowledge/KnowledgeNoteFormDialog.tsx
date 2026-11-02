@@ -20,11 +20,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
 import { KNOWLEDGE_NOTES_QUERY_KEY } from '@/hooks/useKnowledgeAccess';
 import { clearLastContext, loadLastContext, saveLastContext } from '@/lib/knowledgeNoteDraft';
-import { KNOWLEDGE_CATEGORIES, KNOWLEDGE_CATEGORY_LABELS } from '@/types/knowledgeNote';
+import { ALLOWED_NOTE_IMAGE_TYPES, KNOWLEDGE_CATEGORIES, KNOWLEDGE_CATEGORY_LABELS } from '@/types/knowledgeNote';
 import type { KnowledgeCategory, KnowledgeNoteInput } from '@/types/knowledgeNote';
 import type { QuickNoteOpenOptions } from '@/contexts/QuickNoteContext';
 
 const CONTENT_REQUIRED_MESSAGE = '내용 또는 이미지를 입력하세요';
+const UNSUPPORTED_IMAGE_MESSAGE = 'JPEG·PNG·WebP·GIF 이미지만 첨부할 수 있어요';
 const SAVE_FAILED_MESSAGE = '메모를 저장하지 못했습니다.';
 
 /** 모바일 키보드의 자동완성·자동 고침 제안을 끈다. */
@@ -147,8 +148,15 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
       const uploaded = new Map<string, string>();
       if (pending.length > 0) {
         const files = await Promise.all(pending.map((item) => compressImage(item.file as File)));
+        // HEIC·SVG 등은 압축 뒤에도 원본이 남는다 — 서버가 배치 전체를 400 으로 거절하기 전에 막는다.
+        if (files.some((file) => !ALLOWED_NOTE_IMAGE_TYPES.includes(file.type))) {
+          throw new Error(UNSUPPORTED_IMAGE_MESSAGE);
+        }
         const urls = await api.uploadKnowledgeNoteImages(files);
         // 업로드 URL 은 보낸 파일과 순서대로 1:1 이다.
+        if (urls.length !== pending.length) {
+          throw new Error('이미지 업로드 결과가 올바르지 않아요');
+        }
         pending.forEach((item, index) => uploaded.set(item.id, urls[index]));
         // 메모 요청이 실패해 다시 저장해도 같은 이미지를 또 올리지 않도록 먼저 상태에 적어 둔다.
         setAttachments((current) =>
@@ -162,6 +170,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
   });
 
   const handleAddFiles = (files: File[]): void => {
+    if (mutation.isPending) return;
     const { next, dropped } = addFiles(attachmentsRef.current, files);
     attachmentsRef.current = next;
     setAttachments(next);
@@ -180,6 +189,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
     const images = getPastedFiles(event).filter((file) => file.type.startsWith('image/'));
     if (images.length === 0) return;
     event.preventDefault();
+    if (mutation.isPending) return;
     handleAddFiles(images);
   };
   useEffect(() => {
