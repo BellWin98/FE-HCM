@@ -21,13 +21,20 @@ describe('compressImage', () => {
   const makeFile = (type: string, name = 'photo.png', size = 1000): File =>
     new File([new Uint8Array(size)], name, { type });
 
+  const calls: string[] = [];
+
   const stubCanvas = (blobSize: number): void => {
+    calls.length = 0;
     vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ width: 2880, height: 1800, close: vi.fn() }));
     vi.stubGlobal(
       'OffscreenCanvas',
       class {
-        getContext(): { drawImage: () => void } {
-          return { drawImage: vi.fn() };
+        getContext(): { fillStyle: string; fillRect: () => void; drawImage: () => void } {
+          return {
+            fillStyle: '',
+            fillRect: () => calls.push('fillRect'),
+            drawImage: () => calls.push('drawImage'),
+          };
         }
         convertToBlob(): Promise<Blob> {
           return Promise.resolve(new Blob([new Uint8Array(blobSize)], { type: 'image/jpeg' }));
@@ -59,5 +66,27 @@ describe('compressImage', () => {
     expect(result.type).toBe('image/jpeg');
     expect(result.name).toBe('my.photo.jpg');
     expect(result.size).toBe(200);
+  });
+
+  it('JPEG 로 바꾸기 전에 흰 배경을 먼저 칠한다(투명 PNG 가 검게 되지 않게)', async () => {
+    stubCanvas(200);
+    await compressImage(makeFile('image/png', 'a.png', 1000));
+    expect(calls).toEqual(['fillRect', 'drawImage']);
+  });
+
+  it('DOM 캔버스 경로에서도 흰 배경을 먼저 칠한다', async () => {
+    vi.stubGlobal('OffscreenCanvas', undefined);
+    vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ width: 100, height: 100, close: vi.fn() }));
+    const order: string[] = [];
+    const ctx = {
+      fillStyle: '',
+      fillRect: () => order.push('fillRect'),
+      drawImage: () => order.push('drawImage'),
+    };
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((cb) => cb(new Blob([new Uint8Array(10)])));
+    await compressImage(makeFile('image/png', 'a.png', 1000));
+    expect(order).toEqual(['fillRect', 'drawImage']);
+    expect(ctx.fillStyle).toBe('#fff');
   });
 });
