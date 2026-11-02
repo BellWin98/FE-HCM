@@ -424,6 +424,9 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
 
   const formStep = (
     <div className="space-y-5">
+      {/* 종목 메모는 맨 위에 둔다 — 메모가 늦게 불려와도 입력칸·확인 버튼이 밀려나지 않게. */}
+      <StockNotesPanel symbol={target?.symbol ?? null} stockName={target?.name ?? ''} />
+
       {/* 매수 / 매도 */}
       <div role="radiogroup" aria-label="매수 매도 선택" className={cn('grid grid-cols-2 overflow-hidden rounded-lg border', STOCK_BORDER)}>
         {(['BUY', 'SELL'] as TossOrderSide[]).map((value) => (
@@ -605,8 +608,6 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
           시세를 불러오지 못했어요. 가격을 직접 입력하면 그대로 주문할 수 있습니다.
         </p>
       )}
-
-      <StockNotesPanel symbol={target?.symbol ?? null} stockName={target?.name ?? ''} />
 
       <div className={cn('border-t pt-4', STOCK_BORDER)}>
         {isLimitLike && summaryRow('예상 주문금액', money(estimatedAmount))}

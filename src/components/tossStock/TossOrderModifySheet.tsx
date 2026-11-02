@@ -150,6 +150,9 @@ const TossOrderModifySheet: React.FC<TossOrderModifySheetProps> = ({ open, onOpe
 
   const formStep = (
     <div className="space-y-5">
+      {/* 종목 메모는 맨 위에 둔다 — 메모가 늦게 불려와도 입력칸·확인 버튼이 밀려나지 않게. */}
+      <StockNotesPanel symbol={order?.symbol ?? null} stockName={order?.name ?? ''} />
+
       <p className={cn('text-sm tabular-nums', STOCK_TEXT_MUTED)}>
         {sideLabel} · 원주문 {originalPrice} · 미체결 {formatQuantity(order.remainingQuantity)}주
       </p>
@@ -235,8 +238,6 @@ const TossOrderModifySheet: React.FC<TossOrderModifySheetProps> = ({ open, onOpe
       ) : (
         <p className={cn('text-xs', STOCK_TEXT_MUTED)}>미국 주식은 가격만 정정할 수 있어요</p>
       )}
-
-      <StockNotesPanel symbol={order?.symbol ?? null} stockName={order?.name ?? ''} />
 
       <div className={cn('border-t pt-4', STOCK_BORDER)}>
         {isLimit && summaryRow('정정 후 주문금액', money(estimatedAmount))}
