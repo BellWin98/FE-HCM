@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { TossModifyOrderRequest, TossOpenOrder, TossOrderType } from '@/types/tossStock';
+import { StockNotesPanel } from '@/components/knowledge/StockNotesPanel';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -234,6 +235,8 @@ const TossOrderModifySheet: React.FC<TossOrderModifySheetProps> = ({ open, onOpe
       ) : (
         <p className={cn('text-xs', STOCK_TEXT_MUTED)}>미국 주식은 가격만 정정할 수 있어요</p>
       )}
+
+      <StockNotesPanel symbol={order?.symbol ?? null} stockName={order?.name ?? ''} />
 
       <div className={cn('border-t pt-4', STOCK_BORDER)}>
         {isLimit && summaryRow('정정 후 주문금액', money(estimatedAmount))}

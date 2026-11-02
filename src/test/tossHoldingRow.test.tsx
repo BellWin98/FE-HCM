@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { TossHolding } from '@/types/tossStock';
 
@@ -62,17 +63,21 @@ const nvidia = (): TossHolding => ({
 interface RenderOverrides {
   costBasis?: 'preCost' | 'afterCost';
   onLoadTrades?: () => void;
+  noteCount?: number;
 }
 
 const renderRow = (holding: TossHolding, overrides: RenderOverrides = {}) =>
   render(
-    <TossHoldingListItem
-      holding={holding}
-      costBasis={overrides.costBasis ?? 'preCost'}
-      isMobile={false}
-      trades={[]}
-      onLoadTrades={overrides.onLoadTrades}
-    />
+    <MemoryRouter>
+      <TossHoldingListItem
+        holding={holding}
+        costBasis={overrides.costBasis ?? 'preCost'}
+        isMobile={false}
+        trades={[]}
+        onLoadTrades={overrides.onLoadTrades}
+        noteCount={overrides.noteCount}
+      />
+    </MemoryRouter>
   );
 
 const expand = async (name: RegExp) => {
@@ -232,5 +237,29 @@ describe('토스 보유 종목 상세 — 판단 지표 우선', () => {
 
     expect(screen.getByTestId('holding-purchase-amount')).toHaveTextContent('₩818,400');
     expect(screen.getByTestId('holding-detail')).not.toHaveTextContent('$');
+  });
+});
+
+describe('토스 보유 종목 줄 — 메모 배지', () => {
+  it('noteCount=3 이면 "메모 3" 링크가 종목 필터 URL 로 간다; 0 이면 없다', () => {
+    const { unmount } = renderRow(samsung(), { noteCount: 3 });
+
+    expect(screen.getByRole('link', { name: '메모 3' })).toHaveAttribute(
+      'href',
+      '/notes?stockSymbol=005930&stockName=%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90'
+    );
+    unmount();
+
+    renderRow(samsung(), { noteCount: 0 });
+    expect(screen.queryByRole('link', { name: /메모/ })).not.toBeInTheDocument();
+  });
+
+  it('배지를 눌러도 줄이 펼쳐지지 않는다', async () => {
+    renderRow(samsung(), { noteCount: 2 });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('link', { name: '메모 2' }));
+
+    expect(screen.queryByTestId('holding-detail')).not.toBeInTheDocument();
   });
 });

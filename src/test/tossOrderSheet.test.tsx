@@ -1,5 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TossOrderable } from '@/types/tossStock';
 import type { TossOrderTarget } from '@/components/tossStock/TossOrderSheet';
@@ -15,10 +17,16 @@ vi.mock('@/lib/api', () => ({
   api: {
     getTossOrderable: vi.fn(),
     placeTossOrder: vi.fn(),
+    getKnowledgeAccess: vi.fn(),
+    searchKnowledgeNotes: vi.fn(),
+    createKnowledgeNote: vi.fn(),
+    searchTossStocks: vi.fn(),
   },
 }));
 
 const { api } = await import('@/lib/api');
+const { AuthProvider } = await import('@/contexts/AuthContext');
+const { QuickNoteProvider } = await import('@/contexts/QuickNoteContext');
 const TossOrderSheet = (await import('@/components/tossStock/TossOrderSheet')).default;
 
 const krTarget: TossOrderTarget = {
@@ -61,24 +69,39 @@ const heldOrderable = (overrides: Partial<TossOrderable> = {}): TossOrderable =>
   orderable({ holdingQuantity: 100, averagePurchasePrice: 65000, sellableQuantity: 100, ...overrides });
 
 beforeEach(() => {
+  localStorage.clear();
+  vi.mocked(api.getKnowledgeAccess).mockReset().mockResolvedValue({ hasAccess: false });
+  vi.mocked(api.searchKnowledgeNotes).mockReset();
   vi.mocked(api.getTossOrderable).mockReset();
   vi.mocked(api.placeTossOrder).mockReset();
   vi.mocked(api.getTossOrderable).mockResolvedValue(orderable());
   vi.mocked(api.placeTossOrder).mockResolvedValue({ orderId: 'o-1', clientOrderId: 'k-1' });
 });
 
-const renderSheet = (target: TossOrderTarget = krTarget, onOrderPlaced = vi.fn()) => {
-  render(
+/** 지식 메모 패널이 권한 훅(AuthProvider)과 쿼리 클라이언트를 요구한다. 로그인하지 않으면 패널은 아무것도 그리지 않는다. */
+const renderSheet = (
+  target: TossOrderTarget = krTarget,
+  onOrderPlaced = vi.fn(),
+  { withQuickNote = false, onOpenChange = vi.fn() } = {}
+) => {
+  const sheet = (
     <TossOrderSheet
       open
-      onOpenChange={vi.fn()}
+      onOpenChange={onOpenChange}
       owner="ME"
       target={target}
       initialSide="BUY"
       onOrderPlaced={onOrderPlaced}
     />
   );
-  return { onOrderPlaced };
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <AuthProvider>
+        <MemoryRouter>{withQuickNote ? <QuickNoteProvider>{sheet}</QuickNoteProvider> : sheet}</MemoryRouter>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+  return { onOrderPlaced, onOpenChange };
 };
 
 /** 폼을 채우고 확인 단계까지 넘어간다. */
@@ -1016,5 +1039,63 @@ describe('예상 수수료', () => {
 
     expect(screen.queryByText(/예상 수수료/)).not.toBeInTheDocument();
     expect(screen.getByText(/수수료·세금 약/)).toBeInTheDocument();
+  });
+});
+
+describe('주문 시트 — 종목 메모', () => {
+  const signInAsAdmin = () => {
+    localStorage.setItem(
+      'member',
+      JSON.stringify({ id: 1, email: 'a@a.com', nickname: 'a', role: 'ADMIN' })
+    );
+    localStorage.setItem('accessToken', 'token');
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+  };
+
+  it('권한이 없으면 메모 패널도 메모 API 호출도 없다', async () => {
+    renderSheet();
+    await screen.findByLabelText('주문 가격');
+
+    expect(screen.queryByRole('region', { name: '이 종목 메모' })).not.toBeInTheDocument();
+    expect(api.searchKnowledgeNotes).not.toHaveBeenCalled();
+  });
+
+  it('메모 조회가 pending 이어도 주문 입력이 가능하다', async () => {
+    signInAsAdmin();
+    vi.mocked(api.searchKnowledgeNotes).mockReturnValue(new Promise(() => {}));
+    const user = userEvent.setup();
+    renderSheet();
+
+    await waitFor(() => expect(api.searchKnowledgeNotes).toHaveBeenCalled());
+    await user.type(await screen.findByLabelText('주문 수량'), '10');
+
+    expect(screen.getByLabelText('주문 수량')).toHaveValue('10');
+    expect(screen.getByRole('button', { name: '매수 확인' })).toBeEnabled();
+  });
+
+  it('주문 시트 위에서 빠른 메모를 열고 닫아도 주문 시트가 열린 채로 남는다', async () => {
+    signInAsAdmin();
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue({
+      content: [],
+      last: true,
+      totalPages: 1,
+      totalElements: 0,
+      number: 0,
+      size: 20,
+    });
+    const user = userEvent.setup();
+    const { onOpenChange } = renderSheet(krTarget, vi.fn(), { withQuickNote: true });
+
+    await user.click(await screen.findByRole('button', { name: '이 종목 메모 쓰기' }));
+    const memoDialog = await screen.findByRole('heading', { name: '빠른 메모' });
+    expect(memoDialog).toBeInTheDocument();
+
+    // 메모 다이얼로그 안을 누르고(포인터·포커스 이동) 닫아도 시트의 닫힘 요청이 나가면 안 된다.
+    await user.click(await screen.findByRole('textbox', { name: '내용' }));
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('heading', { name: '빠른 메모' })).not.toBeInTheDocument());
+
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('주문 가격')).toBeInTheDocument();
   });
 });

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTossTradeHistory } from '@/hooks/useTossTradeHistory';
+import { useKnowledgeStockCounts } from '@/hooks/useKnowledgeStockCounts';
 import TossHoldingListItem from './TossHoldingListItem';
 import TossOpenOrdersSection from './TossOpenOrdersSection';
 import TossCurrencySegment, { type TossSegmentOption } from './TossCurrencySegment';
@@ -124,6 +125,13 @@ const TossStockAssetsTab: React.FC<TossStockAssetsTabProps> = ({
     [portfolio.holdings, activeSegment, sortOption]
   );
 
+  // 메모 개수 배지. 보유 종목 전체를 한 번에 묻는다(통화 세그먼트를 바꿔도 다시 부르지 않는다).
+  const holdingSymbols = useMemo(
+    () => portfolio.holdings.map((holding) => holding.symbol),
+    [portfolio.holdings]
+  );
+  const noteCounts = useKnowledgeStockCounts(holdingSymbols);
+
   // 거래 내역은 계좌 한 벌을 공유한다. 종목마다 filter 를 돌리면 종목 수 × 거래 수만큼 훑게 된다.
   const tradesBySymbol = useMemo(() => {
     const grouped = new Map<string, TossTrade[]>();
@@ -216,6 +224,7 @@ const TossStockAssetsTab: React.FC<TossStockAssetsTabProps> = ({
             <TossHoldingListItem
               key={`${holding.marketCountry}-${holding.symbol}`}
               holding={holding}
+              noteCount={noteCounts[holding.symbol]}
               costBasis={costBasis}
               isMobile={isMobile}
               onLoadTrades={tradeHistory.load}

@@ -32,6 +32,7 @@ import {
 } from '@/lib/tossOrderInput';
 import { useTossOrderable } from '@/hooks/useTossOrderable';
 import { api } from '@/lib/api';
+import { StockNotesPanel } from '@/components/knowledge/StockNotesPanel';
 
 /**
  * 소수점 수량 자릿수. 토스가 소수점 수량을 허용하는 것은 미국 종목 시장가 매도뿐이고, 보유 수량 표시
@@ -604,6 +605,8 @@ const TossOrderSheet: React.FC<TossOrderSheetProps> = ({
           시세를 불러오지 못했어요. 가격을 직접 입력하면 그대로 주문할 수 있습니다.
         </p>
       )}
+
+      <StockNotesPanel symbol={target?.symbol ?? null} stockName={target?.name ?? ''} />
 
       <div className={cn('border-t pt-4', STOCK_BORDER)}>
         {isLimitLike && summaryRow('예상 주문금액', money(estimatedAmount))}
