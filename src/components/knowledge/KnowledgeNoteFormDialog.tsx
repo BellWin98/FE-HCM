@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import type { KeyboardEvent, RefObject } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ClipboardEvent, KeyboardEvent, MutableRefObject, RefObject } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
+import { NoteImageAttachments } from '@/components/knowledge/NoteImageAttachments';
+import { addFiles, fromUrls, revokePreview } from '@/components/knowledge/noteAttachments';
+import type { NoteAttachment } from '@/components/knowledge/noteAttachments';
 import TossStockSearchSheet from '@/components/tossStock/TossStockSearchSheet';
 import { api } from '@/lib/api';
+import { compressImage } from '@/lib/compressImage';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
@@ -49,14 +53,29 @@ const mergeTags = (current: string[], additions: string[]): string[] => {
   return next;
 };
 
+type PasteHandler = (event: ClipboardEvent<HTMLElement>) => void;
+
+/** 붙여넣기 이벤트에 담긴 파일들(파일 목록이 비어 있으면 항목에서 꺼낸다). */
+const getPastedFiles = (event: ClipboardEvent<HTMLElement>): File[] => {
+  const data = event.clipboardData;
+  if (!data) return [];
+  const files = Array.from(data.files ?? []);
+  if (files.length > 0) return files;
+  return Array.from(data.items ?? [])
+    .filter((item) => item.kind === 'file')
+    .flatMap((item) => item.getAsFile() ?? []);
+};
+
 interface KnowledgeNoteFormProps {
   options: QuickNoteOpenOptions;
+  /** 다이얼로그 내용 영역의 onPaste 가 이 폼의 붙여넣기 처리를 부를 수 있도록 폼이 채워 둔다. */
+  pasteHandlerRef: MutableRefObject<PasteHandler | null>;
   contentRef: RefObject<HTMLTextAreaElement>;
   onDone: () => void;
 }
 
-const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormProps) => {
-  const { note, prefill } = options;
+const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: KnowledgeNoteFormProps) => {
+  const { note, prefill, prefillFiles } = options;
   const queryClient = useQueryClient();
 
   // 폼 상태는 마운트될 때 한 번 정해진다. 열 때마다 바뀌는 key(formKey)로 다시 마운트되므로 열 때마다 새로 채워진다.
@@ -65,7 +84,8 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
       return {
         category: note.category,
         content: note.content ?? '',
-        imageUrls: note.images,
+        attachments: fromUrls(note.images),
+        dropped: 0,
         sourceUrl: note.sourceUrl ?? '',
         sourceText: note.sourceText ?? '',
         tags: note.tags,
@@ -74,13 +94,15 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
       };
     }
     const last = loadLastContext();
+    const { next: attachments, dropped } = addFiles([], prefillFiles ?? []);
     // 출처는 링크·텍스트가 한 쌍이다 — prefill 이 한쪽만 줘도 마지막 출처의 나머지 한쪽을 섞지 않는다.
     const prefillHasSource = Boolean(prefill?.sourceUrl || prefill?.sourceText);
     const lastHasSource = Boolean(last?.sourceUrl || last?.sourceText);
     return {
       category: prefill?.category ?? last?.category ?? 'DEV',
       content: prefill?.content ?? '',
-      imageUrls: [] as string[],
+      attachments,
+      dropped,
       sourceUrl: (prefillHasSource ? prefill?.sourceUrl : last?.sourceUrl) ?? '',
       sourceText: (prefillHasSource ? prefill?.sourceText : last?.sourceText) ?? '',
       tags: prefill?.tags ?? [],
@@ -97,7 +119,11 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
   const [sourceUrl, setSourceUrl] = useState(initial.sourceUrl);
   const [sourceText, setSourceText] = useState(initial.sourceText);
   // 첨부 이미지 목록. 수정할 때 기존 이미지를 그대로 다시 보내야 서버에서 지워지지 않는다.
-  const [imageUrls] = useState<string[]>(initial.imageUrls);
+  const [attachments, setAttachments] = useState<NoteAttachment[]>(initial.attachments);
+  const [droppedCount, setDroppedCount] = useState(initial.dropped);
+  // 언마운트 때 미리보기 URL 을 해제하려면 최신 목록이 필요하다.
+  const attachmentsRef = useRef(attachments);
+  attachmentsRef.current = attachments;
   const [tags, setTags] = useState<string[]>(initial.tags);
   const [tagDraft, setTagDraft] = useState('');
   const [stock, setStock] = useState<SelectedStock | null>(initial.stock);
@@ -107,9 +133,57 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
   const [saveError, setSaveError] = useState<string | null>(null);
   const composingRef = useRef(false);
 
+  useEffect(
+    () => () => {
+      attachmentsRef.current.forEach(revokePreview);
+    },
+    []
+  );
+
+  // 새 첨부 업로드와 메모 저장을 한 번의 저장 흐름으로 묶는다 — 버튼은 둘 다 끝날 때까지 잠긴다.
   const mutation = useMutation({
-    mutationFn: (input: KnowledgeNoteInput) =>
-      note ? api.updateKnowledgeNote(note.id, input) : api.createKnowledgeNote(input),
+    mutationFn: async ({ base, items }: { base: Omit<KnowledgeNoteInput, 'imageUrls'>; items: NoteAttachment[] }) => {
+      const pending = items.filter((item) => !item.url && item.file);
+      const uploaded = new Map<string, string>();
+      if (pending.length > 0) {
+        const files = await Promise.all(pending.map((item) => compressImage(item.file as File)));
+        const urls = await api.uploadKnowledgeNoteImages(files);
+        // 업로드 URL 은 보낸 파일과 순서대로 1:1 이다.
+        pending.forEach((item, index) => uploaded.set(item.id, urls[index]));
+        // 메모 요청이 실패해 다시 저장해도 같은 이미지를 또 올리지 않도록 먼저 상태에 적어 둔다.
+        setAttachments((current) =>
+          current.map((item) => (uploaded.has(item.id) ? { ...item, url: uploaded.get(item.id), file: undefined } : item))
+        );
+      }
+      const imageUrls = items.map((item) => item.url ?? uploaded.get(item.id) ?? '');
+      const input: KnowledgeNoteInput = { ...base, imageUrls };
+      return note ? api.updateKnowledgeNote(note.id, input) : api.createKnowledgeNote(input);
+    },
+  });
+
+  const handleAddFiles = (files: File[]): void => {
+    const { next, dropped } = addFiles(attachmentsRef.current, files);
+    attachmentsRef.current = next;
+    setAttachments(next);
+    setDroppedCount(dropped);
+    setContentError(null);
+  };
+
+  const handleRemoveAttachment = (id: string): void => {
+    const target = attachments.find((item) => item.id === id);
+    if (target) revokePreview(target);
+    setAttachments((current) => current.filter((item) => item.id !== id));
+    setDroppedCount(0);
+  };
+
+  const handlePaste: PasteHandler = (event) => {
+    const images = getPastedFiles(event).filter((file) => file.type.startsWith('image/'));
+    if (images.length === 0) return;
+    event.preventDefault();
+    handleAddFiles(images);
+  };
+  useEffect(() => {
+    pasteHandlerRef.current = handlePaste;
   });
 
   const handleCategoryChange = (value: string): void => {
@@ -169,15 +243,14 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
     const url = sourceUrl.trim();
     const text = sourceText.trim();
     const body = content.trim();
-    if (!body && imageUrls.length === 0) {
+    if (!body && attachments.length === 0) {
       setContentError(CONTENT_REQUIRED_MESSAGE);
       return;
     }
 
-    const input: KnowledgeNoteInput = {
+    const base: Omit<KnowledgeNoteInput, 'imageUrls'> = {
       category,
       ...(body ? { content: body } : {}),
-      imageUrls,
       ...(url ? { sourceUrl: url } : {}),
       ...(text ? { sourceText: text } : {}),
       tags: mergeTags(tags, tagDraft.split(',')),
@@ -185,7 +258,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
     };
 
     setSaveError(null);
-    mutation.mutate(input, {
+    mutation.mutate({ base, items: attachments }, {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: KNOWLEDGE_NOTES_QUERY_KEY });
         // 수정은 "방금 쓴 맥락" 이 아니므로 다음 빠른 메모의 기본값을 바꾸지 않는다.
@@ -240,6 +313,14 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
           </p>
         )}
       </div>
+
+      <NoteImageAttachments
+        attachments={attachments}
+        dropped={droppedCount}
+        disabled={mutation.isPending}
+        onAddFiles={handleAddFiles}
+        onRemove={handleRemoveAttachment}
+      />
 
       <RadioGroup
         aria-label="분야"
@@ -395,6 +476,8 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
   const isMobile = useIsMobile();
   const keyboardInset = useVisualViewportInset(isMobile && open);
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  const pasteHandlerRef = useRef<PasteHandler | null>(null);
+  const handlePaste: PasteHandler = (event) => pasteHandlerRef.current?.(event);
   const title = options.note ? '메모 수정' : '빠른 메모';
   const description = '출처와 함께 지식을 짧게 기록합니다.';
 
@@ -407,7 +490,7 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
   const handleDone = (): void => onOpenChange(false);
 
   const form = (
-    <KnowledgeNoteForm key={formKey} options={options} contentRef={contentRef} onDone={handleDone} />
+    <KnowledgeNoteForm key={formKey} options={options} pasteHandlerRef={pasteHandlerRef} contentRef={contentRef} onDone={handleDone} />
   );
 
   if (isMobile) {
@@ -416,6 +499,7 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
         <SheetContent
           side="bottom"
           onOpenAutoFocus={handleOpenAutoFocus}
+          onPaste={handlePaste}
           // 키보드가 올라오면 시트를 키보드 바로 위에 붙이고, 보이는 높이 안에서 스크롤되게 한다.
           style={{
             bottom: keyboardInset.bottom,
@@ -441,7 +525,7 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onOpenAutoFocus={handleOpenAutoFocus} className="max-h-[90dvh] overflow-y-auto">
+      <DialogContent onOpenAutoFocus={handleOpenAutoFocus} onPaste={handlePaste} className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="sr-only">{description}</DialogDescription>
