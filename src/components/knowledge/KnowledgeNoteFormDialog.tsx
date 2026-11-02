@@ -13,6 +13,7 @@ import TossStockSearchSheet from '@/components/tossStock/TossStockSearchSheet';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
 import { KNOWLEDGE_NOTES_QUERY_KEY } from '@/hooks/useKnowledgeAccess';
 import { clearLastContext, loadLastContext, saveLastContext } from '@/lib/knowledgeNoteDraft';
 import { KNOWLEDGE_CATEGORIES, KNOWLEDGE_CATEGORY_LABELS } from '@/types/knowledgeNote';
@@ -382,6 +383,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
 
 export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }: KnowledgeNoteFormDialogProps) => {
   const isMobile = useIsMobile();
+  const keyboardInset = useVisualViewportInset(isMobile && open);
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const title = options.note ? '메모 수정' : '빠른 메모';
   const description = '출처와 함께 지식을 짧게 기록합니다.';
@@ -404,7 +406,12 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
         <SheetContent
           side="bottom"
           onOpenAutoFocus={handleOpenAutoFocus}
-          className="max-h-[90dvh] overflow-y-auto"
+          // 키보드가 올라오면 시트를 키보드 바로 위에 붙이고, 보이는 높이 안에서 스크롤되게 한다.
+          style={{
+            bottom: keyboardInset.bottom,
+            ...(keyboardInset.height !== null ? { maxHeight: keyboardInset.height * 0.9 } : {}),
+          }}
+          className="max-h-[90dvh] overflow-y-auto overscroll-contain"
         >
           <SheetHeader>
             <SheetTitle>{title}</SheetTitle>
