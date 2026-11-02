@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { KNOWLEDGE_CATEGORY_LABELS, type KnowledgeNote } from '@/types/knowledgeNote';
 import { cn } from '@/lib/utils';
+import NoteImageStrip from '@/components/knowledge/NoteImageStrip';
+import NoteImageViewer from '@/components/knowledge/NoteImageViewer';
 
 interface KnowledgeNoteCardProps {
   note: KnowledgeNote;
@@ -29,8 +31,9 @@ const isHttpUrl = (value: string): boolean => /^https?:\/\//i.test(value.trim())
 const COLLAPSE_MAX_LINES = 4;
 const COLLAPSE_MAX_CHARS = 140;
 
-const isLongContent = (content: string): boolean =>
-  content.split('\n').length > COLLAPSE_MAX_LINES || content.length > COLLAPSE_MAX_CHARS;
+const isLongContent = (content: string | null): boolean =>
+  content !== null &&
+  (content.split('\n').length > COLLAPSE_MAX_LINES || content.length > COLLAPSE_MAX_CHARS);
 
 interface NoteSourceProps {
   sourceUrl: string | null;
@@ -69,7 +72,14 @@ const NoteSource = ({ sourceUrl, sourceText }: NoteSourceProps) => {
 export const KnowledgeNoteCard = ({ note, onEdit, onDelete, onTagClick, onStockClick }: KnowledgeNoteCardProps) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [contentExpanded, setContentExpanded] = useState(false);
-  const collapsible = isLongContent(note.content ?? '');
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
+  const collapsible = isLongContent(note.content);
+
+  const handleOpenImage = (index: number): void => {
+    setViewerIndex(index);
+    setViewerOpen(true);
+  };
 
   return (
     <Card>
@@ -91,26 +101,30 @@ export const KnowledgeNoteCard = ({ note, onEdit, onDelete, onTagClick, onStockC
           <span className="ml-auto text-xs text-muted-foreground">{note.createdAt.slice(0, 10)}</span>
         </div>
 
-        <div className="space-y-1">
-          <p
-            className={cn(
-              'whitespace-pre-wrap break-words text-sm',
-              collapsible && !contentExpanded && 'line-clamp-4'
-            )}
-          >
-            {note.content ?? ''}
-          </p>
-          {collapsible && (
-            <button
-              type="button"
-              aria-expanded={contentExpanded}
-              onClick={() => setContentExpanded((v) => !v)}
-              className="text-xs text-muted-foreground hover:underline"
+        {note.content && (
+          <div className="space-y-1">
+            <p
+              className={cn(
+                'whitespace-pre-wrap break-words text-sm',
+                collapsible && !contentExpanded && 'line-clamp-4'
+              )}
             >
-              {contentExpanded ? '내용 접기' : '내용 더보기'}
-            </button>
-          )}
-        </div>
+              {note.content}
+            </p>
+            {collapsible && (
+              <button
+                type="button"
+                aria-expanded={contentExpanded}
+                onClick={() => setContentExpanded((v) => !v)}
+                className="text-xs text-muted-foreground hover:underline"
+              >
+                {contentExpanded ? '내용 접기' : '내용 더보기'}
+              </button>
+            )}
+          </div>
+        )}
+
+        <NoteImageStrip images={note.images} size="md" onOpen={handleOpenImage} />
 
         <NoteSource sourceUrl={note.sourceUrl} sourceText={note.sourceText} />
 
@@ -138,6 +152,15 @@ export const KnowledgeNoteCard = ({ note, onEdit, onDelete, onTagClick, onStockC
           </Button>
         </div>
       </CardContent>
+
+      {note.images.length > 0 && (
+        <NoteImageViewer
+          images={note.images}
+          startIndex={viewerIndex}
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+        />
+      )}
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

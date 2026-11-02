@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import type { KnowledgeNote } from '@/types/knowledgeNote';
 
 vi.mock('@/lib/api', () => ({
@@ -24,11 +25,11 @@ vi.mock('@/contexts/QuickNoteContext', () => ({
 const { api } = await import('@/lib/api');
 const { StockNotesPanel } = await import('@/components/knowledge/StockNotesPanel');
 
-const note = (id: number, content: string): KnowledgeNote => ({
+const note = (id: number, content: string | null, images: string[] = []): KnowledgeNote => ({
   id,
   category: 'STOCK',
   content,
-  images: [],
+  images,
   sourceUrl: null,
   sourceText: null,
   tags: [],
@@ -53,6 +54,21 @@ const renderPanel = (symbol: string | null = '005930') =>
       <StockNotesPanel symbol={symbol} stockName="삼성전자" />
     </QueryClientProvider>
   );
+
+// embla-carousel(이미지 뷰어)이 jsdom 에 없는 IntersectionObserver 를 요구한다.
+beforeAll(() => {
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    }
+  );
+});
 
 beforeEach(() => {
   useKnowledgeAccess.mockReset().mockReturnValue({ hasAccess: true, isPending: false });
@@ -155,5 +171,44 @@ describe('종목 메모 패널', () => {
     expect(openQuickNote).toHaveBeenCalledWith({
       prefill: { category: 'STOCK', stockSymbol: '005930', stockName: '삼성전자' },
     });
+  });
+
+  it('이미지 메모에는 작은 썸네일이 보이고, 내용이 null 인 메모도 목록에 나온다', async () => {
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(
+      page([note(1, null, ['https://img.test/0.jpg', 'https://img.test/1.jpg'])])
+    );
+    const { container } = renderPanel();
+
+    const thumb = await screen.findByRole('button', { name: '이미지 1/2 크게 보기' });
+    expect(thumb).toHaveClass('h-10', 'w-10');
+    expect(screen.getByRole('region', { name: '이 종목 메모' })).toHaveTextContent('이 종목 메모 1건');
+    expect(container.querySelector('p.whitespace-pre-wrap')).toBeNull();
+  });
+
+  it('시트 안에서 썸네일로 뷰어를 열고 닫아도 시트의 onOpenChange 는 호출되지 않는다', async () => {
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([note(1, '메모', ['https://img.test/0.jpg'])]));
+    const onOpenChange = vi.fn();
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <Sheet open onOpenChange={onOpenChange}>
+          <SheetContent>
+            <SheetTitle>주문</SheetTitle>
+            <SheetDescription>주문 시트</SheetDescription>
+            <StockNotesPanel symbol="005930" stockName="삼성전자" />
+          </SheetContent>
+        </Sheet>
+      </QueryClientProvider>
+    );
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: '이미지 1/1 크게 보기' }));
+    expect(await screen.findByText('1/1')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '닫기' }));
+
+    await waitFor(() => expect(screen.queryByText('1/1')).not.toBeInTheDocument());
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('region', { name: '이 종목 메모' })).toBeInTheDocument();
+    back.mockRestore();
   });
 });
