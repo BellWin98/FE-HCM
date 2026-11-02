@@ -14,7 +14,7 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { KNOWLEDGE_NOTES_QUERY_KEY } from '@/hooks/useKnowledgeAccess';
-import { loadLastContext, saveLastContext } from '@/lib/knowledgeNoteDraft';
+import { clearLastContext, loadLastContext, saveLastContext } from '@/lib/knowledgeNoteDraft';
 import { KNOWLEDGE_CATEGORIES, KNOWLEDGE_CATEGORY_LABELS } from '@/types/knowledgeNote';
 import type { KnowledgeCategory, KnowledgeNoteInput } from '@/types/knowledgeNote';
 import type { QuickNoteOpenOptions } from '@/contexts/QuickNoteContext';
@@ -32,6 +32,8 @@ interface KnowledgeNoteFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   options: QuickNoteOpenOptions;
+  /** 열 때마다 바뀌는 값. 폼의 key 로 써서 열 때마다 폼 상태를 새로 채운다. */
+  formKey: number;
 }
 
 /** 쉼표로 나눈 조각을 다듬고 이미 있는 태그와 겹치는 것을 거른다. */
@@ -54,7 +56,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
   const { note, prefill } = options;
   const queryClient = useQueryClient();
 
-  // 폼 상태는 다이얼로그 콘텐츠가 마운트될 때 한 번 정해진다(닫히면 언마운트되므로 열 때마다 새로 채워진다).
+  // 폼 상태는 마운트될 때 한 번 정해진다. 열 때마다 바뀌는 key(formKey)로 다시 마운트되므로 열 때마다 새로 채워진다.
   const [initial] = useState(() => {
     if (note) {
       return {
@@ -146,6 +148,8 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
   const handleClearSource = (): void => {
     setSourceUrl('');
     setSourceText('');
+    // 기억해 둔 마지막 출처도 지워야 다음에 열 때 지운 출처가 다시 채워지지 않는다.
+    clearLastContext();
   };
 
   const handleSubmit = (): void => {
@@ -376,7 +380,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
   );
 };
 
-export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options }: KnowledgeNoteFormDialogProps) => {
+export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }: KnowledgeNoteFormDialogProps) => {
   const isMobile = useIsMobile();
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const title = options.note ? '메모 수정' : '빠른 메모';
@@ -390,7 +394,9 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options }: Knowled
 
   const handleDone = (): void => onOpenChange(false);
 
-  const form = <KnowledgeNoteForm options={options} contentRef={contentRef} onDone={handleDone} />;
+  const form = (
+    <KnowledgeNoteForm key={formKey} options={options} contentRef={contentRef} onDone={handleDone} />
+  );
 
   if (isMobile) {
     return (

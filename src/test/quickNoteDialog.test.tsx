@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -208,6 +208,56 @@ describe('빠른 메모 다이얼로그', () => {
 
     expect(screen.getByRole('textbox', { name: '출처 링크' })).toHaveValue('');
     expect(screen.getByRole('textbox', { name: '출처 텍스트' })).toHaveValue('');
+  });
+
+  it('"출처 지우기" 는 기억한 마지막 출처도 지워 다음에 다시 채우지 않는다', async () => {
+    localStorage.setItem(CONTEXT_KEY, JSON.stringify({ category: 'DEV', sourceText: '옛 출처' }));
+    await open();
+    expect(await screen.findByRole('textbox', { name: '출처 텍스트' })).toHaveValue('옛 출처');
+
+    await userEvent.click(screen.getByRole('button', { name: '출처 지우기' }));
+    expect(localStorage.getItem(CONTEXT_KEY)).toBeNull();
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: '열기' }));
+    expect(await screen.findByRole('textbox', { name: '출처 텍스트' })).toHaveValue('');
+  });
+
+  it('A 를 열고 닫은 뒤(또는 닫히는 도중) B 를 열면 폼은 B 의 값으로 채워진다', async () => {
+    const noteA: KnowledgeNote = { ...savedNote, id: 1, content: 'A 내용', sourceText: 'A 출처' };
+    const noteB: KnowledgeNote = { ...savedNote, id: 2, content: 'B 내용', sourceText: 'B 출처' };
+    let openQuickNote: ReturnType<typeof useQuickNote>['openQuickNote'] = () => {};
+    const Capture = () => {
+      openQuickNote = useQuickNote().openQuickNote;
+      return null;
+    };
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <MemoryRouter>
+            <QuickNoteProvider>
+              <OpenButton />
+              <Capture />
+            </QuickNoteProvider>
+          </MemoryRouter>
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+    await screen.findByRole('button', { name: '열기' });
+    await waitFor(() => expect(api.getKnowledgeAccess).toHaveBeenCalled());
+
+    act(() => openQuickNote({ note: noteA }));
+    expect(await screen.findByRole('textbox', { name: '내용' })).toHaveValue('A 내용');
+    await userEvent.keyboard('{Escape}');
+    act(() => openQuickNote({ note: noteB }));
+    expect(await screen.findByRole('textbox', { name: '내용' })).toHaveValue('B 내용');
+
+    // 닫힘 애니메이션 중처럼 폼이 아직 마운트된 채로 다른 메모를 열어도 이전 값이 남지 않는다.
+    act(() => openQuickNote({ note: noteA }));
+    await waitFor(() => expect(screen.getByRole('textbox', { name: '내용' })).toHaveValue('A 내용'));
+    expect(screen.getByRole('textbox', { name: '출처 텍스트' })).toHaveValue('A 출처');
   });
 
   it('localStorage 접근이 throw 해도 열리고 저장된다', async () => {
