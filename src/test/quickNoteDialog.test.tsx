@@ -15,10 +15,10 @@ vi.mock('@/lib/api', () => ({
   },
 }));
 
-vi.mock('@/hooks/use-toast', () => ({ toast: vi.fn() }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const { api } = await import('@/lib/api');
-const { toast } = await import('@/hooks/use-toast');
+const { toast } = await import('sonner');
 const { AuthProvider } = await import('@/contexts/AuthContext');
 const { QuickNoteProvider, useQuickNote } = await import('@/contexts/QuickNoteContext');
 const { KNOWLEDGE_NOTES_QUERY_KEY } = await import('@/hooks/useKnowledgeAccess');
@@ -87,7 +87,8 @@ beforeEach(() => {
   vi.mocked(api.getKnowledgeAccess).mockReset().mockResolvedValue({ hasAccess: true });
   vi.mocked(api.createKnowledgeNote).mockReset().mockResolvedValue(savedNote);
   vi.mocked(api.updateKnowledgeNote).mockReset().mockResolvedValue(savedNote);
-  vi.mocked(toast).mockReset();
+  vi.mocked(toast.success).mockReset();
+  vi.mocked(toast.error).mockReset();
 });
 
 describe('빠른 메모 다이얼로그', () => {
@@ -180,7 +181,7 @@ describe('빠른 메모 다이얼로그', () => {
       category: 'REAL_ESTATE',
       sourceText: '유튜브',
     });
-    expect(toast).toHaveBeenCalledWith({ title: '메모를 저장했습니다.' });
+    expect(toast.success).toHaveBeenCalledWith('메모를 저장했습니다.');
 
     await userEvent.click(screen.getByRole('button', { name: '열기' }));
     expect(await screen.findByRole('radio', { name: '부동산' })).toBeChecked();
@@ -293,8 +294,9 @@ describe('빠른 메모 다이얼로그', () => {
     await userEvent.click(screen.getByRole('button', { name: '저장' }));
 
     await waitFor(() =>
-      expect(toast).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'destructive', description: '내용은 2000자 이하여야 합니다' })
+      expect(toast.error).toHaveBeenCalledWith(
+        '메모를 저장하지 못했습니다.',
+        expect.objectContaining({ description: '내용은 2000자 이하여야 합니다' })
       )
     );
     expect(screen.getByRole('dialog')).toBeInTheDocument();

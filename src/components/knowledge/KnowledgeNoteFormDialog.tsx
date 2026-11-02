@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import TossStockSearchSheet from '@/components/tossStock/TossStockSearchSheet';
 import { api } from '@/lib/api';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { KNOWLEDGE_NOTES_QUERY_KEY } from '@/hooks/useKnowledgeAccess';
 import { loadLastContext, saveLastContext } from '@/lib/knowledgeNoteDraft';
@@ -175,7 +175,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
     mutation.mutate(input, {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: KNOWLEDGE_NOTES_QUERY_KEY });
-        toast({ title: '메모를 저장했습니다.' });
+        toast.success('메모를 저장했습니다.');
         // 수정은 "방금 쓴 맥락" 이 아니므로 다음 빠른 메모의 기본값을 바꾸지 않는다.
         if (!note) {
           saveLastContext({
@@ -187,9 +187,7 @@ const KnowledgeNoteForm = ({ options, contentRef, onDone }: KnowledgeNoteFormPro
         onDone();
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
-          title: SAVE_FAILED_MESSAGE,
+        toast.error(SAVE_FAILED_MESSAGE, {
           description: error instanceof Error && error.message ? error.message : undefined,
         });
       },
