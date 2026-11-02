@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { TossHolding, TossTrade } from '@/types/tossStock';
 import { ChevronDown, ChevronUp, Check, Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -90,6 +91,8 @@ interface TossHoldingListItemProps {
    * 시트는 페이지가 들고 있어야 한다.
    */
   onTrade?: (side: 'BUY' | 'SELL') => void;
+  /** 이 종목에 쓴 지식 메모 개수. 0/undefined 면 배지를 그리지 않는다. */
+  noteCount?: number;
 }
 
 /**
@@ -108,6 +111,7 @@ const TossHoldingListItem: React.FC<TossHoldingListItemProps> = ({
   tradesStatus = 'loaded',
   onLoadTrades,
   onTrade,
+  noteCount,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [showCosts, setShowCosts] = useState(false);
@@ -492,6 +496,17 @@ const TossHoldingListItem: React.FC<TossHoldingListItemProps> = ({
             {isOverseas ? 'US' : 'KR'}
           </span>
           {dailyBadge}
+          {noteCount != null && noteCount > 0 && (
+            <Link
+              to={`/notes?${new URLSearchParams({ stockSymbol: holding.symbol, stockName: holding.name }).toString()}`}
+              // 줄 전체가 펼침 토글이라, 링크 클릭이 위로 올라가 줄이 같이 펼쳐지지 않게 한다.
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+              className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium bg-amber-50 text-amber-700 hover:underline dark:bg-amber-900/30 dark:text-amber-300"
+            >
+              메모 {noteCount}
+            </Link>
+          )}
         </div>
         {/*
           수량·평단·현재가. 현재가에만 평단 대비 방향으로 색을 입혀, 두 숫자를 견주지 않아도

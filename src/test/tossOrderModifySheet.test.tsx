@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TossOpenOrder, TossOrderable } from '@/types/tossStock';
 
@@ -18,6 +19,7 @@ vi.mock('@/lib/api', () => ({
 }));
 
 const { api } = await import('@/lib/api');
+const { AuthProvider } = await import('@/contexts/AuthContext');
 const TossOrderModifySheet = (await import('@/components/tossStock/TossOrderModifySheet')).default;
 
 const krOrder = (overrides: Partial<TossOpenOrder> = {}): TossOpenOrder => ({
@@ -94,8 +96,13 @@ beforeEach(() => {
 const renderSheet = (order: TossOpenOrder = krOrder()) => {
   const onModified = vi.fn();
   const onOpenChange = vi.fn();
+  // 지식 메모 패널이 권한 훅(AuthProvider)과 쿼리 클라이언트를 요구한다. 로그인하지 않았으니 패널은 아무것도 그리지 않는다.
   render(
-    <TossOrderModifySheet open onOpenChange={onOpenChange} owner="ME" order={order} onModified={onModified} />
+    <QueryClientProvider client={new QueryClient()}>
+      <AuthProvider>
+        <TossOrderModifySheet open onOpenChange={onOpenChange} owner="ME" order={order} onModified={onModified} />
+      </AuthProvider>
+    </QueryClientProvider>
   );
   return { onModified, onOpenChange };
 };

@@ -28,6 +28,13 @@ vi.mock('@/lib/api', () => ({
   },
 }));
 
+// 지식 메모 연동(권한·개수 조회)은 이 테스트의 관심사가 아니다 — 권한 없음으로 고정해 아무것도 부르지 않게 한다.
+vi.mock('@/hooks/useKnowledgeAccess', () => ({
+  KNOWLEDGE_NOTES_QUERY_KEY: ['knowledgeNotes'],
+  useKnowledgeAccess: () => ({ hasAccess: false, isPending: false }),
+}));
+vi.mock('@/hooks/useKnowledgeStockCounts', () => ({ useKnowledgeStockCounts: () => ({}) }));
+
 vi.mock('@/components/layout/Layout', () => ({
   Layout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
