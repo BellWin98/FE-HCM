@@ -130,12 +130,27 @@ describe('빠른 메모 다이얼로그', () => {
     expect(screen.getByRole('radio', { name: '개발' })).toBeChecked();
   });
 
-  it('출처가 둘 다 비어 있으면 저장 버튼을 눌러도 요청하지 않고 "출처(링크 또는 텍스트)를 입력하세요" 를 보여준다', async () => {
+  it('출처가 둘 다 비어 있어도 내용만 있으면 출처 없이 저장한다', async () => {
     await open();
     await userEvent.type(await screen.findByRole('textbox', { name: '내용' }), '메모');
     await userEvent.click(screen.getByRole('button', { name: '저장' }));
 
-    expect(await screen.findByText('출처(링크 또는 텍스트)를 입력하세요')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(api.createKnowledgeNote).toHaveBeenCalledWith({
+        category: 'DEV',
+        content: '메모',
+        tags: [],
+        imageUrls: [],
+      })
+    );
+  });
+
+  it('내용도 이미지도 없으면 요청하지 않고 "내용 또는 이미지를 입력하세요" 를 보여준다', async () => {
+    await open();
+    await userEvent.type(await screen.findByRole('textbox', { name: '내용' }), '   ');
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    expect(await screen.findByText('내용 또는 이미지를 입력하세요')).toBeInTheDocument();
     expect(api.createKnowledgeNote).not.toHaveBeenCalled();
   });
 
@@ -400,6 +415,32 @@ describe('빠른 메모 다이얼로그', () => {
     expect(api.createKnowledgeNote).not.toHaveBeenCalled();
     // 수정은 "마지막 컨텍스트" 를 덮어쓰지 않는다.
     expect(localStorage.getItem(CONTEXT_KEY)).toBeNull();
+  });
+
+  it('이미지가 있는 메모를 수정해 저장해도 이미지 목록을 그대로 보낸다', async () => {
+    const note: KnowledgeNote = { ...savedNote, id: 43, content: '원본', images: ['u1', 'u2'] };
+    await open({ note });
+
+    await userEvent.click(await screen.findByRole('button', { name: '저장' }));
+
+    await waitFor(() =>
+      expect(api.updateKnowledgeNote).toHaveBeenCalledWith(
+        43,
+        expect.objectContaining({ imageUrls: ['u1', 'u2'] })
+      )
+    );
+  });
+
+  it('내용이 비어도 이미지가 있으면 content 없이 저장한다', async () => {
+    const note: KnowledgeNote = { ...savedNote, id: 44, content: null, images: ['u1'] };
+    await open({ note });
+
+    await userEvent.click(await screen.findByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(api.updateKnowledgeNote).toHaveBeenCalled());
+    const [, input] = vi.mocked(api.updateKnowledgeNote).mock.calls[0];
+    expect(input).not.toHaveProperty('content');
+    expect(input.imageUrls).toEqual(['u1']);
   });
 
   it('저장 후 knowledgeNotes 쿼리 prefix 를 무효화하고 onClosed 를 부른다', async () => {
