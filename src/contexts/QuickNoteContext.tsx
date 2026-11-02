@@ -27,6 +27,9 @@ export const QuickNoteProvider = ({ children }: { children: ReactNode }) => {
   const { hasAccess } = useKnowledgeAccess();
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<QuickNoteOpenOptions>({});
+  // 열 때마다 바뀌는 폼 key. 닫힘 애니메이션 중(폼이 아직 마운트)에 다른 메모를 열어도 폼을 새로 만들어
+  // 이전 메모의 값이 새 메모에 저장되지 않게 한다.
+  const [openCount, setOpenCount] = useState(0);
   const optionsRef = useRef(options);
 
   const openQuickNote = useCallback(
@@ -35,6 +38,7 @@ export const QuickNoteProvider = ({ children }: { children: ReactNode }) => {
       if (!hasAccess) return;
       optionsRef.current = next;
       setOptions(next);
+      setOpenCount((count) => count + 1);
       setOpen(true);
     },
     [hasAccess]
@@ -54,7 +58,12 @@ export const QuickNoteProvider = ({ children }: { children: ReactNode }) => {
       {hasAccess && (
         <>
           <QuickNoteFab onClick={() => openQuickNote()} />
-          <KnowledgeNoteFormDialog open={open} onOpenChange={handleOpenChange} options={options} />
+          <KnowledgeNoteFormDialog
+            open={open}
+            onOpenChange={handleOpenChange}
+            options={options}
+            formKey={openCount}
+          />
         </>
       )}
     </QuickNoteContext.Provider>
