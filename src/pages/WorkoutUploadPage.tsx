@@ -369,12 +369,12 @@ export const WorkoutUploadPage = () => {
                         <div className="flex flex-wrap gap-2 justify-center">
                           <label htmlFor="camera-upload" className="cursor-pointer">
                             <Button type="button" asChild>
-                              <span><Camera className="mr-1 h-4 w-4" />카메라로 촬영</span>
+                              <span><Camera className="mr-1 h-4 w-4" />카메라</span>
                             </Button>
                           </label>
                           <label htmlFor="image-upload" className="cursor-pointer">
                             <Button type="button" variant="outline" asChild>
-                              <span><ImageIcon className="mr-1 h-4 w-4" />앨범에서 선택</span>
+                              <span><ImageIcon className="mr-1 h-4 w-4" />앨범</span>
                             </Button>
                           </label>
                         </div>
