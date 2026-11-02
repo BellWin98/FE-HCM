@@ -11,9 +11,12 @@ vi.mock('@/lib/api', () => ({
     getKnowledgeAccess: vi.fn(),
     createKnowledgeNote: vi.fn(),
     updateKnowledgeNote: vi.fn(),
+    uploadKnowledgeNoteImages: vi.fn(),
     searchTossStocks: vi.fn(),
   },
 }));
+
+vi.mock('@/lib/compressImage', () => ({ compressImage: vi.fn(async (file: File) => file) }));
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -88,8 +91,14 @@ beforeEach(() => {
   vi.mocked(api.getKnowledgeAccess).mockReset().mockResolvedValue({ hasAccess: true });
   vi.mocked(api.createKnowledgeNote).mockReset().mockResolvedValue(savedNote);
   vi.mocked(api.updateKnowledgeNote).mockReset().mockResolvedValue(savedNote);
+  vi.mocked(api.uploadKnowledgeNoteImages)
+    .mockReset()
+    .mockImplementation(async (files: File[]) => files.map((file) => `https://cdn/${file.name}`));
   vi.mocked(toast.success).mockReset();
   vi.mocked(toast.error).mockReset();
+  let previewCount = 0;
+  URL.createObjectURL = vi.fn(() => `blob:preview-${++previewCount}`);
+  URL.revokeObjectURL = vi.fn();
 });
 
 describe('빠른 메모 다이얼로그', () => {
@@ -589,6 +598,117 @@ describe('빠른 메모 — 모바일', () => {
       viewport.dispatchEvent(new Event('resize'));
     });
     expect(screen.getByRole('button', { name: '빠른 메모' })).toBeInTheDocument();
+  });
+});
+
+const png = (name: string): File => new File(['x'], name, { type: 'image/png' });
+const fileInput = (): HTMLInputElement => {
+  const input = document.querySelector<HTMLInputElement>('input[type="file"]');
+  if (!input) throw new Error('file input not found');
+  return input;
+};
+
+describe('빠른 메모 — 이미지 첨부', () => {
+  it('숨은 파일 입력으로 2장을 고르면 썸네일과 "이미지 N 빼기" 버튼이 생긴다', async () => {
+    await open();
+    await screen.findByRole('button', { name: '사진 첨부' });
+    const input = fileInput();
+    expect(input).toHaveAttribute('accept', 'image/*');
+    expect(input).toHaveAttribute('multiple');
+
+    await userEvent.upload(input, [png('a.png'), png('b.png')]);
+
+    expect(await screen.findAllByRole('img')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: '이미지 1 빼기' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '이미지 2 빼기' })).toBeInTheDocument();
+  });
+
+  it('5장이면 "사진 첨부" 가 비활성이 되고 "최대 5장" 을 보여준다', async () => {
+    await open({ prefill: {}, prefillFiles: [1, 2, 3, 4, 5].map((n) => png(`${n}.png`)) });
+
+    expect(await screen.findByRole('button', { name: '사진 첨부' })).toBeDisabled();
+    expect(screen.getByText('최대 5장')).toBeInTheDocument();
+  });
+
+  it('prefillFiles 7장은 5장만 담고 "2장은 빠졌어요(최대 5장)" 를 알린다', async () => {
+    await open({ prefillFiles: [1, 2, 3, 4, 5, 6, 7].map((n) => png(`${n}.png`)) });
+
+    expect(await screen.findAllByRole('img')).toHaveLength(5);
+    expect(screen.getByText('2장은 빠졌어요(최대 5장)')).toBeInTheDocument();
+  });
+
+  it('이미지가 담긴 paste 는 첨부로 더하고 기본 동작을 막는다', async () => {
+    await open();
+    const content = await screen.findByRole('textbox', { name: '내용' });
+
+    const notPrevented = fireEvent.paste(content, { clipboardData: { files: [png('p.png')], items: [] } });
+
+    expect(notPrevented).toBe(false);
+    expect(await screen.findAllByRole('img')).toHaveLength(1);
+  });
+
+  it('글자만 담긴 paste 는 막지 않는다', async () => {
+    await open();
+    const content = await screen.findByRole('textbox', { name: '내용' });
+
+    const notPrevented = fireEvent.paste(content, { clipboardData: { files: [], items: [], getData: () => '글' } });
+
+    expect(notPrevented).toBe(true);
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
+  });
+
+  it('이미지만 넣고 저장하면 한 번 올린 뒤 content 없이 만든다', async () => {
+    await open();
+    await screen.findByRole('button', { name: '사진 첨부' });
+    await userEvent.upload(fileInput(), [png('a.png')]);
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(api.createKnowledgeNote).toHaveBeenCalled());
+    expect(api.uploadKnowledgeNoteImages).toHaveBeenCalledTimes(1);
+    const [input] = vi.mocked(api.createKnowledgeNote).mock.calls[0];
+    expect(input.imageUrls).toEqual(['https://cdn/a.png']);
+    expect(input).not.toHaveProperty('content');
+  });
+
+  it('메모 저장이 실패해 다시 저장해도 이미지는 다시 올리지 않는다', async () => {
+    vi.mocked(api.createKnowledgeNote).mockRejectedValueOnce(new Error('일시 오류')).mockResolvedValueOnce(savedNote);
+    await open();
+    await userEvent.upload(fileInput(), [png('a.png')]);
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('메모를 저장하지 못했습니다.');
+
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(api.createKnowledgeNote).toHaveBeenCalledTimes(2));
+    expect(api.uploadKnowledgeNoteImages).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(api.createKnowledgeNote).mock.calls[1][0].imageUrls).toEqual(['https://cdn/a.png']);
+  });
+
+  it('업로드가 실패하면 창과 첨부를 유지하고 알린다', async () => {
+    vi.mocked(api.uploadKnowledgeNoteImages).mockRejectedValue(new Error('용량 초과'));
+    await open();
+    await userEvent.upload(fileInput(), [png('a.png')]);
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('메모를 저장하지 못했습니다.');
+    expect(alert).toHaveTextContent('용량 초과');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getAllByRole('img')).toHaveLength(1);
+    expect(api.createKnowledgeNote).not.toHaveBeenCalled();
+  });
+
+  it('수정할 때 이미지를 한 장 빼고 저장하면 올리지 않고 남은 URL 만 보낸다', async () => {
+    const note: KnowledgeNote = { ...savedNote, id: 50, content: '원본', images: ['u1', 'u2'] };
+    await open({ note });
+
+    await userEvent.click(await screen.findByRole('button', { name: '이미지 1 빼기' }));
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() =>
+      expect(api.updateKnowledgeNote).toHaveBeenCalledWith(50, expect.objectContaining({ imageUrls: ['u2'] }))
+    );
+    expect(api.uploadKnowledgeNoteImages).not.toHaveBeenCalled();
   });
 });
 

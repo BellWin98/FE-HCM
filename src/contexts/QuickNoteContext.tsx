@@ -10,6 +10,8 @@ export interface QuickNoteOpenOptions {
   note?: KnowledgeNote;
   /** 마지막 컨텍스트보다 우선하는 초기값(공유 시트, 주문 시트의 종목 등). */
   prefill?: Partial<KnowledgeNoteInput>;
+  /** 처음부터 첨부해 둘 이미지 파일(공유 시트 등). 최대 장수를 넘으면 앞에서부터 담는다. */
+  prefillFiles?: File[];
   /** 저장·취소 어느 쪽으로든 다이얼로그가 닫힌 직후 한 번 호출된다. */
   onClosed?: () => void;
 }
