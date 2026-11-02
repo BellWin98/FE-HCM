@@ -6,6 +6,8 @@ import { api } from '@/lib/api';
 import { KNOWLEDGE_NOTES_QUERY_KEY, useKnowledgeAccess } from '@/hooks/useKnowledgeAccess';
 import { cn } from '@/lib/utils';
 import { STOCK_BORDER } from '@/lib/stockTheme';
+import NoteImageStrip from '@/components/knowledge/NoteImageStrip';
+import NoteImageViewer from '@/components/knowledge/NoteImageViewer';
 
 interface StockNotesPanelProps {
   symbol: string | null;
@@ -15,6 +17,9 @@ interface StockNotesPanelProps {
 const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName: string }) => {
   const { openQuickNote } = useQuickNote();
   const [expanded, setExpanded] = useState(false);
+  // 뷰어는 목록이 접히거나 바뀌어도 유지되도록 패널 단위로 한 벌만 둔다.
+  const [viewer, setViewer] = useState<{ images: string[]; index: number } | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   // 메모는 보조 정보다 — 느리거나 실패해도 주문 화면은 그대로 쓸 수 있어야 하므로 오류는 삼킨다.
   const { data, isError } = useQuery({
@@ -66,14 +71,32 @@ const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName:
       <ul className="space-y-2">
         {shown.map((note) => (
           <li key={note.id} className="text-sm">
-            <p className={cn('whitespace-pre-wrap break-words', !expanded && 'line-clamp-2')}>
-              {note.content ?? ''}
-            </p>
+            {note.content && (
+              <p className={cn('whitespace-pre-wrap break-words', !expanded && 'line-clamp-2')}>
+                {note.content}
+              </p>
+            )}
+            <NoteImageStrip
+              images={note.images}
+              size="sm"
+              onOpen={(index) => {
+                setViewer({ images: note.images, index });
+                setViewerOpen(true);
+              }}
+            />
             <span className="text-xs text-muted-foreground">{note.createdAt.slice(0, 10)}</span>
           </li>
         ))}
       </ul>
       {writeButton}
+      {viewer && (
+        <NoteImageViewer
+          images={viewer.images}
+          startIndex={viewer.index}
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+        />
+      )}
     </section>
   );
 };

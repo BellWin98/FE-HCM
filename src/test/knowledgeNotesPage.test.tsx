@@ -2,7 +2,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { KnowledgeNote } from '@/types/knowledgeNote';
 
 vi.mock('@/lib/api', () => ({
@@ -59,6 +59,21 @@ const renderPage = (url = '/notes') => {
 };
 
 const lastCall = () => vi.mocked(api.searchKnowledgeNotes).mock.calls.at(-1)?.[0];
+
+// embla-carousel(이미지 뷰어)이 jsdom 에 없는 IntersectionObserver 를 요구한다.
+beforeAll(() => {
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    }
+  );
+});
 
 describe('KnowledgeNotesPage', () => {
   beforeEach(() => {
@@ -249,5 +264,29 @@ describe('KnowledgeNotesPage', () => {
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([]));
     renderPage();
     expect(await screen.findByText('메모가 없습니다')).toBeInTheDocument();
+  });
+
+  it('이미지가 있는 메모는 썸네일을 보이고 누르면 뷰어가 열린다', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    const images = ['https://img.test/0.jpg', 'https://img.test/1.jpg', 'https://img.test/2.jpg'];
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([makeNote({ images })]));
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: '이미지 1/3 크게 보기' }));
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('1/3')).toBeInTheDocument();
+  });
+
+  it('내용이 null 이고 이미지만 있는 메모는 썸네일만 보이고 "내용 더보기" 는 없다', async () => {
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(
+      page([makeNote({ content: null, images: ['https://img.test/0.jpg'] })])
+    );
+    const { container } = renderPage();
+
+    expect(await screen.findByRole('button', { name: '이미지 1/1 크게 보기' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '내용 더보기' })).not.toBeInTheDocument();
+    expect(container.querySelector('p.whitespace-pre-wrap')).toBeNull();
   });
 });
