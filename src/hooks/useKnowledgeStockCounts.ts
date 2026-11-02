@@ -16,7 +16,7 @@ export const useKnowledgeStockCounts = (symbols: string[]): Record<string, numbe
   const { hasAccess } = useKnowledgeAccess();
   const sorted = useMemo(() => [...new Set(symbols)].sort(), [symbols]);
 
-  const { data } = useQuery({
+  const { data, isError } = useQuery({
     queryKey: [...KNOWLEDGE_NOTES_QUERY_KEY, 'stockCounts', sorted],
     queryFn: () => api.getKnowledgeNoteStockCounts(sorted),
     enabled: hasAccess && sorted.length > 0,
@@ -24,5 +24,7 @@ export const useKnowledgeStockCounts = (symbols: string[]): Record<string, numbe
     staleTime: 30_000,
   });
 
+  // 실패하면 캐시에 남은 이전 값이 있어도 버린다(권한을 잃었거나 다른 사용자의 값일 수 있다).
+  if (isError) return EMPTY_COUNTS;
   return data ?? EMPTY_COUNTS;
 };
