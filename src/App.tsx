@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { RequireRole } from '@/components/RequireRole';
 import { RequireTossAccess } from '@/components/RequireTossAccess';
+import { QuickNoteProvider } from '@/contexts/QuickNoteContext';
 import { PwaUpdateBanner } from '@/components/common/PwaUpdateBanner';
 import { PwaInstallBanner } from '@/components/common/PwaInstallBanner';
 import { InAppBrowserNotice } from '@/components/common/InAppBrowserNotice';
@@ -138,7 +139,9 @@ const App = () => {
         <Toaster />
         <AuthProvider>
           <BrowserRouter>
-            <AppRoutes />
+            <QuickNoteProvider>
+              <AppRoutes />
+            </QuickNoteProvider>
           </BrowserRouter>
         </AuthProvider>
         <PwaUpdateBanner visible={needRefresh} onUpdate={handleUpdate} onClose={dismiss} />

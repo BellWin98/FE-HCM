@@ -7,11 +7,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Settings, LogOut, BarChart3, Menu, X, UserCircle, Clock, Warehouse, Dumbbell, Wallet } from 'lucide-react';
+import { User, Settings, LogOut, BarChart3, Menu, X, UserCircle, Clock, Warehouse, Dumbbell, Wallet, NotebookPen, NotebookText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTossAccess } from '@/hooks/useTossAccess';
+import { useKnowledgeAccess } from '@/hooks/useKnowledgeAccess';
+import { useQuickNote } from '@/contexts/QuickNoteContext';
 
 export const Header = () => {
   const { member, logout, isAuthenticated } = useAuth();
@@ -21,6 +23,9 @@ export const Header = () => {
   const isAdmin = member?.role === 'ADMIN';
   // 토스는 role 이 아니라 ADMIN 이 지정한 개별 권한(`toss_access`)으로 열린다.
   const { hasAccess: hasTossAccess } = useTossAccess();
+  // 지식 메모도 role 이 아니라 서버가 알려 주는 개별 권한으로 연다.
+  const { hasAccess: hasKnowledgeAccess } = useKnowledgeAccess();
+  const { openQuickNote } = useQuickNote();
 
   const handleLogout = () => {
     logout();
@@ -75,6 +80,19 @@ export const Header = () => {
                   </Button>
                 )}
 
+                {/* 빠른 메모 - 지식 메모 접근 권한을 가진 회원만 표시 */}
+                {hasKnowledgeAccess && (
+                  <Button
+                    variant="outline"
+                    aria-label="빠른 메모"
+                    onClick={() => openQuickNote()}
+                    className="flex items-center space-x-2"
+                  >
+                    <NotebookPen className="h-4 w-4" />
+                    <span>메모</span>
+                  </Button>
+                )}
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -105,6 +123,12 @@ export const Header = () => {
                       <Dumbbell className="mr-2 h-4 w-4" />
                       <span>내 운동방</span>
                     </DropdownMenuItem>                    
+                    {hasKnowledgeAccess && (
+                      <DropdownMenuItem onClick={() => handleNavigation('/notes')}>
+                        <NotebookText className="mr-2 h-4 w-4" />
+                        <span>메모 목록</span>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => handleNavigation('/mypage')}>
                       <UserCircle className="mr-2 h-4 w-4" />
                       <span>마이페이지</span>
@@ -183,6 +207,18 @@ export const Header = () => {
               >
                 <Wallet className="h-4 w-4 mr-2" />
                 <span>토스증권</span>
+              </Button>
+            )}
+
+            {/* 메모 목록 - 지식 메모 접근 권한을 가진 회원만 표시 */}
+            {hasKnowledgeAccess && (
+              <Button
+                variant="outline"
+                onClick={() => handleNavigation('/notes')}
+                className="w-full justify-start"
+              >
+                <NotebookText className="h-4 w-4 mr-2" />
+                <span>메모 목록</span>
               </Button>
             )}
 
