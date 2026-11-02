@@ -17,7 +17,7 @@ const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName:
   const [expanded, setExpanded] = useState(false);
 
   // 메모는 보조 정보다 — 느리거나 실패해도 주문 화면은 그대로 쓸 수 있어야 하므로 오류는 삼킨다.
-  const { data } = useQuery({
+  const { data, isError } = useQuery({
     queryKey: [...KNOWLEDGE_NOTES_QUERY_KEY, 'stock', symbol],
     queryFn: () => api.searchKnowledgeNotes({ stockSymbol: symbol, size: 20 }),
     retry: false,
@@ -25,7 +25,8 @@ const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName:
   });
 
   // 불러오는 중이거나 실패했으면 아무것도 그리지 않는다(자리만 차지하지 않게).
-  if (!data) return null;
+  // 실패 시 캐시에 남은 이전 데이터(권한을 잃기 전·다른 사용자)도 보여주지 않는다.
+  if (!data || isError) return null;
 
   const notes = data.content;
   const total = data.totalElements ?? notes.length;
@@ -57,11 +58,10 @@ const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName:
     <section aria-label="이 종목 메모" className={cn('space-y-2 rounded-lg border p-3', STOCK_BORDER)}>
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">이 종목 메모 {total}건</h3>
-        {notes.length > 1 && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => setExpanded((v) => !v)}>
-            {expanded ? '메모 접기' : '메모 펼치기'}
-          </Button>
-        )}
+        {/* 메모가 1건이어도 긴 내용은 줄임 처리되므로 항상 펼칠 수 있어야 한다. */}
+        <Button type="button" variant="ghost" size="sm" onClick={() => setExpanded((v) => !v)}>
+          {expanded ? '메모 접기' : '메모 펼치기'}
+        </Button>
       </div>
       <ul className="space-y-2">
         {shown.map((note) => (

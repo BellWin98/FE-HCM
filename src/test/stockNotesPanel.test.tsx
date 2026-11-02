@@ -115,6 +115,35 @@ describe('종목 메모 패널', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('재조회가 실패하면 캐시에 이전(다른 사용자) 데이터가 남아 있어도 그리지 않는다', async () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(['knowledgeNotes', 'stock', '005930'], page([note(1, '이전 사용자 메모')]), {
+      updatedAt: 0,
+    });
+    vi.mocked(api.searchKnowledgeNotes).mockRejectedValue(new Error('403'));
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <StockNotesPanel symbol="005930" stockName="삼성전자" />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => expect(api.searchKnowledgeNotes).toHaveBeenCalled());
+    await waitFor(() => expect(container).toBeEmptyDOMElement());
+    expect(screen.queryByText('이전 사용자 메모')).not.toBeInTheDocument();
+  });
+
+  it('메모가 1건이어도 긴 메모를 끝까지 볼 수 있게 펼치기/접기 버튼이 있다', async () => {
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([note(1, '아주 긴 메모 '.repeat(40))]));
+    renderPanel();
+
+    const user = userEvent.setup();
+    const content = await screen.findByText(/아주 긴 메모/);
+    expect(content).toHaveClass('line-clamp-2');
+    await user.click(screen.getByRole('button', { name: '메모 펼치기' }));
+    expect(screen.getByText(/아주 긴 메모/)).not.toHaveClass('line-clamp-2');
+    expect(screen.getByRole('button', { name: '메모 접기' })).toBeInTheDocument();
+  });
+
   it('"이 종목 메모 쓰기" 는 STOCK + 종목이 채워진 빠른 메모를 연다', async () => {
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([note(1, '메모')]));
     renderPanel();
