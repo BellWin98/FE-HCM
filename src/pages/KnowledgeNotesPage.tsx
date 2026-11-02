@@ -65,6 +65,15 @@ const KnowledgeNotesPage = () => {
     setSearchParams(next, { replace: true });
   };
 
+  // 보유 종목 배지와 같은 필터(?stockSymbol=&stockName=)로 거른다.
+  const handleStockClick = (note: KnowledgeNote): void => {
+    if (!note.stockSymbol) return;
+    const next = new URLSearchParams(searchParams);
+    next.set('stockSymbol', note.stockSymbol);
+    next.set('stockName', note.stockName ?? note.stockSymbol);
+    setSearchParams(next, { replace: true });
+  };
+
   const notes = data?.pages.flatMap((p) => p.content) ?? [];
 
   return (
@@ -132,6 +141,7 @@ const KnowledgeNotesPage = () => {
                 onEdit={(n) => openQuickNote({ note: n })}
                 onDelete={(n) => deleteMutation.mutate(n)}
                 onTagClick={setKeywordInput}
+                onStockClick={handleStockClick}
               />
             ))}
             {hasNextPage && (

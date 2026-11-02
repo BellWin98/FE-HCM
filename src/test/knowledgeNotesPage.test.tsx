@@ -138,6 +138,54 @@ describe('KnowledgeNotesPage', () => {
     expect(screen.getAllByRole('link')).toHaveLength(1);
   });
 
+  it('출처 링크와 텍스트가 둘 다 있으면 텍스트를 링크 이름으로 쓰고, 링크가 http(s) 가 아니면 둘 다 텍스트로 보인다', async () => {
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(
+      page([
+        makeNote({ id: 1, content: 'a', sourceUrl: 'https://youtu.be/abc', sourceText: '유튜브 강의 제목' }),
+        makeNote({ id: 2, content: 'b', sourceUrl: 'ftp://files/x', sourceText: '사내 자료' }),
+      ])
+    );
+    renderPage();
+
+    const link = await screen.findByRole('link', { name: '유튜브 강의 제목' });
+    expect(link).toHaveAttribute('href', 'https://youtu.be/abc');
+    expect(screen.getByText('사내 자료').closest('a')).toBeNull();
+    expect(screen.getByText('ftp://files/x').closest('a')).toBeNull();
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+  });
+
+  it('카드의 종목 배지를 누르면 그 종목으로 거른다', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(
+      page([makeNote({ category: 'STOCK', stockSymbol: '005930', stockName: '삼성전자' })])
+    );
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: '삼성전자 메모만 보기' }));
+
+    await waitFor(() => expect(lastCall()).toMatchObject({ stockSymbol: '005930' }));
+    expect(screen.getByRole('button', { name: '삼성전자 필터 해제' })).toBeInTheDocument();
+  });
+
+  it('긴 내용은 줄여서 보이고 "내용 더보기"/"내용 접기" 로 펼치고 접는다', async () => {
+    const user = userEvent.setup();
+    const long = ['1줄', '2줄', '3줄', '4줄', '5줄', '6줄'].join('\n');
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(
+      page([makeNote({ id: 1, content: long }), makeNote({ id: 2, content: '짧은 메모' })])
+    );
+    renderPage();
+
+    const content = await screen.findByText(/1줄/);
+    expect(content).toHaveClass('line-clamp-4');
+    expect(screen.getAllByRole('button', { name: '내용 더보기' })).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: '내용 더보기' }));
+    expect(screen.getByText(/1줄/)).not.toHaveClass('line-clamp-4');
+    await user.click(screen.getByRole('button', { name: '내용 접기' }));
+    expect(screen.getByText(/1줄/)).toHaveClass('line-clamp-4');
+    expect(screen.getByText('짧은 메모')).not.toHaveClass('line-clamp-4');
+  });
+
   it('삭제는 확인 후에만 deleteKnowledgeNote 를 호출한다', async () => {
     const user = userEvent.setup();
     renderPage();
