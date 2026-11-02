@@ -18,6 +18,13 @@ vi.mock('@/contexts/QuickNoteContext', () => ({
   useQuickNote: () => ({ openQuickNote }),
 }));
 
+const takeSharedPayload = vi.fn();
+const clearSharedPayload = vi.fn();
+vi.mock('@/lib/shareTargetStash', () => ({
+  takeSharedPayload: (...args: unknown[]) => takeSharedPayload(...args),
+  clearSharedPayload: (...args: unknown[]) => clearSharedPayload(...args),
+}));
+
 const { api } = await import('@/lib/api');
 const { default: KnowledgeShareTargetPage } = await import('@/pages/KnowledgeShareTargetPage');
 const { AuthProvider } = await import('@/contexts/AuthContext');
@@ -61,7 +68,11 @@ beforeEach(() => {
   vi.mocked(api.getKnowledgeAccess).mockReset();
   toastError.mockReset();
   openQuickNote.mockReset();
+  takeSharedPayload.mockReset().mockResolvedValue(null);
+  clearSharedPayload.mockReset().mockResolvedValue(undefined);
 });
+
+const png = (name: string) => new File(['x'], name, { type: 'image/png' });
 
 describe('KnowledgeShareTargetPage', () => {
   it('미인증이면 로그인 화면으로 보낸다', async () => {
@@ -69,6 +80,14 @@ describe('KnowledgeShareTargetPage', () => {
 
     expect(await screen.findByText('로그인 화면')).toBeInTheDocument();
     expect(openQuickNote).not.toHaveBeenCalled();
+  });
+
+  it('미인증이면 공유 보관본을 지운다', async () => {
+    renderPage('?shared=1');
+
+    expect(await screen.findByText('로그인 화면')).toBeInTheDocument();
+    await waitFor(() => expect(clearSharedPayload).toHaveBeenCalled());
+    expect(takeSharedPayload).not.toHaveBeenCalled();
   });
 
   it('권한이 없으면 토스트를 띄우고 대시보드로 보낸다', async () => {
@@ -80,6 +99,18 @@ describe('KnowledgeShareTargetPage', () => {
     expect(await screen.findByText('대시보드')).toBeInTheDocument();
     expect(toastError).toHaveBeenCalledWith('사용할 수 없는 기능입니다.');
     expect(openQuickNote).not.toHaveBeenCalled();
+  });
+
+  it('권한이 없으면 공유 보관본을 지운다', async () => {
+    signIn();
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false });
+
+    renderPage('?shared=1');
+
+    expect(await screen.findByText('대시보드')).toBeInTheDocument();
+    expect(toastError).toHaveBeenCalledWith('사용할 수 없는 기능입니다.');
+    await waitFor(() => expect(clearSharedPayload).toHaveBeenCalled());
+    expect(takeSharedPayload).not.toHaveBeenCalled();
   });
 
   it('권한이 있으면 공유 값을 prefill 로 넘겨 한 번만 열고, 닫히면 /notes 로 이동한다', async () => {
@@ -95,5 +126,69 @@ describe('KnowledgeShareTargetPage', () => {
     arg.onClosed();
     expect(await screen.findByText('메모 목록')).toBeInTheDocument();
     expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it('?shared=1 이면 보관본의 파일 2장과 공유 값으로 연다', async () => {
+    signIn();
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+    takeSharedPayload.mockResolvedValue({
+      title: '제목',
+      text: null,
+      url: 'https://example.com/a',
+      files: [png('a.png'), png('b.png')],
+    });
+
+    renderPage('?shared=1');
+
+    await waitFor(() => expect(openQuickNote).toHaveBeenCalledTimes(1));
+    const arg = openQuickNote.mock.calls[0][0];
+    expect(arg.prefill).toEqual({ sourceUrl: 'https://example.com/a', sourceText: '제목' });
+    expect(arg.prefillFiles).toHaveLength(2);
+    expect(arg.prefillFiles[0].name).toBe('a.png');
+  });
+
+  it('?shared=1 인데 보관본이 없으면 파일 없이 연다', async () => {
+    signIn();
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+
+    renderPage('?shared=1');
+
+    await waitFor(() => expect(openQuickNote).toHaveBeenCalledTimes(1));
+    expect(takeSharedPayload).toHaveBeenCalledTimes(1);
+    const arg = openQuickNote.mock.calls[0][0];
+    expect(arg.prefillFiles ?? []).toHaveLength(0);
+  });
+
+  it('보관본이 7장이면 prefillFiles 7장을 그대로 넘긴다(자르기는 다이얼로그 몫)', async () => {
+    signIn();
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+    takeSharedPayload.mockResolvedValue({
+      title: null,
+      text: null,
+      url: null,
+      files: [1, 2, 3, 4, 5, 6, 7].map((n) => png(`${n}.png`)),
+    });
+
+    renderPage('?shared=1');
+
+    await waitFor(() => expect(openQuickNote).toHaveBeenCalledTimes(1));
+    expect(openQuickNote.mock.calls[0][0].prefillFiles).toHaveLength(7);
+  });
+
+  it('기존 GET 쿼리 공유는 보관본을 읽지 않고 그대로 동작한다', async () => {
+    signIn();
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+
+    renderPage('?title=t&text=%EB%B3%B8%EB%AC%B8%20https%3A%2F%2Fexample.com%2Fb&url=');
+
+    await waitFor(() => expect(openQuickNote).toHaveBeenCalledTimes(1));
+    expect(takeSharedPayload).not.toHaveBeenCalled();
+    expect(openQuickNote.mock.calls[0][0].prefill).toEqual(
+      (await import('@/lib/parseSharedContent')).parseSharedContent({
+        title: 't',
+        text: '본문 https://example.com/b',
+        url: '',
+      })
+    );
   });
 });
