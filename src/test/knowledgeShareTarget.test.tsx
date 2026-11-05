@@ -92,7 +92,7 @@ describe('KnowledgeShareTargetPage', () => {
 
   it('권한이 없으면 토스트를 띄우고 대시보드로 보낸다', async () => {
     signIn();
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false, canRead: false, canWrite: false, isAdmin: false });
 
     renderPage();
 
@@ -103,7 +103,7 @@ describe('KnowledgeShareTargetPage', () => {
 
   it('권한이 없으면 공유 보관본을 지운다', async () => {
     signIn();
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false, canRead: false, canWrite: false, isAdmin: false });
 
     renderPage('?shared=1');
 
@@ -115,7 +115,7 @@ describe('KnowledgeShareTargetPage', () => {
 
   it('권한이 있으면 공유 값을 prefill 로 넘겨 한 번만 열고, 닫히면 /notes 로 이동한다', async () => {
     signIn();
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: true, isAdmin: false });
 
     renderPage();
 
@@ -130,7 +130,7 @@ describe('KnowledgeShareTargetPage', () => {
 
   it('?shared=1 이면 보관본의 파일 2장과 공유 값으로 연다', async () => {
     signIn();
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: true, isAdmin: false });
     takeSharedPayload.mockResolvedValue({
       title: '제목',
       text: null,
@@ -149,7 +149,7 @@ describe('KnowledgeShareTargetPage', () => {
 
   it('?shared=1 인데 보관본이 없으면 파일 없이 연다', async () => {
     signIn();
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: true, isAdmin: false });
 
     renderPage('?shared=1');
 
@@ -161,7 +161,7 @@ describe('KnowledgeShareTargetPage', () => {
 
   it('보관본이 7장이면 prefillFiles 7장을 그대로 넘긴다(자르기는 다이얼로그 몫)', async () => {
     signIn();
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: true, isAdmin: false });
     takeSharedPayload.mockResolvedValue({
       title: null,
       text: null,
@@ -177,7 +177,7 @@ describe('KnowledgeShareTargetPage', () => {
 
   it('기존 GET 쿼리 공유는 보관본을 읽지 않고 그대로 동작한다', async () => {
     signIn();
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: true, isAdmin: false });
 
     renderPage('?title=t&text=%EB%B3%B8%EB%AC%B8%20https%3A%2F%2Fexample.com%2Fb&url=');
 

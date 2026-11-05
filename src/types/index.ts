@@ -1,3 +1,5 @@
+import type { KnowledgeAccessFlags } from '@/types/knowledgeNote';
+
 export interface PageResponse<T> {
   content: T[];
   last: boolean;
@@ -25,6 +27,7 @@ export interface Member {
  */
 export interface AdminMember extends Member {
   tossAccess: boolean;
+  knowledgeAccess: KnowledgeAccessFlags;
 }
 
 export interface WorkoutRoom {

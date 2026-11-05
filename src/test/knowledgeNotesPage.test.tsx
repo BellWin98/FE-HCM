@@ -36,6 +36,9 @@ const makeNote = (over: Partial<KnowledgeNote> = {}): KnowledgeNote => ({
   stockName: null,
   createdAt: '2026-11-02T00:00:00',
   updatedAt: null,
+  visibility: 'PUBLIC',
+  author: { id: 1, nickname: 'user', profileUrl: null },
+  editable: true,
   ...over,
 });
 

@@ -39,6 +39,8 @@ import type {
   TossStockSearchResult,
 } from "@/types/tossStock";
 import type {
+  KnowledgeAccessFlags,
+  KnowledgeAccessGrant,
   KnowledgeAccessStatus,
   KnowledgeNote,
   KnowledgeNoteInput,
@@ -472,6 +474,7 @@ class ApiClient {
     if (params.keyword) searchParams.append("keyword", params.keyword);
     if (params.category) searchParams.append("category", params.category);
     if (params.stockSymbol) searchParams.append("stockSymbol", params.stockSymbol);
+    params.scopes?.forEach((scope) => searchParams.append("scopes", scope));
     if (params.page !== undefined) searchParams.append("page", String(params.page));
     if (params.size !== undefined) searchParams.append("size", String(params.size));
     const query = searchParams.toString();
@@ -736,6 +739,22 @@ class ApiClient {
   // ─── Admin: 토스 접근 권한 ───────────────────────────────────────────────────
   // 토스 접근은 role 과 분리되어 있다(`toss_access`). ADMIN 은 부여 없이도 항상 접근하므로
   // 여기서 다루는 것은 "ADMIN 이 지정한 유저" 목록이다.
+
+  /** GET /admin/knowledge-access — 지식 메모 권한이 부여된 회원 목록. */
+  async getAdminKnowledgeAccess(): Promise<KnowledgeAccessGrant[]> {
+    return this.request<KnowledgeAccessGrant[]>("/admin/knowledge-access");
+  }
+
+  /** PUT /admin/knowledge-access/{memberId} — 읽기·쓰기 권한 설정(멱등). */
+  async updateAdminKnowledgeAccess(
+    memberId: number,
+    flags: KnowledgeAccessFlags
+  ): Promise<KnowledgeAccessGrant> {
+    return this.request<KnowledgeAccessGrant>(`/admin/knowledge-access/${memberId}`, {
+      method: "PUT",
+      data: flags,
+    });
+  }
 
   /** GET /admin/toss-access — 토스 접근이 부여된 회원 목록. */
   async getAdminTossAccess(): Promise<TossAccessGrant[]> {

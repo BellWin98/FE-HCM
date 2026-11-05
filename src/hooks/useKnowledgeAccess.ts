@@ -29,6 +29,9 @@ export const useKnowledgeAccess = () => {
   return {
     // 조회 실패는 권한 없음으로 취급한다 — 판정할 수 없으면 열지 않는다.
     hasAccess: !isError && (data?.hasAccess ?? false),
+    canRead: !isError && (data?.canRead ?? false),
+    canWrite: !isError && (data?.canWrite ?? false),
+    isAdmin: !isError && (data?.isAdmin ?? false),
     isPending: isAuthenticated && isPending,
   };
 };
