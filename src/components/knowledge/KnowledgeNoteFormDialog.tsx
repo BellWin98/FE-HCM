@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { NoteImageAttachments } from '@/components/knowledge/NoteImageAttachments';
 import { addFiles, fromUrls, revokePreview } from '@/components/knowledge/noteAttachments';
@@ -92,6 +93,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
         tags: note.tags,
         stock: note.stockSymbol ? { symbol: note.stockSymbol, name: note.stockName ?? note.stockSymbol } : null,
         sourceFromLast: false,
+        isPublic: note.visibility !== 'PRIVATE',
       };
     }
     const last = loadLastContext();
@@ -112,6 +114,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
         : null,
       // 키보드에 가려 출처 칸이 안 보이는 채로 지난 출처가 붙어 저장되지 않도록 채웠다는 사실을 알린다.
       sourceFromLast: !prefillHasSource && lastHasSource,
+      isPublic: true,
     };
   });
 
@@ -126,6 +129,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
   const attachmentsRef = useRef(attachments);
   attachmentsRef.current = attachments;
   const [tags, setTags] = useState<string[]>(initial.tags);
+  const [isPublic, setIsPublic] = useState(initial.isPublic);
   const [tagDraft, setTagDraft] = useState('');
   const [stock, setStock] = useState<SelectedStock | null>(initial.stock);
   const [stockNotice, setStockNotice] = useState(false);
@@ -264,6 +268,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
       ...(url ? { sourceUrl: url } : {}),
       ...(text ? { sourceText: text } : {}),
       tags: mergeTags(tags, tagDraft.split(',')),
+      visibility: isPublic ? 'PUBLIC' : 'PRIVATE',
       ...(category === 'STOCK' && stock ? { stockSymbol: stock.symbol, stockName: stock.name } : {}),
     };
 
@@ -460,6 +465,11 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
             if (tagDraft.trim()) commitTagDraft();
           }}
         />
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor="knowledge-note-public">공개</Label>
+        <Switch id="knowledge-note-public" checked={isPublic} onCheckedChange={setIsPublic} />
       </div>
 
       <Button type="submit" disabled={mutation.isPending}>
