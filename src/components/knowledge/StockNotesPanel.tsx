@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useQuickNote } from '@/contexts/QuickNoteContext';
 import { api } from '@/lib/api';
@@ -86,7 +87,12 @@ const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName:
                 setViewerOpen(true);
               }}
             />
-            <span className="text-xs text-muted-foreground">{note.createdAt.slice(0, 10)}</span>
+            <span className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+              <span>{note.author.nickname}</span>
+              {note.visibility === 'PRIVATE' && <Badge variant="outline">비공개</Badge>}
+              <span aria-hidden="true">·</span>
+              <span>{note.createdAt.slice(0, 10)}</span>
+            </span>
           </li>
         ))}
       </ul>

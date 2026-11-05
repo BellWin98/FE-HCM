@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { KnowledgeNote } from '@/types/knowledgeNote';
 import { KnowledgeNoteCard } from '@/components/knowledge/KnowledgeNoteCard';
 
@@ -33,6 +33,35 @@ const renderCard = (note: Partial<KnowledgeNote> = {}, currentMemberId?: number)
   );
 
 describe('KnowledgeNoteCard', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('card_authorWithProfileUrl_showsProfileImage', async () => {
+    // Radix Avatar 는 이미지가 로드된 뒤에만 <img> 를 그리므로 jsdom 에서 로드 성공을 흉내 낸다.
+    vi.stubGlobal(
+      'Image',
+      class {
+        private listeners: Record<string, (() => void)[]> = {};
+        addEventListener(type: string, fn: () => void) {
+          (this.listeners[type] ??= []).push(fn);
+        }
+        removeEventListener() {}
+        set src(_value: string) {
+          queueMicrotask(() => this.listeners.load?.forEach((fn) => fn()));
+        }
+      }
+    );
+    renderCard({ author: { id: 7, nickname: '홍길동', profileUrl: 'https://img.test/p.png' } });
+    const img = await screen.findByRole('img', { name: '홍길동' });
+    expect(img).toHaveAttribute('src', 'https://img.test/p.png');
+  });
+
+  it('card_authorWithoutProfileUrl_showsInitialFallback', () => {
+    renderCard({}, 1);
+    expect(screen.getByText('홍')).toBeInTheDocument();
+  });
+
   it('card_showsAuthorNickname', () => {
     renderCard({}, 1);
     expect(screen.getByText('홍길동')).toBeInTheDocument();

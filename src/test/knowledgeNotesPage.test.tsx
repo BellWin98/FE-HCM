@@ -335,6 +335,27 @@ describe('KnowledgeNotesPage', () => {
       expect(screen.getByRole('button', { name: '내 메모만 보기' })).toHaveAttribute('aria-pressed', 'true');
     });
 
+    it('writer_losesWrite_staleMineScopeIsNotSent', async () => {
+      const user = userEvent.setup();
+      accessState.canWrite = true;
+      const view = renderPage();
+      await screen.findByText('첫 메모');
+      await user.click(screen.getByRole('button', { name: '내 메모만 보기' }));
+      await waitFor(() => expect(lastCall()).toMatchObject({ scopes: ['MINE'] }));
+
+      accessState.canWrite = false;
+      view.rerender(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <MemoryRouter initialEntries={['/notes']}>
+            <KnowledgeNotesPage />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => expect(lastCall()?.scopes).toEqual([]));
+      expect(screen.queryByRole('button', { name: '내 메모만 보기' })).not.toBeInTheDocument();
+    });
+
     it('admin_defaultScopes_mineAndPublic', async () => {
       Object.assign(accessState, { canWrite: true, isAdmin: true });
       renderPage();

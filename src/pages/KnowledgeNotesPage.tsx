@@ -35,8 +35,12 @@ const KnowledgeNotesPage = () => {
   const keyword = useDebouncedValue(keywordInput.trim(), SEARCH_DEBOUNCE_MS);
 
   // 사용자가 필터를 건드리기 전에는 권한 조회 결과(관리자 여부)로 기본값을 정한다.
-  const [userScopes, setUserScopes] = useState<KnowledgeNoteScope[] | null>(null);
-  const scopes = userScopes ?? (isAdmin ? ADMIN_DEFAULT_SCOPES : []);
+  // 필터 모양이 권한에 따라 달라지므로, 선택값은 설정 당시의 모드와 함께 보관해 모드가 바뀌면 무시한다.
+  const mode = isAdmin ? 'admin' : canWrite ? 'writer' : 'none';
+  const [userScopes, setUserScopes] = useState<{ mode: string; value: KnowledgeNoteScope[] } | null>(null);
+  const activeUserScopes = userScopes?.mode === mode ? userScopes.value : null;
+  const scopes = activeUserScopes ?? (isAdmin ? ADMIN_DEFAULT_SCOPES : []);
+  const handleScopesChange = (value: KnowledgeNoteScope[]): void => setUserScopes({ mode, value });
 
   const stockSymbol = searchParams.get('stockSymbol') ?? undefined;
   const stockName = searchParams.get('stockName') ?? stockSymbol;
@@ -123,7 +127,7 @@ const KnowledgeNotesPage = () => {
           ))}
         </div>
 
-        <KnowledgeScopeFilter isAdmin={isAdmin} canWrite={canWrite} value={scopes} onChange={setUserScopes} />
+        <KnowledgeScopeFilter isAdmin={isAdmin} canWrite={canWrite} value={scopes} onChange={handleScopesChange} />
 
         {stockSymbol && (
           <Button

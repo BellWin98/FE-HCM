@@ -90,6 +90,26 @@ beforeEach(() => {
 });
 
 describe('종목 메모 패널', () => {
+  it('작성자 닉네임을 보여주고 비공개 메모에는 비공개 배지를 단다', async () => {
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(
+      page([{ ...note(1, '비밀 메모'), visibility: 'PRIVATE', author: { id: 2, nickname: '철수', profileUrl: null } }])
+    );
+    renderPanel();
+
+    const region = await screen.findByRole('region', { name: '이 종목 메모' });
+    expect(region).toHaveTextContent('철수');
+    expect(region).toHaveTextContent('비공개');
+  });
+
+  it('공개 메모에는 비공개 배지가 없다', async () => {
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([note(1, '공개 메모')]));
+    renderPanel();
+
+    const region = await screen.findByRole('region', { name: '이 종목 메모' });
+    expect(region).toHaveTextContent('user');
+    expect(region).not.toHaveTextContent('비공개');
+  });
+
   it('hasAccess=false 면 아무것도 그리지 않고 API 를 부르지 않는다', async () => {
     useKnowledgeAccess.mockReturnValue({ hasAccess: false, isPending: false });
     const { container } = renderPanel();
