@@ -67,6 +67,7 @@ const AdminMembersPage = () => {
     open: boolean;
     target: Member | null;
   }>({ open: false, target: null });
+  const [savingKnowledgeIds, setSavingKnowledgeIds] = useState<ReadonlySet<number>>(new Set());
   const [pendingTossChange, setPendingTossChange] = useState<{
     open: boolean;
     target: AdminMember | null;
@@ -133,10 +134,13 @@ const AdminMembersPage = () => {
   const knowledgeAccessMutation = useMutation({
     mutationFn: ({ memberId, canRead, canWrite }: { memberId: number; canRead: boolean; canWrite: boolean }) =>
       api.updateAdminKnowledgeAccess(memberId, { canRead, canWrite }),
-    onSuccess: () => {
+    // 목록 재조회가 끝날 때까지 mutation 을 pending 으로 두어, 낡은 값으로 두 번째 PUT 이 나가지 않게 한다.
+    onSuccess: async () => {
       toast.success('지식 메모 권한을 변경했습니다.');
-      queryClient.invalidateQueries({ queryKey: ['adminMembers'] });
-      queryClient.invalidateQueries({ queryKey: KNOWLEDGE_ACCESS_QUERY_KEY });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['adminMembers'] }),
+        queryClient.invalidateQueries({ queryKey: KNOWLEDGE_ACCESS_QUERY_KEY }),
+      ]);
     },
     onError: (err) => {
       toast.error(getErrorMessage(err));
@@ -166,7 +170,6 @@ const AdminMembersPage = () => {
 
   const updatingMemberId = roleMutation.variables?.memberId;
   const tossUpdatingMemberId = tossAccessMutation.variables?.memberId;
-  const knowledgeUpdatingMemberId = knowledgeAccessMutation.variables?.memberId;
 
   const pageItems = useMemo(() => {
     if (!totalPages || totalPages <= 1) return [];
@@ -211,7 +214,19 @@ const AdminMembersPage = () => {
   };
 
   const handleKnowledgeAccessChange = (target: AdminMember, changed: Partial<AdminMember['knowledgeAccess']>) => {
-    knowledgeAccessMutation.mutate({ memberId: target.id, ...target.knowledgeAccess, ...changed });
+    const memberId = target.id;
+    // 단일 mutation 옵저버는 마지막 호출만 추적하므로, 저장 중인 행은 id 집합으로 따로 관리한다.
+    setSavingKnowledgeIds((prev) => new Set(prev).add(memberId));
+    knowledgeAccessMutation
+      .mutateAsync({ memberId, ...target.knowledgeAccess, ...changed })
+      .catch(() => undefined) // 오류 토스트는 mutation 의 onError 가 처리한다.
+      .finally(() => {
+        setSavingKnowledgeIds((prev) => {
+          const next = new Set(prev);
+          next.delete(memberId);
+          return next;
+        });
+      });
   };
 
   const openTossConfirm = (target: AdminMember, nextGranted: boolean) => {
@@ -366,7 +381,7 @@ const AdminMembersPage = () => {
                     const isUpdatingThisRow = roleMutation.isPending && updatingMemberId === m.id;
                     const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === m.id;
                     const isTossUpdatingThisRow = tossAccessMutation.isPending && tossUpdatingMemberId === m.id;
-                    const isKnowledgeUpdatingThisRow = knowledgeAccessMutation.isPending && knowledgeUpdatingMemberId === m.id;
+                    const isKnowledgeUpdatingThisRow = savingKnowledgeIds.has(m.id);
 
                     return (
                       <div key={m.id} className="rounded-lg border bg-card p-4 shadow-sm">
@@ -481,7 +496,7 @@ const AdminMembersPage = () => {
                           const isUpdatingThisRow = roleMutation.isPending && updatingMemberId === m.id;
                           const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === m.id;
                           const isTossUpdatingThisRow = tossAccessMutation.isPending && tossUpdatingMemberId === m.id;
-                    const isKnowledgeUpdatingThisRow = knowledgeAccessMutation.isPending && knowledgeUpdatingMemberId === m.id;
+                          const isKnowledgeUpdatingThisRow = savingKnowledgeIds.has(m.id);
                           return (
                             <TableRow key={m.id}>
                               <TableCell className="font-mono text-xs text-muted-foreground">{m.id}</TableCell>

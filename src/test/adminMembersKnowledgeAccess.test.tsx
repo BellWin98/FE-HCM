@@ -124,4 +124,89 @@ describe('AdminMembersPage 지식 메모 권한', () => {
     await userEvent.click(box);
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('저장 실패'));
   });
+
+  it('otherFlagCurrentValue_isSent', async () => {
+    vi.mocked(api.getAdminMembers).mockResolvedValue({
+      content: [makeMember({ knowledgeAccess: { canRead: false, canWrite: true } })],
+      totalPages: 1,
+      number: 0,
+      size: 10,
+    } as never);
+    renderPage();
+    const [box] = await findBoxes('일반유저 지식 메모 조회');
+    await userEvent.click(box);
+    await waitFor(() =>
+      expect(api.updateAdminKnowledgeAccess).toHaveBeenCalledWith(1, { canRead: true, canWrite: true })
+    );
+  });
+
+  describe('여러 행 저장', () => {
+    const twoUsers = {
+      content: [
+        makeMember({}),
+        makeMember({ id: 3, email: 'b@test.com', nickname: '유저B' }),
+      ],
+      totalPages: 1,
+      number: 0,
+      size: 10,
+    };
+    const deferred = () => {
+      let resolve: (v: unknown) => void = () => undefined;
+      const promise = new Promise((r) => {
+        resolve = r;
+      });
+      return { promise, resolve };
+    };
+    const expectDisabled = async (name: string, disabled: boolean) => {
+      await waitFor(async () => {
+        const boxes = await findBoxes(name);
+        boxes.forEach((box) => (disabled ? expect(box).toBeDisabled() : expect(box).toBeEnabled()));
+      });
+    };
+
+    it('savingRowA_keepsRowBEnabled_andStartingBKeepsADisabled', async () => {
+      vi.mocked(api.getAdminMembers).mockResolvedValue(twoUsers as never);
+      const a = deferred();
+      const b = deferred();
+      vi.mocked(api.updateAdminKnowledgeAccess)
+        .mockReturnValueOnce(a.promise as never)
+        .mockReturnValueOnce(b.promise as never);
+      renderPage();
+
+      const [aRead] = await findBoxes('일반유저 지식 메모 조회');
+      await userEvent.click(aRead);
+      await expectDisabled('일반유저 지식 메모 조회', true);
+      await expectDisabled('유저B 지식 메모 조회', false);
+
+      const [bRead] = await findBoxes('유저B 지식 메모 조회');
+      await userEvent.click(bRead);
+      await expectDisabled('유저B 지식 메모 조회', true);
+      await expectDisabled('일반유저 지식 메모 조회', true);
+
+      a.resolve({});
+      await expectDisabled('일반유저 지식 메모 조회', false);
+      await expectDisabled('유저B 지식 메모 조회', true);
+      b.resolve({});
+      await expectDisabled('유저B 지식 메모 조회', false);
+    });
+
+    it('afterPutResolves_rowStaysDisabledUntilMembersRefetchLands', async () => {
+      const refetch = deferred();
+      vi.mocked(api.getAdminMembers)
+        .mockResolvedValueOnce(twoUsers as never)
+        .mockReturnValueOnce(refetch.promise as never);
+      renderPage();
+
+      const [aRead] = await findBoxes('일반유저 지식 메모 조회');
+      await userEvent.click(aRead);
+      await waitFor(() => expect(api.getAdminMembers).toHaveBeenCalledTimes(2));
+      await expectDisabled('일반유저 지식 메모 작성', true);
+
+      refetch.resolve({
+        ...twoUsers,
+        content: [makeMember({ knowledgeAccess: { canRead: true, canWrite: false } }), twoUsers.content[1]],
+      });
+      await expectDisabled('일반유저 지식 메모 작성', false);
+    });
+  });
 });
