@@ -114,6 +114,12 @@ esbuild 트랜스파일이라 타입 오류를 잡지 않습니다).
   피드는 사진 중복을 피하려고 하루 한 장만 그립니다. 그래서 카드에 보이는 `reactions`/`commentCount`는
   방 전체 합계이고, 어느 방에 리액션을 남길지는 정할 수 없습니다 — 합계는 표시 전용이며 댓글을 열 때는
   `rooms[].recordId`로 방을 골라야 합니다.
+- **지식 메모 권한은 `useKnowledgeAccess`가 돌려주는 `{ hasAccess, canRead, canWrite, isAdmin }` 하나로
+  판단합니다.** 메뉴·라우트(`RequireKnowledgeAccess`)는 `hasAccess`, 생성 진입점(헤더 빠른 메모, FAB,
+  "메모 쓰기", 공유 대상 페이지)은 `canWrite`(`QuickNoteContext`의 `canCreate`)를 봅니다. 메모별 수정·삭제
+  노출은 서버가 내려주는 `editable`만 따르며, 화면에서 작성자 id를 비교해 판정하지 않습니다(관리자는 남의
+  메모도 수정할 수 있기 때문입니다). 목록 필터는 `KnowledgeScopeFilter`가 관리자에게 내 메모·공개·비공개
+  3종(기본 내 메모+공개), 작성 권한이 있는 일반 유저에게 "내 메모만 보기"만 보여줍니다.
 
 ## 따라야 할 컨벤션
 
