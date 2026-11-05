@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -109,6 +110,10 @@ export const KnowledgeNoteCard = ({
             </button>
           )}
           <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+            <Avatar className="h-5 w-5">
+              {note.author.profileUrl && <AvatarImage src={note.author.profileUrl} alt={note.author.nickname} />}
+              <AvatarFallback className="text-[10px]">{note.author.nickname.charAt(0)}</AvatarFallback>
+            </Avatar>
             <span>{note.author.id === currentMemberId ? '나' : note.author.nickname}</span>
             <span aria-hidden="true">·</span>
             <span>{note.createdAt.slice(0, 10)}</span>
