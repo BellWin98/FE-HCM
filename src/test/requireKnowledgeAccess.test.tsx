@@ -72,7 +72,21 @@ beforeEach(() => {
 describe('RequireKnowledgeAccess', () => {
   it('권한이 있으면 메모 화면을 그린다', async () => {
     signIn();
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: true, isAdmin: false });
+
+    renderGuard();
+
+    expect(await screen.findByText('메모 화면')).toBeInTheDocument();
+  });
+
+  it('writeOnly_hasAccess_rendersChildren', async () => {
+    signIn();
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({
+      hasAccess: true,
+      canRead: false,
+      canWrite: true,
+      isAdmin: false,
+    });
 
     renderGuard();
 
@@ -81,7 +95,7 @@ describe('RequireKnowledgeAccess', () => {
 
   it('권한이 없으면 대시보드로 돌려보낸다', async () => {
     signIn();
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false, canRead: false, canWrite: false, isAdmin: false });
 
     renderGuard();
 
@@ -91,7 +105,7 @@ describe('RequireKnowledgeAccess', () => {
 
   it('ADMIN 역할이어도 서버가 거부하면 통과하지 못한다 — 판정은 서버 응답만 본다', async () => {
     signIn('ADMIN');
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false, canRead: false, canWrite: false, isAdmin: false });
 
     renderGuard();
 

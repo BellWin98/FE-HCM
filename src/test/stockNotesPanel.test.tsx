@@ -37,6 +37,9 @@ const note = (id: number, content: string | null, images: string[] = []): Knowle
   stockName: '삼성전자',
   createdAt: '2026-11-02T09:00:00',
   updatedAt: null,
+  visibility: 'PUBLIC',
+  author: { id: 1, nickname: 'user', profileUrl: null },
+  editable: true,
 });
 
 const page = (content: KnowledgeNote[]) => ({

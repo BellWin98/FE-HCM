@@ -56,6 +56,9 @@ const savedNote: KnowledgeNote = {
   stockName: null,
   createdAt: '2026-11-02T00:00:00',
   updatedAt: null,
+  visibility: 'PUBLIC',
+  author: { id: 1, nickname: 'user', profileUrl: null },
+  editable: true,
 };
 
 const OpenButton = ({ options }: { options?: Parameters<ReturnType<typeof useQuickNote>['openQuickNote']>[0] }) => {
@@ -89,7 +92,7 @@ const open = async (options?: Parameters<typeof renderDialog>[0]) => {
 beforeEach(() => {
   localStorage.clear();
   signIn();
-  vi.mocked(api.getKnowledgeAccess).mockReset().mockResolvedValue({ hasAccess: true });
+  vi.mocked(api.getKnowledgeAccess).mockReset().mockResolvedValue({ hasAccess: true, canRead: true, canWrite: true, isAdmin: false });
   vi.mocked(api.createKnowledgeNote).mockReset().mockResolvedValue(savedNote);
   vi.mocked(api.updateKnowledgeNote).mockReset().mockResolvedValue(savedNote);
   vi.mocked(api.uploadKnowledgeNoteImages)
@@ -123,7 +126,7 @@ describe('빠른 메모 다이얼로그', () => {
   });
 
   it('권한이 없으면 열리지 않는다', async () => {
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false, canRead: false, canWrite: false, isAdmin: false });
     renderDialog();
     await waitFor(() => expect(api.getKnowledgeAccess).toHaveBeenCalled());
     await userEvent.click(screen.getByRole('button', { name: '열기' }));

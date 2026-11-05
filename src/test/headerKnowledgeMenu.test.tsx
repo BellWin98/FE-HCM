@@ -60,7 +60,7 @@ beforeEach(() => {
 describe('Header — 메모 진입점', () => {
   it('hasAccess=false 면 메모 버튼·메뉴가 없다 (ADMIN role 이어도)', async () => {
     signIn('ADMIN');
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false, canRead: false, canWrite: false, isAdmin: false });
 
     renderHeader();
 
@@ -72,7 +72,7 @@ describe('Header — 메모 진입점', () => {
 
   it('hasAccess=true 면 "빠른 메모" 버튼과 "메모 목록" 메뉴가 보인다', async () => {
     signIn('USER');
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: true, isAdmin: false });
 
     renderHeader();
 
@@ -88,7 +88,7 @@ describe('Header — 메모 진입점', () => {
 
   it('"빠른 메모" 버튼을 누르면 다이얼로그가 열린다', async () => {
     signIn('USER');
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: true, isAdmin: false });
 
     renderHeader();
     const header = await screen.findByRole('banner');

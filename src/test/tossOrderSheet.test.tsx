@@ -70,7 +70,7 @@ const heldOrderable = (overrides: Partial<TossOrderable> = {}): TossOrderable =>
 
 beforeEach(() => {
   localStorage.clear();
-  vi.mocked(api.getKnowledgeAccess).mockReset().mockResolvedValue({ hasAccess: false });
+  vi.mocked(api.getKnowledgeAccess).mockReset().mockResolvedValue({ hasAccess: false, canRead: false, canWrite: false, isAdmin: false });
   vi.mocked(api.searchKnowledgeNotes).mockReset();
   vi.mocked(api.getTossOrderable).mockReset();
   vi.mocked(api.placeTossOrder).mockReset();
@@ -1049,7 +1049,7 @@ describe('주문 시트 — 종목 메모', () => {
       JSON.stringify({ id: 1, email: 'a@a.com', nickname: 'a', role: 'ADMIN' })
     );
     localStorage.setItem('accessToken', 'token');
-    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true });
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: true, isAdmin: false });
   };
 
   it('권한이 없으면 메모 패널도 메모 API 호출도 없다', async () => {
