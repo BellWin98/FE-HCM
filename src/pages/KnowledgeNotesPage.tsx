@@ -3,18 +3,21 @@ import { useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { ADMIN_DEFAULT_SCOPES, KnowledgeScopeFilter } from '@/components/knowledge/KnowledgeScopeFilter';
 import { KnowledgeNoteCard } from '@/components/knowledge/KnowledgeNoteCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuickNote } from '@/contexts/QuickNoteContext';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { KNOWLEDGE_NOTES_QUERY_KEY } from '@/hooks/useKnowledgeAccess';
+import { KNOWLEDGE_NOTES_QUERY_KEY, useKnowledgeAccess } from '@/hooks/useKnowledgeAccess';
 import { api } from '@/lib/api';
 import {
   KNOWLEDGE_CATEGORIES,
   KNOWLEDGE_CATEGORY_LABELS,
   type KnowledgeCategory,
   type KnowledgeNote,
+  type KnowledgeNoteScope,
 } from '@/types/knowledgeNote';
 
 const PAGE_SIZE = 20;
@@ -24,24 +27,33 @@ const KnowledgeNotesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { openQuickNote } = useQuickNote();
+  const { member } = useAuth();
+  const { canWrite, isAdmin, isPending: isAccessPending } = useKnowledgeAccess();
 
   const [keywordInput, setKeywordInput] = useState(searchParams.get('q') ?? '');
   const [category, setCategory] = useState<KnowledgeCategory | undefined>();
   const keyword = useDebouncedValue(keywordInput.trim(), SEARCH_DEBOUNCE_MS);
 
+  // 사용자가 필터를 건드리기 전에는 권한 조회 결과(관리자 여부)로 기본값을 정한다.
+  const [userScopes, setUserScopes] = useState<KnowledgeNoteScope[] | null>(null);
+  const scopes = userScopes ?? (isAdmin ? ADMIN_DEFAULT_SCOPES : []);
+
   const stockSymbol = searchParams.get('stockSymbol') ?? undefined;
   const stockName = searchParams.get('stockName') ?? stockSymbol;
 
   const { data, isPending, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: [...KNOWLEDGE_NOTES_QUERY_KEY, 'list', { keyword, category, stockSymbol }],
+    queryKey: [...KNOWLEDGE_NOTES_QUERY_KEY, 'list', { keyword, category, stockSymbol, scopes }],
     queryFn: ({ pageParam }) =>
       api.searchKnowledgeNotes({
         keyword: keyword || undefined,
         category,
         stockSymbol,
+        scopes,
         page: pageParam,
         size: PAGE_SIZE,
       }),
+    // 관리자 기본 범위가 정해지기 전에 불필요한 요청이 나가지 않게 권한 조회를 기다린다.
+    enabled: !isAccessPending,
     initialPageParam: 0,
     getNextPageParam: (lastPage) => (lastPage.last ? undefined : lastPage.number + 1),
   });
@@ -111,6 +123,8 @@ const KnowledgeNotesPage = () => {
           ))}
         </div>
 
+        <KnowledgeScopeFilter isAdmin={isAdmin} canWrite={canWrite} value={scopes} onChange={setUserScopes} />
+
         {stockSymbol && (
           <Button
             type="button"
@@ -142,6 +156,7 @@ const KnowledgeNotesPage = () => {
               <KnowledgeNoteCard
                 key={note.id}
                 note={note}
+                currentMemberId={member?.id}
                 onEdit={(n) => openQuickNote({ note: n })}
                 onDelete={(n) => deleteMutation.mutate(n)}
                 onTagClick={setKeywordInput}

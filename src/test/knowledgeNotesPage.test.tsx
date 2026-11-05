@@ -20,6 +20,15 @@ vi.mock('@/contexts/QuickNoteContext', () => ({
   useQuickNote: () => ({ openQuickNote }),
 }));
 
+const accessState = { canRead: true, canWrite: false, isAdmin: false, isPending: false };
+vi.mock('@/hooks/useKnowledgeAccess', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/hooks/useKnowledgeAccess')>()),
+  useKnowledgeAccess: () => ({ hasAccess: accessState.canRead, ...accessState }),
+}));
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ member: { id: 1 } }),
+}));
+
 const { api } = await import('@/lib/api');
 const { toast } = await import('sonner');
 const { default: KnowledgeNotesPage } = await import('@/pages/KnowledgeNotesPage');
@@ -89,6 +98,7 @@ describe('KnowledgeNotesPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.assign(accessState, { canRead: true, canWrite: false, isAdmin: false, isPending: false });
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([makeNote()]));
     vi.mocked(api.deleteKnowledgeNote).mockResolvedValue(undefined);
   });
@@ -299,5 +309,86 @@ describe('KnowledgeNotesPage', () => {
     expect(await screen.findByRole('button', { name: '이미지 1/1 크게 보기' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '내용 더보기' })).not.toBeInTheDocument();
     expect(container.querySelector('p.whitespace-pre-wrap')).toBeNull();
+  });
+
+  describe('범위 필터', () => {
+    const filterNames = ['내 메모만 보기', '내 메모', '공개 메모', '비공개 메모'];
+
+    it('readOnlyUser_noFilter', async () => {
+      renderPage();
+      await screen.findByText('첫 메모');
+      filterNames.forEach((name) => {
+        expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+      });
+    });
+
+    it('writer_mineToggle_sendsMineScope', async () => {
+      const user = userEvent.setup();
+      accessState.canWrite = true;
+      renderPage();
+      await screen.findByText('첫 메모');
+      expect(lastCall()?.scopes).toEqual([]);
+
+      await user.click(screen.getByRole('button', { name: '내 메모만 보기' }));
+
+      await waitFor(() => expect(lastCall()).toMatchObject({ scopes: ['MINE'] }));
+      expect(screen.getByRole('button', { name: '내 메모만 보기' })).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('admin_defaultScopes_mineAndPublic', async () => {
+      Object.assign(accessState, { canWrite: true, isAdmin: true });
+      renderPage();
+      await screen.findByText('첫 메모');
+      expect(api.searchKnowledgeNotes).toHaveBeenCalledTimes(1);
+      expect(lastCall()).toMatchObject({ scopes: ['MINE', 'PUBLIC'] });
+      expect(screen.getByRole('button', { name: '내 메모' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('button', { name: '공개 메모' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('button', { name: '비공개 메모' })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.queryByRole('button', { name: '내 메모만 보기' })).not.toBeInTheDocument();
+    });
+
+    it('admin_accessPending_doesNotRequestUntilResolved', async () => {
+      Object.assign(accessState, { canWrite: true, isAdmin: true, isPending: true });
+      const { rerender } = renderPage();
+      await new Promise((r) => setTimeout(r, 50));
+      expect(api.searchKnowledgeNotes).not.toHaveBeenCalled();
+      accessState.isPending = false;
+      rerender(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <MemoryRouter>
+            <KnowledgeNotesPage />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+      await screen.findByText('첫 메모');
+      expect(vi.mocked(api.searchKnowledgeNotes).mock.calls.every(([a]) => a.scopes?.length === 2)).toBe(true);
+    });
+
+    it('filterChange_requestsWithNewScopes', async () => {
+      const user = userEvent.setup();
+      Object.assign(accessState, { canWrite: true, isAdmin: true });
+      renderPage();
+      await screen.findByText('첫 메모');
+      expect(screen.queryByText(/다른 유저의 비공개 메모/)).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: '비공개 메모' }));
+
+      await waitFor(() => expect(lastCall()?.scopes).toContain('PRIVATE'));
+      expect(screen.getByText(/다른 유저의 비공개 메모도 표시됩니다/)).toBeInTheDocument();
+    });
+
+    it('adminFilter_lastChipCannotBeUnchecked', async () => {
+      const user = userEvent.setup();
+      Object.assign(accessState, { canWrite: true, isAdmin: true });
+      renderPage();
+      await screen.findByText('첫 메모');
+
+      await user.click(screen.getByRole('button', { name: '공개 메모' }));
+      await waitFor(() => expect(lastCall()?.scopes).toEqual(['MINE']));
+      await user.click(screen.getByRole('button', { name: '내 메모' }));
+
+      expect(screen.getByRole('button', { name: '내 메모' })).toHaveAttribute('aria-pressed', 'true');
+      expect(vi.mocked(api.searchKnowledgeNotes).mock.calls.some(([a]) => a.scopes?.length === 0)).toBe(false);
+    });
   });
 });
