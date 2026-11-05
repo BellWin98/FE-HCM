@@ -2,6 +2,7 @@ import { Layout } from '@/components/layout/Layout';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { KNOWLEDGE_ACCESS_QUERY_KEY } from '@/hooks/useKnowledgeAccess';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { AdminMember, Member } from '@/types';
@@ -127,6 +129,20 @@ const AdminMembersPage = () => {
     },
   });
 
+  // 지식 메모 권한은 조회/작성 두 플래그를 한 번에 PUT 한다(바뀐 쪽만 새 값, 나머지는 현재 값).
+  const knowledgeAccessMutation = useMutation({
+    mutationFn: ({ memberId, canRead, canWrite }: { memberId: number; canRead: boolean; canWrite: boolean }) =>
+      api.updateAdminKnowledgeAccess(memberId, { canRead, canWrite }),
+    onSuccess: () => {
+      toast.success('지식 메모 권한을 변경했습니다.');
+      queryClient.invalidateQueries({ queryKey: ['adminMembers'] });
+      queryClient.invalidateQueries({ queryKey: KNOWLEDGE_ACCESS_QUERY_KEY });
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err));
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (memberId: number) => api.deleteAdminMember(memberId),
     onSuccess: () => {
@@ -150,6 +166,7 @@ const AdminMembersPage = () => {
 
   const updatingMemberId = roleMutation.variables?.memberId;
   const tossUpdatingMemberId = tossAccessMutation.variables?.memberId;
+  const knowledgeUpdatingMemberId = knowledgeAccessMutation.variables?.memberId;
 
   const pageItems = useMemo(() => {
     if (!totalPages || totalPages <= 1) return [];
@@ -193,6 +210,10 @@ const AdminMembersPage = () => {
     roleMutation.mutate({ memberId: target.id, role: nextRole });
   };
 
+  const handleKnowledgeAccessChange = (target: AdminMember, changed: Partial<AdminMember['knowledgeAccess']>) => {
+    knowledgeAccessMutation.mutate({ memberId: target.id, ...target.knowledgeAccess, ...changed });
+  };
+
   const openTossConfirm = (target: AdminMember, nextGranted: boolean) => {
     if (target.tossAccess === nextGranted) return;
     setPendingTossChange({ open: true, target, nextGranted });
@@ -219,6 +240,32 @@ const AdminMembersPage = () => {
     if (!target) return;
     closeDeleteConfirm();
     deleteMutation.mutate(target.id);
+  };
+
+  const renderKnowledgeCheckboxes = (m: AdminMember, disabled: boolean) => {
+    const isAdmin = m.role === 'ADMIN';
+    return (
+      <>
+        <label className="flex items-center gap-1 text-xs">
+          <Checkbox
+            checked={isAdmin || m.knowledgeAccess.canRead}
+            onCheckedChange={(checked) => handleKnowledgeAccessChange(m, { canRead: checked === true })}
+            disabled={isAdmin || disabled}
+            aria-label={`${m.nickname} 지식 메모 조회`}
+          />
+          조회
+        </label>
+        <label className="flex items-center gap-1 text-xs">
+          <Checkbox
+            checked={isAdmin || m.knowledgeAccess.canWrite}
+            onCheckedChange={(checked) => handleKnowledgeAccessChange(m, { canWrite: checked === true })}
+            disabled={isAdmin || disabled}
+            aria-label={`${m.nickname} 지식 메모 작성`}
+          />
+          작성
+        </label>
+      </>
+    );
   };
 
   return (
@@ -319,6 +366,7 @@ const AdminMembersPage = () => {
                     const isUpdatingThisRow = roleMutation.isPending && updatingMemberId === m.id;
                     const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === m.id;
                     const isTossUpdatingThisRow = tossAccessMutation.isPending && tossUpdatingMemberId === m.id;
+                    const isKnowledgeUpdatingThisRow = knowledgeAccessMutation.isPending && knowledgeUpdatingMemberId === m.id;
 
                     return (
                       <div key={m.id} className="rounded-lg border bg-card p-4 shadow-sm">
@@ -384,6 +432,15 @@ const AdminMembersPage = () => {
                               />
                             </div>
                           </div>
+                          <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                            <span className="text-sm text-foreground">지식 메모</span>
+                            <div className="flex items-center gap-3">
+                              {isKnowledgeUpdatingThisRow ? (
+                                <span className="text-xs text-muted-foreground">변경 중...</span>
+                              ) : null}
+                              {renderKnowledgeCheckboxes(m, isKnowledgeUpdatingThisRow || isDeletingThisRow)}
+                            </div>
+                          </div>
                           <Button
                             variant="outline"
                             size="sm"
@@ -411,6 +468,7 @@ const AdminMembersPage = () => {
                           <TableHead>닉네임</TableHead>
                           <TableHead className="w-[220px]">역할</TableHead>
                           <TableHead className="w-[110px]">토스 접근</TableHead>
+                          <TableHead className="w-[170px]">지식 메모</TableHead>
                           <TableHead className="w-[120px] text-right">운동일수</TableHead>
                           <TableHead className="w-[140px] text-right">누적 벌금</TableHead>
                           <TableHead className="w-[140px]">가입일</TableHead>
@@ -423,6 +481,7 @@ const AdminMembersPage = () => {
                           const isUpdatingThisRow = roleMutation.isPending && updatingMemberId === m.id;
                           const isDeletingThisRow = deleteMutation.isPending && pendingDelete.target?.id === m.id;
                           const isTossUpdatingThisRow = tossAccessMutation.isPending && tossUpdatingMemberId === m.id;
+                    const isKnowledgeUpdatingThisRow = knowledgeAccessMutation.isPending && knowledgeUpdatingMemberId === m.id;
                           return (
                             <TableRow key={m.id}>
                               <TableCell className="font-mono text-xs text-muted-foreground">{m.id}</TableCell>
@@ -461,6 +520,14 @@ const AdminMembersPage = () => {
                                     aria-label={`${m.nickname} 토스 접근 권한`}
                                   />
                                   {isTossUpdatingThisRow ? <span className="text-xs text-muted-foreground">변경 중...</span> : null}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  {renderKnowledgeCheckboxes(m, isKnowledgeUpdatingThisRow || isDeletingThisRow)}
+                                  {isKnowledgeUpdatingThisRow ? (
+                                    <span className="text-xs text-muted-foreground">변경 중...</span>
+                                  ) : null}
                                 </div>
                               </TableCell>
                               <TableCell className="text-right tabular-nums">{m.totalWorkoutDays ?? 0}</TableCell>
