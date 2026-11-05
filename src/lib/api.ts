@@ -736,9 +736,7 @@ class ApiClient {
     );
   }
 
-  // ─── Admin: 토스 접근 권한 ───────────────────────────────────────────────────
-  // 토스 접근은 role 과 분리되어 있다(`toss_access`). ADMIN 은 부여 없이도 항상 접근하므로
-  // 여기서 다루는 것은 "ADMIN 이 지정한 유저" 목록이다.
+  // ─── Admin: 지식 메모 권한 ───────────────────────────────────────────────────
 
   /** GET /admin/knowledge-access — 지식 메모 권한이 부여된 회원 목록. */
   async getAdminKnowledgeAccess(): Promise<KnowledgeAccessGrant[]> {
@@ -755,6 +753,10 @@ class ApiClient {
       data: flags,
     });
   }
+
+  // ─── Admin: 토스 접근 권한 ───────────────────────────────────────────────────
+  // 토스 접근은 role 과 분리되어 있다(`toss_access`). ADMIN 은 부여 없이도 항상 접근하므로
+  // 여기서 다루는 것은 "ADMIN 이 지정한 유저" 목록이다.
 
   /** GET /admin/toss-access — 토스 접근이 부여된 회원 목록. */
   async getAdminTossAccess(): Promise<TossAccessGrant[]> {
