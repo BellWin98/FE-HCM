@@ -18,8 +18,9 @@ vi.mock('@/hooks/useKnowledgeAccess', () => ({
 }));
 
 const openQuickNote = vi.fn();
+let canCreate = true;
 vi.mock('@/contexts/QuickNoteContext', () => ({
-  useQuickNote: () => ({ openQuickNote }),
+  useQuickNote: () => ({ openQuickNote, canCreate }),
 }));
 
 const { api } = await import('@/lib/api');
@@ -85,6 +86,7 @@ beforeEach(() => {
   useKnowledgeAccess.mockReset().mockReturnValue({ hasAccess: true, isPending: false });
   vi.mocked(api.searchKnowledgeNotes).mockReset();
   openQuickNote.mockReset();
+  canCreate = true;
 });
 
 describe('종목 메모 패널', () => {
@@ -131,6 +133,16 @@ describe('종목 메모 패널', () => {
     expect(await screen.findByRole('button', { name: '이 종목 메모 쓰기' })).toBeInTheDocument();
     expect(screen.queryByText(/이 종목 메모 \d+건/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '메모 펼치기' })).not.toBeInTheDocument();
+  });
+
+  it('readOnly_hidesWriteButton: 쓰기 권한이 없으면 메모는 보이고 쓰기 버튼은 없다', async () => {
+    canCreate = false;
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([note(1, '조회용 메모')]));
+    renderPanel();
+
+    const region = await screen.findByRole('region', { name: '이 종목 메모' });
+    expect(region).toHaveTextContent('조회용 메모');
+    expect(screen.queryByRole('button', { name: '이 종목 메모 쓰기' })).not.toBeInTheDocument();
   });
 
   it('조회가 실패해도 오류를 드러내지 않는다', async () => {

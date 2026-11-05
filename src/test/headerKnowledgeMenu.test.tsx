@@ -86,6 +86,19 @@ describe('Header — 메모 진입점', () => {
     expect(screen.getByText('메모 화면')).toBeInTheDocument();
   });
 
+  it('readOnly_showsMenuButHidesQuickNote: 조회 권한만 있으면 메뉴는 보이고 빠른 메모는 없다', async () => {
+    signIn('USER');
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: false, isAdmin: false });
+
+    renderHeader();
+
+    const avatar = await screen.findByRole('button', { name: /^(admin|AD)/ });
+    // 메뉴를 열면 바깥 요소가 aria-hidden 이 되어 부정 단언이 무의미해지므로 먼저 확인한다.
+    expect(screen.queryByRole('button', { name: '빠른 메모' })).not.toBeInTheDocument();
+    await userEvent.click(avatar);
+    expect(await screen.findByRole('menuitem', { name: '메모 목록' })).toBeInTheDocument();
+  });
+
   it('"빠른 메모" 버튼을 누르면 다이얼로그가 열린다', async () => {
     signIn('USER');
     vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: true, isAdmin: false });

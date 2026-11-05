@@ -135,6 +135,45 @@ describe('빠른 메모 다이얼로그', () => {
     expect(screen.queryByRole('button', { name: '빠른 메모' })).not.toBeInTheDocument();
   });
 
+  it('fab_readOnly_hidden: 조회 권한만 있으면 빠른 메모 버튼이 없다', async () => {
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: false, isAdmin: false });
+    renderDialog();
+    await waitFor(() => expect(api.getKnowledgeAccess).toHaveBeenCalled());
+    await screen.findByRole('button', { name: '열기' });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(screen.queryByRole('button', { name: '빠른 메모' })).not.toBeInTheDocument();
+  });
+
+  it('openQuickNote_newNote_ignoredForReadOnly: 조회 권한만 있으면 새 메모는 열리지 않는다', async () => {
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: false, isAdmin: false });
+    renderDialog();
+    await waitFor(() => expect(api.getKnowledgeAccess).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await userEvent.click(screen.getByRole('button', { name: '열기' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('openQuickNote_uneditableNote_ignored: editable=false 메모는 열리지 않는다', async () => {
+    renderDialog({ note: { ...savedNote, editable: false } });
+    await waitFor(() => expect(api.getKnowledgeAccess).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await userEvent.click(screen.getByRole('button', { name: '열기' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('openQuickNote_editableNote_opensForReadOnlyAccess: 조회 권한만 있어도 editable=true 메모는 서버 판정대로 열린다', async () => {
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: false, isAdmin: false });
+    renderDialog({ note: { ...savedNote, editable: true } });
+    await waitFor(() => expect(api.getKnowledgeAccess).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await userEvent.click(screen.getByRole('button', { name: '열기' }));
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  });
+
   it('분야 라디오 4개가 있고 기본은 개발이다', async () => {
     await open();
 

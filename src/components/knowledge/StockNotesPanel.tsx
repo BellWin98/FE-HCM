@@ -15,7 +15,7 @@ interface StockNotesPanelProps {
 }
 
 const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName: string }) => {
-  const { openQuickNote } = useQuickNote();
+  const { openQuickNote, canCreate } = useQuickNote();
   const [expanded, setExpanded] = useState(false);
   // 뷰어는 목록이 접히거나 바뀌어도 유지되도록 패널 단위로 한 벌만 둔다.
   const [viewer, setViewer] = useState<{ images: string[]; index: number } | null>(null);
@@ -36,7 +36,7 @@ const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName:
   const notes = data.content;
   const total = data.totalElements ?? notes.length;
 
-  const writeButton = (
+  const writeButton = canCreate && (
     <Button
       type="button"
       variant="ghost"
@@ -50,6 +50,8 @@ const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName:
   );
 
   if (notes.length === 0) {
+    // 작성 권한이 없으면 보여줄 것도 없다.
+    if (!canCreate) return null;
     return (
       <section aria-label="이 종목 메모" className={cn('rounded-lg border px-3 py-1', STOCK_BORDER)}>
         {writeButton}
