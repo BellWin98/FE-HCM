@@ -18,7 +18,7 @@ import { clearSharedPayload, takeSharedPayload } from '@/lib/shareTargetStash';
  */
 const KnowledgeShareTargetPage = () => {
   const { isAuthenticated, loading } = useAuth();
-  const { hasAccess, isPending } = useKnowledgeAccess();
+  const { canWrite, isPending } = useKnowledgeAccess();
   const { openQuickNote } = useQuickNote();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -36,7 +36,7 @@ const KnowledgeShareTargetPage = () => {
     if (!decided || handledRef.current) return;
     handledRef.current = true;
 
-    if (!hasAccess) {
+    if (!canWrite) {
       void clearSharedPayload();
       toast.error('사용할 수 없는 기능입니다.');
       navigate('/dashboard', { replace: true });
@@ -68,7 +68,7 @@ const KnowledgeShareTargetPage = () => {
         onClosed: handleClosed,
       });
     });
-  }, [decided, hasAccess, navigate, openQuickNote, searchParams]);
+  }, [decided, canWrite, navigate, openQuickNote, searchParams]);
 
   if (unauthenticated) {
     return <Navigate to="/login" replace />;

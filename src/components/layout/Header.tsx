@@ -25,7 +25,7 @@ export const Header = () => {
   const { hasAccess: hasTossAccess } = useTossAccess();
   // 지식 메모도 role 이 아니라 서버가 알려 주는 개별 권한으로 연다.
   const { hasAccess: hasKnowledgeAccess } = useKnowledgeAccess();
-  const { openQuickNote } = useQuickNote();
+  const { openQuickNote, canCreate } = useQuickNote();
 
   const handleLogout = () => {
     logout();
@@ -80,8 +80,8 @@ export const Header = () => {
                   </Button>
                 )}
 
-                {/* 빠른 메모 - 지식 메모 접근 권한을 가진 회원만 표시 */}
-                {hasKnowledgeAccess && (
+                {/* 빠른 메모 - 지식 메모 작성 권한을 가진 회원만 표시 */}
+                {canCreate && (
                   <Button
                     variant="outline"
                     aria-label="빠른 메모"

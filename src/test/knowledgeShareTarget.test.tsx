@@ -101,6 +101,19 @@ describe('KnowledgeShareTargetPage', () => {
     expect(openQuickNote).not.toHaveBeenCalled();
   });
 
+  it('shareTarget_readOnly_redirectsAndClears: 조회 권한만 있으면 대시보드로 보내고 보관본을 지운다', async () => {
+    signIn();
+    vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: true, canRead: true, canWrite: false, isAdmin: false });
+
+    renderPage('?shared=1');
+
+    expect(await screen.findByText('대시보드')).toBeInTheDocument();
+    expect(toastError).toHaveBeenCalledWith('사용할 수 없는 기능입니다.');
+    await waitFor(() => expect(clearSharedPayload).toHaveBeenCalled());
+    expect(takeSharedPayload).not.toHaveBeenCalled();
+    expect(openQuickNote).not.toHaveBeenCalled();
+  });
+
   it('권한이 없으면 공유 보관본을 지운다', async () => {
     signIn();
     vi.mocked(api.getKnowledgeAccess).mockResolvedValue({ hasAccess: false, canRead: false, canWrite: false, isAdmin: false });

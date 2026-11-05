@@ -18,15 +18,20 @@ export interface QuickNoteOpenOptions {
 
 interface QuickNoteContextValue {
   openQuickNote: (options?: QuickNoteOpenOptions) => void;
+  /** 새 메모를 쓸 수 있는지(작성 권한). 생성 진입점 버튼의 노출 기준이다. */
+  canCreate: boolean;
 }
 
 // Provider 밖(권한 없는 화면, 기존 토스 시트 테스트)에서 불려도 터지지 않도록 no-op 이 기본값이다.
-const QuickNoteContext = createContext<QuickNoteContextValue>({ openQuickNote: () => {} });
+const QuickNoteContext = createContext<QuickNoteContextValue>({
+  openQuickNote: () => {},
+  canCreate: false,
+});
 
 export const useQuickNote = (): QuickNoteContextValue => useContext(QuickNoteContext);
 
 export const QuickNoteProvider = ({ children }: { children: ReactNode }) => {
-  const { hasAccess } = useKnowledgeAccess();
+  const { hasAccess, canWrite } = useKnowledgeAccess();
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<QuickNoteOpenOptions>({});
   // 열 때마다 바뀌는 폼 key. 닫힘 애니메이션 중(폼이 아직 마운트)에 다른 메모를 열어도 폼을 새로 만들어
@@ -36,14 +41,15 @@ export const QuickNoteProvider = ({ children }: { children: ReactNode }) => {
 
   const openQuickNote = useCallback(
     (next: QuickNoteOpenOptions = {}): void => {
-      // 서버가 최종 차단하지만 화면에서도 권한 없는 사용자에게는 열지 않는다.
-      if (!hasAccess) return;
+      // 서버가 최종 차단하지만 화면에서도 열지 않는다.
+      // 새 메모는 작성 권한이, 기존 메모 수정은 서버가 내려준 editable 이 있어야 한다.
+      if (next.note ? !next.note.editable : !canWrite) return;
       optionsRef.current = next;
       setOptions(next);
       setOpenCount((count) => count + 1);
       setOpen(true);
     },
-    [hasAccess]
+    [canWrite]
   );
 
   const handleOpenChange = useCallback((nextOpen: boolean): void => {
@@ -59,14 +65,17 @@ export const QuickNoteProvider = ({ children }: { children: ReactNode }) => {
     openQuickNote();
   };
 
-  const value = useMemo(() => ({ openQuickNote }), [openQuickNote]);
+  const value = useMemo(
+    () => ({ openQuickNote, canCreate: canWrite }),
+    [openQuickNote, canWrite]
+  );
 
   return (
     <QuickNoteContext.Provider value={value}>
       {children}
       {hasAccess && (
         <>
-          <QuickNoteFab onClick={handleFabClick} />
+          {canWrite && <QuickNoteFab onClick={handleFabClick} />}
           <KnowledgeNoteFormDialog
             open={open}
             onOpenChange={handleOpenChange}
