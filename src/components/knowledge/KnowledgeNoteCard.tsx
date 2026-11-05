@@ -19,6 +19,8 @@ import NoteImageViewer from '@/components/knowledge/NoteImageViewer';
 
 interface KnowledgeNoteCardProps {
   note: KnowledgeNote;
+  /** 로그인한 회원 id. 내가 쓴 메모에 "나" 를 표시하는 데 쓴다. */
+  currentMemberId?: number;
   onEdit: (note: KnowledgeNote) => void;
   onDelete: (note: KnowledgeNote) => void;
   onTagClick: (tag: string) => void;
@@ -69,7 +71,14 @@ const NoteSource = ({ sourceUrl, sourceText }: NoteSourceProps) => {
   );
 };
 
-export const KnowledgeNoteCard = ({ note, onEdit, onDelete, onTagClick, onStockClick }: KnowledgeNoteCardProps) => {
+export const KnowledgeNoteCard = ({
+  note,
+  currentMemberId,
+  onEdit,
+  onDelete,
+  onTagClick,
+  onStockClick,
+}: KnowledgeNoteCardProps) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [contentExpanded, setContentExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -86,6 +95,7 @@ export const KnowledgeNoteCard = ({ note, onEdit, onDelete, onTagClick, onStockC
       <CardContent className="space-y-3 pt-6">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">{KNOWLEDGE_CATEGORY_LABELS[note.category]}</Badge>
+          {note.visibility === 'PRIVATE' && <Badge variant="outline">비공개</Badge>}
           {note.stockSymbol && note.stockName && (
             <button
               type="button"
@@ -98,7 +108,11 @@ export const KnowledgeNoteCard = ({ note, onEdit, onDelete, onTagClick, onStockC
               </Badge>
             </button>
           )}
-          <span className="ml-auto text-xs text-muted-foreground">{note.createdAt.slice(0, 10)}</span>
+          <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+            <span>{note.author.id === currentMemberId ? '나' : note.author.nickname}</span>
+            <span aria-hidden="true">·</span>
+            <span>{note.createdAt.slice(0, 10)}</span>
+          </span>
         </div>
 
         {note.content && (
@@ -143,14 +157,16 @@ export const KnowledgeNoteCard = ({ note, onEdit, onDelete, onTagClick, onStockC
           </div>
         )}
 
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => onEdit(note)}>
-            수정
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => setConfirmOpen(true)}>
-            삭제
-          </Button>
-        </div>
+        {note.editable && (
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => onEdit(note)}>
+              수정
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setConfirmOpen(true)}>
+              삭제
+            </Button>
+          </div>
+        )}
       </CardContent>
 
       {note.images.length > 0 && (
@@ -162,18 +178,20 @@ export const KnowledgeNoteCard = ({ note, onEdit, onDelete, onTagClick, onStockC
         />
       )}
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>메모를 삭제할까요?</AlertDialogTitle>
-            <AlertDialogDescription>삭제한 메모는 되돌릴 수 없습니다.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={() => onDelete(note)}>삭제</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {note.editable && (
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>메모를 삭제할까요?</AlertDialogTitle>
+              <AlertDialogDescription>삭제한 메모는 되돌릴 수 없습니다.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onDelete(note)}>삭제</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </Card>
   );
 };

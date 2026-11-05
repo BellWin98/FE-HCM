@@ -154,6 +154,7 @@ describe('빠른 메모 다이얼로그', () => {
         content: '메모',
         tags: [],
         imageUrls: [],
+        visibility: 'PUBLIC',
       })
     );
   });
@@ -182,6 +183,7 @@ describe('빠른 메모 다이얼로그', () => {
         sourceText: '클린 코드',
         tags: ['리팩터링', '테스트'],
         imageUrls: [],
+        visibility: 'PUBLIC',
       })
     );
   });
@@ -199,6 +201,7 @@ describe('빠른 메모 다이얼로그', () => {
         sourceUrl: 'https://example.com',
         tags: [],
         imageUrls: [],
+        visibility: 'PUBLIC',
       })
     );
   });
@@ -357,6 +360,7 @@ describe('빠른 메모 다이얼로그', () => {
         sourceText: '리포트',
         tags: [],
         imageUrls: [],
+        visibility: 'PUBLIC',
       })
     );
   });
@@ -376,6 +380,7 @@ describe('빠른 메모 다이얼로그', () => {
         imageUrls: [],
         stockSymbol: '005930',
         stockName: '삼성전자',
+        visibility: 'PUBLIC',
       })
     );
   });
@@ -423,6 +428,7 @@ describe('빠른 메모 다이얼로그', () => {
         sourceText: '출처',
         tags: ['a'],
         imageUrls: [],
+        visibility: 'PUBLIC',
       })
     );
     expect(api.createKnowledgeNote).not.toHaveBeenCalled();
@@ -476,6 +482,41 @@ describe('빠른 메모 다이얼로그', () => {
     await userEvent.keyboard('{Escape}');
 
     await waitFor(() => expect(onClosed).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe('빠른 메모 — 공개 설정', () => {
+  it('newNote_defaultsPublic_sendsPublic', async () => {
+    await open();
+    expect(await screen.findByRole('switch', { name: '공개' })).toBeChecked();
+    await userEvent.type(screen.getByRole('textbox', { name: '내용' }), '메모');
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() =>
+      expect(api.createKnowledgeNote).toHaveBeenCalledWith(expect.objectContaining({ visibility: 'PUBLIC' }))
+    );
+  });
+
+  it('toggleOff_sendsPrivate', async () => {
+    await open();
+    await userEvent.click(await screen.findByRole('switch', { name: '공개' }));
+    expect(screen.getByRole('switch', { name: '공개' })).not.toBeChecked();
+    await userEvent.type(screen.getByRole('textbox', { name: '내용' }), '메모');
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() =>
+      expect(api.createKnowledgeNote).toHaveBeenCalledWith(expect.objectContaining({ visibility: 'PRIVATE' }))
+    );
+  });
+
+  it('editPrivateNote_startsUnchecked', async () => {
+    await open({ note: { ...savedNote, id: 60, visibility: 'PRIVATE' } });
+    expect(await screen.findByRole('switch', { name: '공개' })).not.toBeChecked();
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() =>
+      expect(api.updateKnowledgeNote).toHaveBeenCalledWith(60, expect.objectContaining({ visibility: 'PRIVATE' }))
+    );
   });
 });
 
