@@ -1,13 +1,34 @@
-export type KnowledgeCategory = 'DEV' | 'REAL_ESTATE' | 'STOCK' | 'ETC';
+export type KnowledgeCategory =
+  | 'DEV'
+  | 'REAL_ESTATE'
+  | 'STOCK'
+  | 'ECONOMY'
+  | 'RESTAURANT'
+  | 'CAFE'
+  | 'TRAVEL'
+  | 'ETC';
 
 export const KNOWLEDGE_CATEGORY_LABELS: Record<KnowledgeCategory, string> = {
   DEV: '개발',
   REAL_ESTATE: '부동산',
   STOCK: '주식',
+  ECONOMY: '경제',
+  RESTAURANT: '맛집',
+  CAFE: '카페',
+  TRAVEL: '여행지',
   ETC: '기타',
 };
 
-export const KNOWLEDGE_CATEGORIES: KnowledgeCategory[] = ['DEV', 'REAL_ESTATE', 'STOCK', 'ETC'];
+export const KNOWLEDGE_CATEGORIES: KnowledgeCategory[] = [
+  'DEV',
+  'REAL_ESTATE',
+  'STOCK',
+  'ECONOMY',
+  'RESTAURANT',
+  'CAFE',
+  'TRAVEL',
+  'ETC',
+];
 
 export const MAX_NOTE_IMAGES = 5;
 
