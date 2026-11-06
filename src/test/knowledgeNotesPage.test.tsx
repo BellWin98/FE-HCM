@@ -132,6 +132,21 @@ describe('KnowledgeNotesPage', () => {
     expect(screen.getByRole('button', { name: '주식' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it.each([
+    ['경제', 'ECONOMY'],
+    ['맛집', 'RESTAURANT'],
+    ['카페', 'CAFE'],
+    ['여행지', 'TRAVEL'],
+  ])('새 분야 "%s" 버튼을 누르면 %s 로 조회한다', async (label, category) => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('첫 메모');
+
+    await user.click(screen.getByRole('button', { name: label }));
+
+    await waitFor(() => expect(lastCall()).toMatchObject({ category }));
+  });
+
   it('?stockSymbol=005930&stockName=삼성전자 로 들어오면 종목 필터 칩이 보이고 해제할 수 있다', async () => {
     const user = userEvent.setup();
     renderPage('/notes?stockSymbol=005930&stockName=삼성전자');

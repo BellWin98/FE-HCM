@@ -174,11 +174,14 @@ describe('빠른 메모 다이얼로그', () => {
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 
-  it('분야 라디오 4개가 있고 기본은 개발이다', async () => {
+  it('분야 라디오 8개가 있고 기본은 개발이다', async () => {
     await open();
 
     const group = await screen.findByRole('radiogroup', { name: '분야' });
-    expect(group.querySelectorAll('[role="radio"]')).toHaveLength(4);
+    expect(group.querySelectorAll('[role="radio"]')).toHaveLength(8);
+    for (const name of ['경제', '맛집', '카페', '여행지']) {
+      expect(screen.getByRole('radio', { name })).toBeInTheDocument();
+    }
     expect(screen.getByRole('radio', { name: '개발' })).toBeChecked();
   });
 
