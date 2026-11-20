@@ -578,6 +578,38 @@ describe('빠른 메모 다이얼로그', () => {
     await waitFor(() => expect(onClosed).toHaveBeenCalledTimes(1));
   });
 
+  it('내용이 9000자를 넘으면 글자 수를 보여 준다', async () => {
+    await open();
+    const content = await screen.findByRole('textbox', { name: '내용' });
+
+    fireEvent.change(content, { target: { value: 'a'.repeat(9000) } });
+    expect(screen.queryByText(/\/ 10000/)).not.toBeInTheDocument();
+
+    fireEvent.change(content, { target: { value: 'a'.repeat(9001) } });
+    expect(screen.getByText('9001 / 10000')).toBeInTheDocument();
+  });
+
+  it('내용이 10000자를 넘으면 저장하지 않고 초과 글자 수를 알린다', async () => {
+    await open();
+    fireEvent.change(await screen.findByRole('textbox', { name: '내용' }), { target: { value: 'a'.repeat(10001) } });
+
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('내용은 10000자 이하로 입력해주세요 (1자 초과)');
+    expect(api.createKnowledgeNote).not.toHaveBeenCalled();
+  });
+
+  it('내용이 정확히 10000자면 저장한다', async () => {
+    await open();
+    fireEvent.change(await screen.findByRole('textbox', { name: '내용' }), { target: { value: 'a'.repeat(10000) } });
+
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() =>
+      expect(api.createKnowledgeNote).toHaveBeenCalledWith(expect.objectContaining({ content: 'a'.repeat(10000) }))
+    );
+  });
+
   it('닫기만 해도 onClosed 를 부른다', async () => {
     const onClosed = vi.fn();
     await open({ onClosed });

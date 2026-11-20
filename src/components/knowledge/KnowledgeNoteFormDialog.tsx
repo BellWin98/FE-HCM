@@ -27,7 +27,9 @@ import {
   ALLOWED_NOTE_IMAGE_TYPES,
   KNOWLEDGE_CATEGORIES,
   KNOWLEDGE_CATEGORY_LABELS,
+  MAX_NOTE_CONTENT_LENGTH,
   MAX_NOTE_TITLE_LENGTH,
+  NOTE_CONTENT_COUNTER_THRESHOLD,
 } from '@/types/knowledgeNote';
 import type { KnowledgeCategory, KnowledgeNoteInput } from '@/types/knowledgeNote';
 import type { QuickNoteOpenOptions } from '@/contexts/QuickNoteContext';
@@ -291,6 +293,13 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, escapeHandlerRef, content
       setContentError(CONTENT_REQUIRED_MESSAGE);
       return;
     }
+    // 서버가 400 으로 거절하기 전에 막는다. 보내는 값(trim)과 같은 기준으로 센다.
+    if (body.length > MAX_NOTE_CONTENT_LENGTH) {
+      setContentError(
+        `내용은 ${MAX_NOTE_CONTENT_LENGTH}자 이하로 입력해주세요 (${body.length - MAX_NOTE_CONTENT_LENGTH}자 초과)`
+      );
+      return;
+    }
 
     const base: Omit<KnowledgeNoteInput, 'imageUrls'> = {
       category,
@@ -380,6 +389,16 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, escapeHandlerRef, content
             setContentError(null);
           }}
         />
+        {content.length > NOTE_CONTENT_COUNTER_THRESHOLD && (
+          <p
+            className={cn(
+              'text-right text-xs text-muted-foreground',
+              content.length > MAX_NOTE_CONTENT_LENGTH && 'text-destructive'
+            )}
+          >
+            {content.length} / {MAX_NOTE_CONTENT_LENGTH}
+          </p>
+        )}
         {contentError && (
           <p role="alert" className="text-sm text-destructive">
             {contentError}
