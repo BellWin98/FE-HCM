@@ -134,7 +134,7 @@ describe('KnowledgeShareTargetPage', () => {
 
     await waitFor(() => expect(openQuickNote).toHaveBeenCalledTimes(1));
     const arg = openQuickNote.mock.calls[0][0];
-    expect(arg.prefill).toEqual({ sourceUrl: 'https://example.com/a', sourceText: '제목' });
+    expect(arg.prefill).toEqual({ title: '제목', sourceUrl: 'https://example.com/a', sourceText: '제목' });
 
     arg.onClosed();
     expect(await screen.findByText('메모 목록')).toBeInTheDocument();
@@ -155,7 +155,7 @@ describe('KnowledgeShareTargetPage', () => {
 
     await waitFor(() => expect(openQuickNote).toHaveBeenCalledTimes(1));
     const arg = openQuickNote.mock.calls[0][0];
-    expect(arg.prefill).toEqual({ sourceUrl: 'https://example.com/a', sourceText: '제목' });
+    expect(arg.prefill).toEqual({ title: '제목', sourceUrl: 'https://example.com/a', sourceText: '제목' });
     expect(arg.prefillFiles).toHaveLength(2);
     expect(arg.prefillFiles[0].name).toBe('a.png');
   });

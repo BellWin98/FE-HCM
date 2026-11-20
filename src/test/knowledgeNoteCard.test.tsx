@@ -6,6 +6,7 @@ import { KnowledgeNoteCard } from '@/components/knowledge/KnowledgeNoteCard';
 const baseNote: KnowledgeNote = {
   id: 1,
   category: 'DEV',
+  title: null,
   content: '내용',
   images: [],
   sourceUrl: null,
