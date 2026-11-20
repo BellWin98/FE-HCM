@@ -173,11 +173,10 @@ npm run test:watch  # vitest 워치 모드
 - 브랜치명: `feature/issue-{issue_number}` 또는 `fix/issue-{issue_number}`
 - 커밋 메시지: 한국어로 작성하고 `(#{issue_number})`로 끝맺음 (예: `feat: 채팅 이미지 업로드 기능 추가 (#42)`)
 - PR base 브랜치: `dev`를 거치지 않고 항상 `main`으로 바로 병합
-- 자세한 자동화 절차는 `.cursor/commands/github-issue-pr-command.md` 참고
+- 이슈/PR의 `title`, `body`는 한국어로 작성
+- PR 본문은 `Closes #{issue_number}`로 시작해 병합 시 이슈가 자동으로 닫히게 함
 
 ## 코드 컨벤션
-
-`.cursor/rules/front-end.mdc`에 명시된 규칙:
 
 - 가능하면 조기 반환(early return) 사용
 - 스타일링은 Tailwind 유틸리티 클래스만 사용(인라인 스타일/별도 CSS 지양), 조건부 클래스는 `tailwind-merge` 활용

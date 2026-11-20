@@ -123,11 +123,18 @@ esbuild 트랜스파일이라 타입 오류를 잡지 않습니다).
 
 ## 따라야 할 컨벤션
 
-`.cursor/rules/front-end.mdc`에 명시된 규칙(코드 작성 시 적용):
+코드 작성 시 적용하는 규칙:
 
+- 새 컴포넌트를 만들기 전에 재사용할 수 있는 기존 컴포넌트(`src/components/`, `src/components/ui/`)가 있는지
+  먼저 확인.
 - 가능하면 조기 반환(early return) 사용.
 - 스타일링은 Tailwind 유틸리티 클래스만 사용(인라인 스타일/별도 CSS 지양). 조건부 클래스는 `tailwind-merge`
   활용.
+- Tailwind 클래스는 layout → spacing → visual → interactive 순으로 정렬하고, 색상·간격은
+  `tailwind.config` 에 정의된 값을 사용.
+- `@apply`는 전역 기본 스타일을 정의할 때만 사용.
+- props는 함수 시그니처에서 구조 분해.
+- `useCallback`/`useMemo`는 실제로 성능상 필요할 때만 사용(선제적 최적화 지양).
 - 이벤트 핸들러는 `handle` 접두사(`handleClick`, `handleKeyDown` 등).
 - 함수보다 `const` 화살표 함수 선호, 가능하면 타입을 명시.
 - 복잡한 함수는 반환 타입을 명시적으로 작성.
@@ -142,4 +149,6 @@ esbuild 트랜스파일이라 타입 오류를 잡지 않습니다).
 - 브랜치명: `feature/issue-{issue_number}` 또는 `fix/issue-{issue_number}`.
 - 커밋 메시지: 한국어로 작성하고 `(#{issue_number})`로 끝맺음 (예: `feat: 채팅 이미지 업로드 기능 추가 (#42)`).
 - PR base 브랜치: `dev`를 거치지 않고 항상 `main`으로 바로 병합합니다.
-- 자세한 자동화 절차는 `.cursor/commands/github-issue-pr-command.md` 참고.
+- 이슈/PR의 `title`, `body`는 한국어로 작성.
+- PR 본문은 `Closes #{issue_number}`로 시작해 병합 시 이슈가 자동으로 닫히게 하고, 그 아래 `## Description`에
+  변경 내용을 요약합니다.
