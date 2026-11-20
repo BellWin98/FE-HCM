@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { KnowledgeNote } from '@/types/knowledgeNote';
 import { KnowledgeNoteCard } from '@/components/knowledge/KnowledgeNoteCard';
@@ -21,7 +22,7 @@ const baseNote: KnowledgeNote = {
   editable: true,
 };
 
-const renderCard = (note: Partial<KnowledgeNote> = {}, currentMemberId?: number) =>
+const renderCard = (note: Partial<KnowledgeNote> = {}, currentMemberId?: number, onStockClick = vi.fn()) =>
   render(
     <KnowledgeNoteCard
       note={{ ...baseNote, ...note }}
@@ -29,9 +30,11 @@ const renderCard = (note: Partial<KnowledgeNote> = {}, currentMemberId?: number)
       onEdit={vi.fn()}
       onDelete={vi.fn()}
       onTagClick={vi.fn()}
-      onStockClick={vi.fn()}
+      onStockClick={onStockClick}
     />
   );
+
+const headline = (name: string | RegExp = /내용/) => screen.getByRole('button', { name });
 
 describe('KnowledgeNoteCard', () => {
   afterEach(() => {
@@ -84,15 +87,63 @@ describe('KnowledgeNoteCard', () => {
     expect(screen.queryByText('비공개')).not.toBeInTheDocument();
   });
 
-  it('card_notEditable_hidesEditAndDelete', () => {
+  it('card_notEditable_hidesEditAndDelete', async () => {
     renderCard({ editable: false });
+    await userEvent.click(headline());
     expect(screen.queryByRole('button', { name: '수정' })).toBeNull();
     expect(screen.queryByRole('button', { name: '삭제' })).toBeNull();
   });
 
-  it('card_editable_showsEditAndDelete', () => {
+  it('card_editable_showsEditAndDelete', async () => {
     renderCard();
+    await userEvent.click(headline());
     expect(screen.getByRole('button', { name: '수정' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument();
+  });
+
+  it('card_collapsed_showsHeadlineOnly', () => {
+    renderCard({ title: 'HBM 메모', content: '본문 전체', tags: ['반도체'] });
+
+    expect(headline(/HBM 메모/)).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByText('HBM 메모')).toHaveClass('truncate');
+    expect(screen.queryByText('본문 전체')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '수정' })).toBeNull();
+  });
+
+  it('card_toggle_expandsAndCollapses', async () => {
+    renderCard({ title: 'HBM 메모', content: '본문 전체', tags: ['반도체'] });
+
+    await userEvent.click(headline(/HBM 메모/));
+    expect(headline(/HBM 메모/)).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('본문 전체')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '#반도체' })).toBeInTheDocument();
+
+    await userEvent.click(headline(/HBM 메모/));
+    expect(screen.queryByText('본문 전체')).not.toBeInTheDocument();
+  });
+
+  it('card_toggle_keyboard', async () => {
+    renderCard({ title: 'HBM 메모' });
+
+    headline(/HBM 메모/).focus();
+    await userEvent.keyboard('{Enter}');
+    expect(headline(/HBM 메모/)).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('card_stockBadgeClick_doesNotExpand', async () => {
+    const onStockClick = vi.fn();
+    renderCard({ category: 'STOCK', stockSymbol: '005930', stockName: '삼성전자' }, undefined, onStockClick);
+
+    await userEvent.click(screen.getByRole('button', { name: '삼성전자 메모만 보기' }));
+
+    expect(onStockClick).toHaveBeenCalled();
+    expect(headline()).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('card_imageOnly_showsImageCount', () => {
+    renderCard({ content: null, images: ['https://cdn/a.png', 'https://cdn/b.png'] });
+
+    expect(headline(/이미지 메모/)).toBeInTheDocument();
+    expect(screen.getByText('이미지 2장')).toBeInTheDocument();
   });
 });
