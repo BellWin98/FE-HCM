@@ -34,6 +34,12 @@ export const MAX_NOTE_IMAGES = 5;
 
 export const MAX_NOTE_TITLE_LENGTH = 100;
 
+/** 내용 최대 길이. BE `KnowledgeNote.MAX_CONTENT_LENGTH` 와 같아야 한다. */
+export const MAX_NOTE_CONTENT_LENGTH = 10000;
+
+/** 이 길이를 넘으면 내용 칸 아래에 글자 수를 보여 준다. */
+export const NOTE_CONTENT_COUNTER_THRESHOLD = 9000;
+
 export const ALLOWED_NOTE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export type KnowledgeVisibility = 'PUBLIC' | 'PRIVATE';
