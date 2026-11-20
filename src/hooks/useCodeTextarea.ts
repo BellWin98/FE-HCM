@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { KeyboardEvent, RefObject } from 'react';
 import { fenceEdit, indentEdit, newlineEdit } from '@/lib/codeEditing';
 import type { TextEdit } from '@/lib/codeEditing';
+import { revealCaret } from '@/lib/textareaCaret';
 
 /**
  * 편집 결과를 textarea 에 적용한다. 가능하면 execCommand 로 넣어 브라우저 undo 기록을 살리고,
@@ -20,6 +21,8 @@ export const applyTextEdit = (textarea: HTMLTextAreaElement, edit: TextEdit): vo
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
   textarea.setSelectionRange(edit.selectionStart, edit.selectionEnd);
+  // 코드로 넣은 편집은 브라우저가 커서를 따라 스크롤해 주지 않는다.
+  revealCaret(textarea);
 };
 
 const MODIFIER_KEYS = ['Shift', 'Control', 'Alt', 'Meta'];
