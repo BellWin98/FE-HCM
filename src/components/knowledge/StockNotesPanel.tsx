@@ -74,6 +74,7 @@ const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName:
       <ul className="space-y-2">
         {shown.map((note) => (
           <li key={note.id} className="text-sm">
+            {note.title && <p className="truncate font-semibold">{note.title}</p>}
             {note.content && (
               <p className={cn('whitespace-pre-wrap break-words', !expanded && 'line-clamp-2')}>
                 {note.content}

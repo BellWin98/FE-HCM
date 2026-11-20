@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -100,6 +100,22 @@ describe('종목 메모 패널', () => {
     const region = await screen.findByRole('region', { name: '이 종목 메모' });
     expect(region).toHaveTextContent('철수');
     expect(region).toHaveTextContent('비공개');
+  });
+
+  it('제목이 있으면 내용 위에 굵게 보여준다', async () => {
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([{ ...note(1, '본문'), title: 'HBM 메모' }]));
+    renderPanel();
+
+    expect(await screen.findByText('HBM 메모')).toHaveClass('font-semibold');
+  });
+
+  it('제목이 없으면 제목 줄을 그리지 않는다', async () => {
+    vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([note(1, '본문')]));
+    renderPanel();
+
+    const region = await screen.findByRole('region', { name: '이 종목 메모' });
+    expect(within(region).getByText('본문')).toBeInTheDocument();
+    expect(region.querySelector('li p.font-semibold')).toBeNull();
   });
 
   it('공개 메모에는 비공개 배지가 없다', async () => {
