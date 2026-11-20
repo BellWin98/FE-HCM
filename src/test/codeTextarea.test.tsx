@@ -141,6 +141,33 @@ describe('메모 내용 칸 코드 편집', () => {
     expect(textarea.value).toBe('  a\n  ');
   });
 
+  it('Enter 로 커서가 칸 아래로 내려가면 커서가 보이도록 칸을 스크롤한다', async () => {
+    const textarea = await contentBox();
+    // jsdom 은 레이아웃이 없어 줄 수만큼 높이를 흉내 낸다: 한 줄 20px, 보이는 높이 100px(5줄).
+    const scrollHeight = vi
+      .spyOn(HTMLTextAreaElement.prototype, 'scrollHeight', 'get')
+      .mockImplementation(function (this: HTMLTextAreaElement) {
+        return this.value.split('\n').length * 20;
+      });
+    const clientHeight = vi.spyOn(HTMLTextAreaElement.prototype, 'clientHeight', 'get').mockReturnValue(100);
+    vi.spyOn(window, 'getComputedStyle').mockImplementation(
+      () => ({ lineHeight: '20px', paddingTop: '0px', paddingBottom: '0px' }) as CSSStyleDeclaration
+    );
+    try {
+      setValue(textarea, 'a\n\n\n\n');
+      textarea.scrollTop = 0;
+
+      lineBreak(textarea);
+
+      // 커서는 6번째 줄(위 100~120px) — 아래 끝 120 이 보이려면 20 만큼 내려가야 한다.
+      expect(textarea.scrollTop).toBe(20);
+    } finally {
+      scrollHeight.mockRestore();
+      clientHeight.mockRestore();
+      vi.mocked(window.getComputedStyle).mockRestore();
+    }
+  });
+
   it('insertParagraph 도 같은 줄바꿈으로 처리한다', async () => {
     const textarea = await contentBox();
     setValue(textarea, 'if (a) {');
