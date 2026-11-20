@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { CodeEditToolbar } from '@/components/knowledge/CodeEditToolbar';
 import { NoteImageAttachments } from '@/components/knowledge/NoteImageAttachments';
 import { addFiles, fromUrls, revokePreview } from '@/components/knowledge/noteAttachments';
 import type { NoteAttachment } from '@/components/knowledge/noteAttachments';
@@ -19,6 +20,7 @@ import { compressImage } from '@/lib/compressImage';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
+import { useCodeTextarea } from '@/hooks/useCodeTextarea';
 import { KNOWLEDGE_NOTES_QUERY_KEY } from '@/hooks/useKnowledgeAccess';
 import { clearLastContext, loadLastContext, saveLastContext } from '@/lib/knowledgeNoteDraft';
 import {
@@ -61,6 +63,7 @@ const mergeTags = (current: string[], additions: string[]): string[] => {
 };
 
 type PasteHandler = (event: ClipboardEvent<HTMLElement>) => void;
+type EscapeHandler = (event: globalThis.KeyboardEvent) => void;
 
 /** 붙여넣기 이벤트에 담긴 파일들(파일 목록이 비어 있으면 항목에서 꺼낸다). */
 const getPastedFiles = (event: ClipboardEvent<HTMLElement>): File[] => {
@@ -77,11 +80,13 @@ interface KnowledgeNoteFormProps {
   options: QuickNoteOpenOptions;
   /** 다이얼로그 내용 영역의 onPaste 가 이 폼의 붙여넣기 처리를 부를 수 있도록 폼이 채워 둔다. */
   pasteHandlerRef: MutableRefObject<PasteHandler | null>;
+  /** 다이얼로그의 Esc 처리가 내용 칸의 Esc 규칙을 따르도록 폼이 채워 둔다. */
+  escapeHandlerRef: MutableRefObject<EscapeHandler | null>;
   contentRef: RefObject<HTMLTextAreaElement>;
   onDone: () => void;
 }
 
-const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: KnowledgeNoteFormProps) => {
+const KnowledgeNoteForm = ({ options, pasteHandlerRef, escapeHandlerRef, contentRef, onDone }: KnowledgeNoteFormProps) => {
   const { note, prefill, prefillFiles } = options;
   const queryClient = useQueryClient();
 
@@ -145,6 +150,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
   const [contentError, setContentError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const composingRef = useRef(false);
+  const codeEditing = useCodeTextarea(contentRef);
 
   useEffect(
     () => () => {
@@ -206,6 +212,13 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
   };
   useEffect(() => {
     pasteHandlerRef.current = handlePaste;
+  });
+
+  // 내용 칸의 첫 Esc 는 "다음 Tab 은 칸 이동" 으로 쓰고 다이얼로그를 닫지 않는다(쓰던 메모 보호). 두 번째 Esc 는 닫는다.
+  useEffect(() => {
+    escapeHandlerRef.current = (event) => {
+      if (event.target === contentRef.current && codeEditing.armEscape()) event.preventDefault();
+    };
   });
 
   const handleCategoryChange = (value: string): void => {
@@ -346,13 +359,22 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
       </div>
 
       <div className="grid gap-1.5">
-        <Label htmlFor="knowledge-note-content">내용</Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="knowledge-note-content">내용</Label>
+          <CodeEditToolbar
+            disabled={mutation.isPending}
+            onInsertFence={codeEditing.insertFence}
+            onIndent={codeEditing.indent}
+            onOutdent={codeEditing.outdent}
+          />
+        </div>
         <Textarea
           id="knowledge-note-content"
           ref={contentRef}
           value={content}
           rows={5}
           {...NO_SUGGESTION_PROPS}
+          onKeyDown={codeEditing.handleKeyDown}
           onChange={(event) => {
             setContent(event.target.value);
             setContentError(null);
@@ -549,10 +571,20 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
     event.preventDefault();
   };
 
+  const escapeHandlerRef = useRef<EscapeHandler | null>(null);
+  const handleEscapeKeyDown: EscapeHandler = (event) => escapeHandlerRef.current?.(event);
+
   const handleDone = (): void => onOpenChange(false);
 
   const form = (
-    <KnowledgeNoteForm key={formKey} options={options} pasteHandlerRef={pasteHandlerRef} contentRef={contentRef} onDone={handleDone} />
+    <KnowledgeNoteForm
+      key={formKey}
+      options={options}
+      pasteHandlerRef={pasteHandlerRef}
+      escapeHandlerRef={escapeHandlerRef}
+      contentRef={contentRef}
+      onDone={handleDone}
+    />
   );
 
   if (isMobile) {
@@ -562,6 +594,7 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
           side="bottom"
           onOpenAutoFocus={handleOpenAutoFocus}
           onInteractOutside={handleInteractOutside}
+          onEscapeKeyDown={handleEscapeKeyDown}
           onPaste={handlePaste}
           // 키보드가 올라오면 시트를 키보드 바로 위로 옮기고, 보이는 높이 안에서 스크롤되게 한다.
           // bottom 은 레이아웃 속성이라 키보드가 올라오는 동안 매 프레임 레이아웃을 다시 계산해 버벅이므로,
@@ -593,6 +626,7 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
       <DialogContent
         onOpenAutoFocus={handleOpenAutoFocus}
         onInteractOutside={handleInteractOutside}
+        onEscapeKeyDown={handleEscapeKeyDown}
         onPaste={handlePaste}
         className="max-h-[90dvh] overflow-y-auto"
       >
