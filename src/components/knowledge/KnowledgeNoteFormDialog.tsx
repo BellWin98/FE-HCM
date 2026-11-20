@@ -563,16 +563,18 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
           onOpenAutoFocus={handleOpenAutoFocus}
           onInteractOutside={handleInteractOutside}
           onPaste={handlePaste}
-          // 키보드가 올라오면 시트를 키보드 바로 위에 붙이고, 보이는 높이 안에서 스크롤되게 한다.
+          // 키보드가 올라오면 시트를 키보드 바로 위로 옮기고, 보이는 높이 안에서 스크롤되게 한다.
+          // bottom 은 레이아웃 속성이라 키보드가 올라오는 동안 매 프레임 레이아웃을 다시 계산해 버벅이므로,
+          // 합성(compositor)만으로 움직이는 translate 를 쓴다. 열림 애니메이션의 transform 과는 따로 합쳐진다.
           style={{
-            bottom: keyboardInset.bottom,
+            ...(keyboardInset.bottom > 0 ? { translate: `0 -${keyboardInset.bottom}px` } : {}),
             ...(keyboardInset.height !== null ? { maxHeight: keyboardInset.height * 0.9 } : {}),
           }}
-          // 열리자마자 내용 칸 포커스로 키보드가 올라오므로, 올라오는 애니메이션을 줄이고 bottom 변화는
+          // 열리자마자 내용 칸 포커스로 키보드가 올라오므로, 올라오는 애니메이션을 줄이고 위치 변화는
           // 부드럽게 따라가게 해 시트가 뚝 끊겨 튀어 오르지 않게 한다.
           // 키보드가 없을 때만 홈 인디케이터만큼 아래 여백을 둔다(키보드 위에서는 필요 없다).
           className={cn(
-            'max-h-[90dvh] overflow-y-auto overscroll-contain transition-[bottom] data-[state=open]:duration-300',
+            'max-h-[90dvh] overflow-y-auto overscroll-contain transition-[translate] data-[state=open]:duration-300',
             keyboardInset.bottom === 0 && 'pb-safe'
           )}
         >

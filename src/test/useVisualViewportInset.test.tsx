@@ -45,6 +45,29 @@ describe('useVisualViewportInset', () => {
     expect(result.current).toEqual({ bottom: 250, height: 450 });
   });
 
+  it('값이 그대로면 같은 객체를 돌려줘 다시 그리지 않는다', () => {
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders += 1;
+      return useVisualViewportInset(true);
+    });
+    const before = result.current;
+
+    // React 는 같은 값의 첫 갱신에서 한 번은 렌더한 뒤 버릴 수 있으므로, 스크롤처럼 이어지는 이벤트로 본다.
+    act(() => {
+      viewport.dispatchEvent(new Event('resize'));
+    });
+    const rendersBefore = renders;
+    act(() => {
+      for (let i = 0; i < 10; i += 1) {
+        viewport.dispatchEvent(new Event('resize'));
+        viewport.dispatchEvent(new Event('scroll'));
+      }
+    });
+    expect(result.current).toBe(before);
+    expect(renders).toBe(rendersBefore);
+  });
+
   it('꺼져 있으면 아무 값도 주지 않는다', () => {
     const { result } = renderHook(() => useVisualViewportInset(false));
     expect(result.current).toEqual({ bottom: 0, height: null });

@@ -38,8 +38,9 @@ export const Header = () => {
     setIsMobileMenuOpen(false);
   };
 
+  // 모바일에서 sticky 헤더의 backdrop-blur 는 스크롤 프레임마다 뒤 내용을 다시 흐려 버벅이므로 데스크톱에서만 쓴다.
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 md:bg-white/80 md:backdrop-blur-md">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div 
           className="flex items-center space-x-2 cursor-pointer"
