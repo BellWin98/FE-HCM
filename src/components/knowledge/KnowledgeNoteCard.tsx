@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { Image as ImageIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { KNOWLEDGE_CATEGORY_LABELS, type KnowledgeNote } from '@/types/knowledge
 import { cn } from '@/lib/utils';
 import NoteImageStrip from '@/components/knowledge/NoteImageStrip';
 import NoteImageViewer from '@/components/knowledge/NoteImageViewer';
+import { noteHeadline } from '@/components/knowledge/noteHeadline';
 
 interface KnowledgeNoteCardProps {
   note: KnowledgeNote;
@@ -29,14 +31,6 @@ interface KnowledgeNoteCardProps {
 }
 
 const isHttpUrl = (value: string): boolean => /^https?:\/\//i.test(value.trim());
-
-/** 이보다 길면(줄 수 또는 글자 수) 4줄로 줄여 보이고 펼치기 버튼을 단다. */
-const COLLAPSE_MAX_LINES = 4;
-const COLLAPSE_MAX_CHARS = 140;
-
-const isLongContent = (content: string | null): boolean =>
-  content !== null &&
-  (content.split('\n').length > COLLAPSE_MAX_LINES || content.length > COLLAPSE_MAX_CHARS);
 
 interface NoteSourceProps {
   sourceUrl: string | null;
@@ -81,10 +75,12 @@ export const KnowledgeNoteCard = ({
   onStockClick,
 }: KnowledgeNoteCardProps) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [contentExpanded, setContentExpanded] = useState(false);
+  // 목록에서는 한 줄만 보여 많이 훑어볼 수 있게 하고, 누르면 전체를 펼친다. 펼침 상태는 저장하지 않는다.
+  const [expanded, setExpanded] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
-  const collapsible = isLongContent(note.content);
+  const bodyId = useId();
+  const headline = noteHeadline(note);
 
   const handleOpenImage = (index: number): void => {
     setViewerIndex(index);
@@ -120,56 +116,70 @@ export const KnowledgeNoteCard = ({
           </span>
         </div>
 
-        {note.content && (
-          <div className="space-y-1">
-            <p
-              className={cn(
-                'whitespace-pre-wrap break-words text-sm',
-                collapsible && !contentExpanded && 'line-clamp-4'
-              )}
-            >
-              {note.content}
-            </p>
-            {collapsible && (
-              <button
-                type="button"
-                aria-expanded={contentExpanded}
-                onClick={() => setContentExpanded((v) => !v)}
-                className="text-xs text-muted-foreground hover:underline"
-              >
-                {contentExpanded ? '내용 접기' : '내용 더보기'}
-              </button>
+        {/* 태그는 이 버튼 안에서 텍스트로만 보인다 — 버튼 안에 버튼을 둘 수 없어, 태그 검색은 펼친 뒤 한다. */}
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={bodyId}
+          onClick={() => setExpanded((v) => !v)}
+          className="flex w-full min-w-0 items-center gap-2 rounded-md text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span
+            className={cn(
+              'min-w-0 flex-1 truncate',
+              headline.kind === 'title' && 'font-semibold',
+              headline.kind === 'image' && 'text-muted-foreground'
             )}
-          </div>
-        )}
+          >
+            {headline.text}
+          </span>
+          {note.images.length > 0 && (
+            <span className="flex shrink-0 items-center gap-0.5 text-xs text-muted-foreground">
+              <ImageIcon aria-hidden="true" className="h-3.5 w-3.5" />
+              <span aria-hidden="true">{note.images.length}</span>
+              <span className="sr-only">이미지 {note.images.length}장</span>
+            </span>
+          )}
+          {!expanded && note.tags.length > 0 && (
+            <span className="max-w-[40%] shrink-0 truncate text-xs text-muted-foreground">
+              {note.tags.map((tag) => `#${tag}`).join(' ')}
+            </span>
+          )}
+        </button>
 
-        <NoteImageStrip images={note.images} size="md" onOpen={handleOpenImage} />
+        {expanded && (
+          <div id={bodyId} className="space-y-3">
+            {note.content && <p className="whitespace-pre-wrap break-words text-sm">{note.content}</p>}
 
-        <NoteSource sourceUrl={note.sourceUrl} sourceText={note.sourceText} />
+            <NoteImageStrip images={note.images} size="md" onOpen={handleOpenImage} />
 
-        {note.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {note.tags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => onTagClick(tag)}
-                className="rounded-full bg-muted px-2 py-0.5 text-xs hover:bg-muted/70"
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        )}
+            <NoteSource sourceUrl={note.sourceUrl} sourceText={note.sourceText} />
 
-        {note.editable && (
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => onEdit(note)}>
-              수정
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => setConfirmOpen(true)}>
-              삭제
-            </Button>
+            {note.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {note.tags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => onTagClick(tag)}
+                    className="rounded-full bg-muted px-2 py-0.5 text-xs hover:bg-muted/70"
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {note.editable && (
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => onEdit(note)}>
+                  수정
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setConfirmOpen(true)}>
+                  삭제
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

@@ -165,6 +165,7 @@ describe('KnowledgeNotesPage', () => {
     const user = userEvent.setup();
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([makeNote({ tags: ['react'] })]));
     renderPage();
+    await user.click(await screen.findByRole('button', { name: /첫 메모/ }));
 
     await user.click(await screen.findByRole('button', { name: '#react' }));
 
@@ -173,6 +174,7 @@ describe('KnowledgeNotesPage', () => {
   });
 
   it('http(s) 출처만 새 탭 링크(rel="noopener noreferrer")로 그리고, 그 외 값은 텍스트로 그린다', async () => {
+    const user = userEvent.setup();
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(
       page([
         makeNote({ id: 1, content: 'a', sourceUrl: 'HTTPS://example.com/x', sourceText: null }),
@@ -181,6 +183,7 @@ describe('KnowledgeNotesPage', () => {
       ])
     );
     renderPage();
+    for (const name of ['a', 'b', 'c']) await user.click(await screen.findByRole('button', { name }));
 
     const link = await screen.findByRole('link', { name: 'HTTPS://example.com/x' });
     expect(link).toHaveAttribute('href', 'HTTPS://example.com/x');
@@ -192,6 +195,7 @@ describe('KnowledgeNotesPage', () => {
   });
 
   it('출처 링크와 텍스트가 둘 다 있으면 텍스트를 링크 이름으로 쓰고, 링크가 http(s) 가 아니면 둘 다 텍스트로 보인다', async () => {
+    const user = userEvent.setup();
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(
       page([
         makeNote({ id: 1, content: 'a', sourceUrl: 'https://youtu.be/abc', sourceText: '유튜브 강의 제목' }),
@@ -199,6 +203,7 @@ describe('KnowledgeNotesPage', () => {
       ])
     );
     renderPage();
+    for (const name of ['a', 'b']) await user.click(await screen.findByRole('button', { name }));
 
     const link = await screen.findByRole('link', { name: '유튜브 강의 제목' });
     expect(link).toHaveAttribute('href', 'https://youtu.be/abc');
@@ -220,7 +225,7 @@ describe('KnowledgeNotesPage', () => {
     expect(screen.getByRole('button', { name: '삼성전자 필터 해제' })).toBeInTheDocument();
   });
 
-  it('긴 내용은 줄여서 보이고 "내용 더보기"/"내용 접기" 로 펼치고 접는다', async () => {
+  it('메모는 접힌 채로 보이고 누르면 내용 전문이 보인다', async () => {
     const user = userEvent.setup();
     const long = ['1줄', '2줄', '3줄', '4줄', '5줄', '6줄'].join('\n');
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(
@@ -228,21 +233,18 @@ describe('KnowledgeNotesPage', () => {
     );
     renderPage();
 
-    const content = await screen.findByText(/1줄/);
-    expect(content).toHaveClass('line-clamp-4');
-    expect(screen.getAllByRole('button', { name: '내용 더보기' })).toHaveLength(1);
+    const toggle = await screen.findByRole('button', { name: '1줄' });
+    expect(screen.queryByText(/6줄/)).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: '내용 더보기' }));
-    expect(screen.getByText(/1줄/)).not.toHaveClass('line-clamp-4');
-    await user.click(screen.getByRole('button', { name: '내용 접기' }));
-    expect(screen.getByText(/1줄/)).toHaveClass('line-clamp-4');
-    expect(screen.getByText('짧은 메모')).not.toHaveClass('line-clamp-4');
+    await user.click(toggle);
+    expect(screen.getByText(/6줄/)).not.toHaveClass('line-clamp-4');
+    expect(screen.queryByRole('button', { name: '내용 더보기' })).not.toBeInTheDocument();
   });
 
   it('삭제는 확인 후에만 deleteKnowledgeNote 를 호출한다', async () => {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByText('첫 메모');
+    await user.click(await screen.findByRole('button', { name: '첫 메모' }));
 
     await user.click(screen.getByRole('button', { name: '삭제' }));
     expect(api.deleteKnowledgeNote).not.toHaveBeenCalled();
@@ -259,7 +261,7 @@ describe('KnowledgeNotesPage', () => {
     const user = userEvent.setup();
     vi.mocked(api.deleteKnowledgeNote).mockRejectedValue(new Error('fail'));
     renderPage();
-    await screen.findByText('첫 메모');
+    await user.click(await screen.findByRole('button', { name: '첫 메모' }));
 
     await user.click(screen.getByRole('button', { name: '삭제' }));
     const dialog = await screen.findByRole('alertdialog');
@@ -275,6 +277,7 @@ describe('KnowledgeNotesPage', () => {
     const note = makeNote();
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([note]));
     renderPage();
+    await user.click(await screen.findByRole('button', { name: '첫 메모' }));
 
     await user.click(await screen.findByRole('button', { name: '수정' }));
 
@@ -309,6 +312,7 @@ describe('KnowledgeNotesPage', () => {
     const images = ['https://img.test/0.jpg', 'https://img.test/1.jpg', 'https://img.test/2.jpg'];
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([makeNote({ images })]));
     renderPage();
+    await user.click(await screen.findByRole('button', { name: /첫 메모/ }));
 
     await user.click(await screen.findByRole('button', { name: '이미지 1/3 크게 보기' }));
 
@@ -316,11 +320,13 @@ describe('KnowledgeNotesPage', () => {
     expect(screen.getByText('1/3')).toBeInTheDocument();
   });
 
-  it('내용이 null 이고 이미지만 있는 메모는 썸네일만 보이고 "내용 더보기" 는 없다', async () => {
+  it('내용이 null 이고 이미지만 있는 메모는 "이미지 메모" 로 접혀 있고, 펼치면 썸네일만 보인다', async () => {
+    const user = userEvent.setup();
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(
       page([makeNote({ content: null, images: ['https://img.test/0.jpg'] })])
     );
     const { container } = renderPage();
+    await user.click(await screen.findByRole('button', { name: /이미지 메모/ }));
 
     expect(await screen.findByRole('button', { name: '이미지 1/1 크게 보기' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '내용 더보기' })).not.toBeInTheDocument();
