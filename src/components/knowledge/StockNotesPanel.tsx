@@ -7,7 +7,9 @@ import { api } from '@/lib/api';
 import { KNOWLEDGE_NOTES_QUERY_KEY, useKnowledgeAccess } from '@/hooks/useKnowledgeAccess';
 import { cn } from '@/lib/utils';
 import { STOCK_BORDER } from '@/lib/stockTheme';
+import { NoteContent } from '@/components/knowledge/NoteContent';
 import NoteImageStrip from '@/components/knowledge/NoteImageStrip';
+import { stripFenceLines } from '@/lib/noteContent';
 import NoteImageViewer from '@/components/knowledge/NoteImageViewer';
 
 interface StockNotesPanelProps {
@@ -75,11 +77,13 @@ const StockNotesPanelBody = ({ symbol, stockName }: { symbol: string; stockName:
         {shown.map((note) => (
           <li key={note.id} className="text-sm">
             {note.title && <p className="truncate font-semibold">{note.title}</p>}
-            {note.content && (
-              <p className={cn('whitespace-pre-wrap break-words', !expanded && 'line-clamp-2')}>
-                {note.content}
-              </p>
-            )}
+            {/* 접힌 두 줄 미리보기에는 펜스 줄을 빼고, 펼치면 코드블록까지 그린다. */}
+            {note.content &&
+              (expanded ? (
+                <NoteContent content={note.content} />
+              ) : (
+                <p className="line-clamp-2 whitespace-pre-wrap break-words">{stripFenceLines(note.content)}</p>
+              ))}
             <NoteImageStrip
               images={note.images}
               size="sm"

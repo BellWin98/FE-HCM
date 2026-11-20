@@ -175,3 +175,32 @@
     display: none;
   }
 }
+
+/* 메모 코드블록 색 강조(highlight.js 토큰). 라이브러리 테마 CSS 대신 앱 색에 맞춰 최소한만 정의한다. */
+@layer base {
+  .hljs-keyword,
+  .hljs-selector-tag {
+    @apply text-purple-700 dark:text-purple-300;
+  }
+  .hljs-string,
+  .hljs-regexp {
+    @apply text-green-700 dark:text-green-300;
+  }
+  .hljs-number,
+  .hljs-literal,
+  .hljs-built_in {
+    @apply text-orange-700 dark:text-orange-300;
+  }
+  .hljs-comment {
+    @apply italic text-muted-foreground;
+  }
+  .hljs-title,
+  .hljs-title.function_ {
+    @apply text-blue-700 dark:text-blue-300;
+  }
+  .hljs-type,
+  .hljs-attr,
+  .hljs-variable {
+    @apply text-sky-700 dark:text-sky-300;
+  }
+}
