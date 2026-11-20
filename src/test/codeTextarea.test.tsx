@@ -184,6 +184,24 @@ describe('메모 내용 칸 코드 편집', () => {
     expect(textarea.value).toBe('a');
   });
 
+  it('Esc 다음 Shift+Tab 도 내어쓰지 않고 칸 이동에 맡긴다', async () => {
+    const textarea = await contentBox();
+    setValue(textarea, '  a');
+
+    await userEvent.keyboard('{Escape}{Shift>}{Tab}{/Shift}');
+
+    expect(textarea.value).toBe('  a');
+  });
+
+  it('취소할 수 없는 줄바꿈 입력은 브라우저에 맡기고 따로 넣지 않는다', async () => {
+    const textarea = await contentBox();
+    setValue(textarea, '  a');
+
+    lineBreak(textarea, { cancelable: false });
+
+    expect(textarea.value).toBe('  a');
+  });
+
   it('Esc 뒤에 다른 키를 누르면 Tab 은 다시 들여쓴다', async () => {
     const textarea = await contentBox();
     setValue(textarea, 'a');

@@ -22,6 +22,8 @@ export const applyTextEdit = (textarea: HTMLTextAreaElement, edit: TextEdit): vo
   textarea.setSelectionRange(edit.selectionStart, edit.selectionEnd);
 };
 
+const MODIFIER_KEYS = ['Shift', 'Control', 'Alt', 'Meta'];
+
 interface CodeTextareaControls {
   handleKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   insertFence: () => void;
@@ -46,7 +48,8 @@ export const useCodeTextarea = (ref: RefObject<HTMLTextAreaElement>): CodeTextar
     // 안드로이드 IME 는 Enter 를 keyCode 229 로 보내므로 keydown 이 아니라 beforeinput 으로 줄바꿈을 잡는다.
     const handleBeforeInput = (event: InputEvent): void => {
       if (event.inputType !== 'insertLineBreak' && event.inputType !== 'insertParagraph') return;
-      if (event.isComposing) return;
+      // 취소할 수 없는 입력(일부 안드로이드 IME)에서 우리 줄바꿈까지 넣으면 두 번 들어간다 — 브라우저에 맡긴다.
+      if (event.isComposing || !event.cancelable) return;
       event.preventDefault();
       applyTextEdit(textarea, newlineEdit(textarea.value, textarea.selectionStart, textarea.selectionEnd));
     };
@@ -68,6 +71,8 @@ export const useCodeTextarea = (ref: RefObject<HTMLTextAreaElement>): CodeTextar
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
     // Esc 는 다이얼로그의 Esc 처리(armEscape)가 맡는다 — Radix 가 캡처 단계에서 먼저 받는다.
     if (event.key === 'Escape') return;
+    // Shift+Tab 의 Shift 처럼 조합키만 눌린 것은 Esc 대기 상태를 풀지 않는다.
+    if (MODIFIER_KEYS.includes(event.key)) return;
     if (event.key !== 'Tab') {
       escapeArmedRef.current = false;
       return;
