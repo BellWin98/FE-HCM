@@ -582,7 +582,8 @@ describe('빠른 메모 다이얼로그', () => {
     const onClosed = vi.fn();
     await open({ onClosed });
     await screen.findByRole('dialog');
-    await userEvent.keyboard('{Escape}');
+    // 포커스가 내용 칸에 있으면 첫 Esc 는 Tab 탈출용이라 두 번 눌러야 닫힌다.
+    await userEvent.keyboard('{Escape}{Escape}');
 
     await waitFor(() => expect(onClosed).toHaveBeenCalledTimes(1));
   });

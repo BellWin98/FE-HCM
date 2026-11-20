@@ -1092,7 +1092,8 @@ describe('주문 시트 — 종목 메모', () => {
 
     // 메모 다이얼로그 안을 누르고(포인터·포커스 이동) 닫아도 시트의 닫힘 요청이 나가면 안 된다.
     await user.click(await screen.findByRole('textbox', { name: '내용' }));
-    await user.keyboard('{Escape}');
+    // 내용 칸의 첫 Esc 는 Tab 탈출용이라 두 번 눌러야 닫힌다.
+    await user.keyboard('{Escape}{Escape}');
     await waitFor(() => expect(screen.queryByRole('heading', { name: '빠른 메모' })).not.toBeInTheDocument());
 
     expect(onOpenChange).not.toHaveBeenCalled();
