@@ -21,7 +21,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
 import { KNOWLEDGE_NOTES_QUERY_KEY } from '@/hooks/useKnowledgeAccess';
 import { clearLastContext, loadLastContext, saveLastContext } from '@/lib/knowledgeNoteDraft';
-import { ALLOWED_NOTE_IMAGE_TYPES, KNOWLEDGE_CATEGORIES, KNOWLEDGE_CATEGORY_LABELS } from '@/types/knowledgeNote';
+import {
+  ALLOWED_NOTE_IMAGE_TYPES,
+  KNOWLEDGE_CATEGORIES,
+  KNOWLEDGE_CATEGORY_LABELS,
+  MAX_NOTE_TITLE_LENGTH,
+} from '@/types/knowledgeNote';
 import type { KnowledgeCategory, KnowledgeNoteInput } from '@/types/knowledgeNote';
 import type { QuickNoteOpenOptions } from '@/contexts/QuickNoteContext';
 
@@ -85,6 +90,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
     if (note) {
       return {
         category: note.category,
+        title: note.title ?? '',
         content: note.content ?? '',
         attachments: fromUrls(note.images),
         dropped: 0,
@@ -103,6 +109,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
     const lastHasSource = Boolean(last?.sourceUrl || last?.sourceText);
     return {
       category: prefill?.category ?? last?.category ?? 'DEV',
+      title: prefill?.title ?? '',
       content: prefill?.content ?? '',
       attachments,
       dropped,
@@ -119,6 +126,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
   });
 
   const [category, setCategory] = useState<KnowledgeCategory>(initial.category);
+  const [title, setTitle] = useState(initial.title);
   const [content, setContent] = useState(initial.content);
   const [sourceUrl, setSourceUrl] = useState(initial.sourceUrl);
   const [sourceText, setSourceText] = useState(initial.sourceText);
@@ -257,6 +265,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
     const url = sourceUrl.trim();
     const text = sourceText.trim();
     const body = content.trim();
+    const heading = title.trim();
     if (!body && attachments.length === 0) {
       setContentError(CONTENT_REQUIRED_MESSAGE);
       return;
@@ -264,6 +273,7 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
 
     const base: Omit<KnowledgeNoteInput, 'imageUrls'> = {
       category,
+      ...(heading ? { title: heading } : {}),
       ...(body ? { content: body } : {}),
       ...(url ? { sourceUrl: url } : {}),
       ...(text ? { sourceText: text } : {}),
@@ -309,6 +319,22 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
 
   return (
     <form onSubmit={handleFormSubmit} onKeyDown={handleFormKeyDown} className="grid gap-4">
+      <div className="grid gap-1.5">
+        <Label htmlFor="knowledge-note-title">
+          제목{' '}
+          <span aria-hidden="true" className="font-normal text-muted-foreground">
+            (선택)
+          </span>
+        </Label>
+        <Input
+          id="knowledge-note-title"
+          value={title}
+          maxLength={MAX_NOTE_TITLE_LENGTH}
+          {...NO_SUGGESTION_PROPS}
+          onChange={(event) => setTitle(event.target.value)}
+        />
+      </div>
+
       <div className="grid gap-1.5">
         <Label htmlFor="knowledge-note-content">내용</Label>
         <Textarea

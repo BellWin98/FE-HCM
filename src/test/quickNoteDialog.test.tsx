@@ -47,6 +47,7 @@ const signIn = () => {
 const savedNote: KnowledgeNote = {
   id: 9,
   category: 'DEV',
+  title: null,
   content: '저장됨',
   images: [],
   sourceUrl: null,
@@ -117,12 +118,50 @@ describe('빠른 메모 다이얼로그', () => {
   it('입력 칸은 자동완성·자동 고침을 끈다', async () => {
     await open();
     await screen.findByRole('textbox', { name: '내용' });
-    for (const name of ['내용', '출처 링크', '출처 텍스트', '태그']) {
+    for (const name of ['제목', '내용', '출처 링크', '출처 텍스트', '태그']) {
       const field = screen.getByRole('textbox', { name });
       expect(field).toHaveAttribute('autocomplete', 'off');
       expect(field).toHaveAttribute('autocorrect', 'off');
       expect(field).toHaveAttribute('spellcheck', 'false');
     }
+  });
+
+  it('제목 칸은 100자 제한이다', async () => {
+    await open();
+
+    expect(await screen.findByRole('textbox', { name: '제목' })).toHaveAttribute('maxLength', '100');
+  });
+
+  it('제목을 입력하면 다듬어 보낸다', async () => {
+    await open();
+    await userEvent.type(await screen.findByRole('textbox', { name: '제목' }), '  HBM 메모 ');
+    await userEvent.type(screen.getByRole('textbox', { name: '내용' }), '본문');
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(api.createKnowledgeNote).toHaveBeenCalled());
+    expect(vi.mocked(api.createKnowledgeNote).mock.calls[0][0]).toMatchObject({ title: 'HBM 메모', content: '본문' });
+  });
+
+  it('제목이 비어 있으면 title 을 보내지 않는다', async () => {
+    await open();
+    await userEvent.type(await screen.findByRole('textbox', { name: '제목' }), '   ');
+    await userEvent.type(screen.getByRole('textbox', { name: '내용' }), '본문');
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(api.createKnowledgeNote).toHaveBeenCalled());
+    expect(vi.mocked(api.createKnowledgeNote).mock.calls[0][0]).not.toHaveProperty('title');
+  });
+
+  it('수정 폼은 기존 제목을 채우고, 지우고 저장하면 title 을 보내지 않는다', async () => {
+    await open({ note: { ...savedNote, id: 42, title: '옛 제목' } });
+
+    const title = await screen.findByRole('textbox', { name: '제목' });
+    expect(title).toHaveValue('옛 제목');
+    await userEvent.clear(title);
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(api.updateKnowledgeNote).toHaveBeenCalled());
+    expect(vi.mocked(api.updateKnowledgeNote).mock.calls[0][1]).not.toHaveProperty('title');
   });
 
   it('권한이 없으면 열리지 않는다', async () => {

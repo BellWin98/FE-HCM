@@ -32,6 +32,8 @@ export const KNOWLEDGE_CATEGORIES: KnowledgeCategory[] = [
 
 export const MAX_NOTE_IMAGES = 5;
 
+export const MAX_NOTE_TITLE_LENGTH = 100;
+
 export const ALLOWED_NOTE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export type KnowledgeVisibility = 'PUBLIC' | 'PRIVATE';
@@ -47,6 +49,7 @@ export interface KnowledgeNoteAuthor {
 export interface KnowledgeNote {
   id: number;
   category: KnowledgeCategory;
+  title: string | null;
   content: string | null;
   images: string[];
   sourceUrl: string | null;
@@ -63,6 +66,7 @@ export interface KnowledgeNote {
 
 export interface KnowledgeNoteInput {
   category: KnowledgeCategory;
+  title?: string;
   content?: string;
   imageUrls: string[];
   sourceUrl?: string;

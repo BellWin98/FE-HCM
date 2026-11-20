@@ -29,6 +29,7 @@ const { StockNotesPanel } = await import('@/components/knowledge/StockNotesPanel
 const note = (id: number, content: string | null, images: string[] = []): KnowledgeNote => ({
   id,
   category: 'STOCK',
+  title: null,
   content,
   images,
   sourceUrl: null,

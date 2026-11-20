@@ -36,6 +36,7 @@ const { default: KnowledgeNotesPage } = await import('@/pages/KnowledgeNotesPage
 const makeNote = (over: Partial<KnowledgeNote> = {}): KnowledgeNote => ({
   id: 1,
   category: 'DEV',
+  title: null,
   content: '첫 메모',
   images: [],
   sourceUrl: null,

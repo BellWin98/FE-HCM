@@ -1,4 +1,5 @@
 const MAX_SOURCE_TEXT_LENGTH = 500;
+const MAX_TITLE_LENGTH = 100;
 const HTTP_URL = /^https?:\/\//i;
 const HTTP_URL_IN_TEXT = /https?:\/\/\S+/i;
 
@@ -9,12 +10,14 @@ interface SharedContentInput {
 }
 
 interface SharedContent {
+  title?: string;
   sourceUrl?: string;
   sourceText?: string;
 }
 
 /**
  * Web Share Target 으로 들어온 title/text/url 을 메모의 출처(sourceUrl/sourceText)로 변환한다.
+ * 공유된 title 은 메모 제목 칸에도 채운다(text 는 본문 통째일 때가 많아 제목으로 쓰지 않는다).
  * Android 공유 시트는 URL 을 `url` 이 아니라 `text` 에 "제목 URL" 형태로 싣는 경우가 많다.
  */
 export const parseSharedContent = ({ title, text, url }: SharedContentInput): SharedContent => {
@@ -34,6 +37,7 @@ export const parseSharedContent = ({ title, text, url }: SharedContentInput): Sh
   const sourceText = (trimmedTitle || remainingText).slice(0, MAX_SOURCE_TEXT_LENGTH);
 
   const result: SharedContent = {};
+  if (trimmedTitle) result.title = trimmedTitle.slice(0, MAX_TITLE_LENGTH);
   if (sourceUrl) result.sourceUrl = sourceUrl;
   if (sourceText) result.sourceText = sourceText;
   return result;
