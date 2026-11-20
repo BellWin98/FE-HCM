@@ -730,13 +730,24 @@ describe('빠른 메모 — 모바일', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalInnerWidth });
   });
 
-  it('키보드에 맞춰 위치가 바뀔 때 튀지 않도록 bottom 을 전환하고 열림 애니메이션을 줄인다', async () => {
+  it('키보드에 맞춰 위치가 바뀔 때 레이아웃 대신 translate 로 옮기고 열림 애니메이션을 줄인다', async () => {
     await open();
     const sheet = await screen.findByRole('dialog');
 
-    expect(sheet.className).toContain('transition-[bottom]');
+    // bottom 은 레이아웃 속성이라 키보드가 올라오는 동안 매 프레임 레이아웃을 다시 계산한다.
+    expect(sheet.className).toContain('transition-[translate]');
+    expect(sheet.className).not.toContain('transition-[bottom]');
+    expect(sheet.style.bottom).toBe('');
     expect(sheet.className).toContain('data-[state=open]:duration-300');
     expect(sheet.className).not.toContain('data-[state=open]:duration-500');
+  });
+
+  it('키보드가 올라오면 시트를 그 높이만큼 위로 옮긴다', async () => {
+    await open();
+    const sheet = await screen.findByRole('dialog');
+
+    showKeyboard();
+    expect(sheet.style.translate).toBe('0 -350px');
   });
 
   it('키보드가 없으면 홈 인디케이터만큼 아래 여백을 두고, 키보드가 올라오면 뺀다', async () => {

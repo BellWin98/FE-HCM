@@ -26,7 +26,9 @@ export function useVisualViewportInset(enabled: boolean): VisualViewportInset {
 
     const update = (): void => {
       const bottom = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-      setInset({ bottom, height: viewport.height });
+      const height = viewport.height;
+      // 주소창이 접히는 스크롤 중에도 이벤트가 계속 오므로, 값이 그대로면 이전 객체를 돌려줘 다시 그리지 않는다.
+      setInset((prev) => (prev.bottom === bottom && prev.height === height ? prev : { bottom, height }));
     };
 
     update();
