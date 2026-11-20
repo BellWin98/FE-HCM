@@ -586,6 +586,20 @@ describe('빠른 메모 다이얼로그', () => {
 
     await waitFor(() => expect(onClosed).toHaveBeenCalledTimes(1));
   });
+
+  it('바깥(배경)을 눌러도 닫히지 않고 쓰던 내용을 유지한다', async () => {
+    const onClosed = vi.fn();
+    await open({ onClosed });
+    await userEvent.type(await screen.findByRole('textbox', { name: '내용' }), '쓰던 메모');
+
+    fireEvent.pointerDown(document.body);
+    fireEvent.mouseDown(document.body);
+    fireEvent.focusIn(document.body);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: '내용' })).toHaveValue('쓰던 메모');
+    expect(onClosed).not.toHaveBeenCalled();
+  });
 });
 
 describe('빠른 메모 — 공개 설정', () => {
@@ -747,9 +761,23 @@ describe('빠른 메모 — 모바일', () => {
     });
     expect(screen.getByRole('button', { name: '빠른 메모' })).toBeInTheDocument();
   });
+
+  it('시트 바깥(오버레이)을 눌러도 닫히지 않고 쓰던 내용을 유지한다', async () => {
+    const onClosed = vi.fn();
+    await open({ onClosed });
+    await userEvent.type(await screen.findByRole('textbox', { name: '내용' }), '쓰던 메모');
+
+    fireEvent.pointerDown(document.body);
+    fireEvent.mouseDown(document.body);
+    fireEvent.focusIn(document.body);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: '내용' })).toHaveValue('쓰던 메모');
+    expect(onClosed).not.toHaveBeenCalled();
+  });
 });
 
-const png = (name: string): File => new File(['x'], name, { type: 'image/png' });
+const png =(name: string): File => new File(['x'], name, { type: 'image/png' });
 const fileInput = (): HTMLInputElement => {
   const input = document.querySelector<HTMLInputElement>('input[type="file"]');
   if (!input) throw new Error('file input not found');

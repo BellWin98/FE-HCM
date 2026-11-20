@@ -543,6 +543,12 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
     contentRef.current?.focus({ preventScroll: true });
   };
 
+  // 배경(오버레이)을 실수로 눌러 닫히면 쓰던 내용이 사라진다(열 때마다 폼이 새로 마운트된다).
+  // 바깥 클릭·포커스 이동으로는 닫지 않고, 닫기(X)·Esc·저장으로만 닫는다.
+  const handleInteractOutside = (event: Event): void => {
+    event.preventDefault();
+  };
+
   const handleDone = (): void => onOpenChange(false);
 
   const form = (
@@ -555,6 +561,7 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
         <SheetContent
           side="bottom"
           onOpenAutoFocus={handleOpenAutoFocus}
+          onInteractOutside={handleInteractOutside}
           onPaste={handlePaste}
           // 키보드가 올라오면 시트를 키보드 바로 위에 붙이고, 보이는 높이 안에서 스크롤되게 한다.
           style={{
@@ -581,7 +588,12 @@ export const KnowledgeNoteFormDialog = ({ open, onOpenChange, options, formKey }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onOpenAutoFocus={handleOpenAutoFocus} onPaste={handlePaste} className="max-h-[90dvh] overflow-y-auto">
+      <DialogContent
+        onOpenAutoFocus={handleOpenAutoFocus}
+        onInteractOutside={handleInteractOutside}
+        onPaste={handlePaste}
+        className="max-h-[90dvh] overflow-y-auto"
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="sr-only">{description}</DialogDescription>
