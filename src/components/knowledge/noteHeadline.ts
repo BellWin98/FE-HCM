@@ -1,4 +1,5 @@
 import type { KnowledgeNote } from '@/types/knowledgeNote';
+import { stripFenceLines } from '@/lib/noteContent';
 
 export interface NoteHeadline {
   text: string;
@@ -10,7 +11,8 @@ export const noteHeadline = (note: Pick<KnowledgeNote, 'title' | 'content'>): No
   const title = note.title?.trim();
   if (title) return { text: title, kind: 'title' };
 
-  const firstLine = note.content
+  // 코드블록 펜스(```sql 등) 줄은 내용이 아니므로 건너뛴다.
+  const firstLine = (note.content ? stripFenceLines(note.content) : undefined)
     ?.split('\n')
     .map((line) => line.trim())
     .find((line) => line.length > 0);

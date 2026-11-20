@@ -18,3 +18,9 @@ describe('noteHeadline', () => {
     expect(noteHeadline({ title: '  ', content: '본문' }).kind).toBe('content');
   });
 });
+
+describe('noteHeadline 코드블록', () => {
+  it('펜스 줄은 건너뛰고 코드 첫 줄을 쓴다', () => {
+    expect(noteHeadline({ title: null, content: '```sql\nSELECT 1\n```' })).toEqual({ text: 'SELECT 1', kind: 'content' });
+  });
+});
