@@ -142,6 +142,28 @@ describe('빠른 메모 다이얼로그', () => {
     expect(vi.mocked(api.createKnowledgeNote).mock.calls[0][0]).toMatchObject({ title: 'HBM 메모', content: '본문' });
   });
 
+  it('제목 칸에서 Enter 를 누르면 저장하지 않고 내용 칸으로 넘어간다', async () => {
+    await open();
+    const title = await screen.findByRole('textbox', { name: '제목' });
+    expect(title).toHaveAttribute('enterKeyHint', 'next');
+
+    await userEvent.type(title, 'HBM 메모{Enter}');
+
+    expect(screen.getByRole('textbox', { name: '내용' })).toHaveFocus();
+    expect(api.createKnowledgeNote).not.toHaveBeenCalled();
+    expect(screen.queryByText('내용 또는 이미지를 입력하세요')).not.toBeInTheDocument();
+  });
+
+  it('제목 칸에서도 Ctrl+Enter 는 저장한다', async () => {
+    await open();
+    await userEvent.type(await screen.findByRole('textbox', { name: '내용' }), '본문');
+    await userEvent.type(screen.getByRole('textbox', { name: '제목' }), 'HBM');
+    await userEvent.keyboard('{Control>}{Enter}{/Control}');
+
+    await waitFor(() => expect(api.createKnowledgeNote).toHaveBeenCalled());
+    expect(vi.mocked(api.createKnowledgeNote).mock.calls[0][0]).toMatchObject({ title: 'HBM', content: '본문' });
+  });
+
   it('제목이 비어 있으면 title 을 보내지 않는다', async () => {
     await open();
     await userEvent.type(await screen.findByRole('textbox', { name: '제목' }), '   ');
