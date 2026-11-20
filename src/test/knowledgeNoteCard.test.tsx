@@ -146,4 +146,20 @@ describe('KnowledgeNoteCard', () => {
     expect(headline(/이미지 메모/)).toBeInTheDocument();
     expect(screen.getByText('이미지 2장')).toBeInTheDocument();
   });
+
+  it('card_imageOnly_collapsedShowsFirstImageThumbnail', () => {
+    const { container } = renderCard({ content: null, images: ['https://cdn/a.png', 'https://cdn/b.png'] });
+
+    const thumbs = headline(/이미지 메모/).querySelectorAll('img');
+    expect(thumbs).toHaveLength(1);
+    expect(thumbs[0]).toHaveAttribute('src', 'https://cdn/a.png');
+    expect(thumbs[0]).toHaveAttribute('alt', '');
+    expect(container.querySelectorAll('img')).toHaveLength(1);
+  });
+
+  it('card_withContent_collapsedHasNoThumbnail', () => {
+    renderCard({ content: '본문', images: ['https://cdn/a.png'] });
+
+    expect(headline(/본문/).querySelector('img')).toBeNull();
+  });
 });

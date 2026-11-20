@@ -240,6 +240,14 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
     setTagDraft(rest);
   };
 
+  // 제목은 맨 위 한 줄 입력이라 Enter 가 폼을 저장해 버리면 내용 없이 제출된다. 그냥 Enter 는 내용 칸으로 넘긴다.
+  // Ctrl/⌘+Enter 는 폼의 저장 단축키로 그대로 올려 보낸다.
+  const handleTitleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key !== 'Enter' || event.ctrlKey || event.metaKey || event.nativeEvent.isComposing) return;
+    event.preventDefault();
+    contentRef.current?.focus();
+  };
+
   const handleTagKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     if (event.key !== 'Enter' || event.ctrlKey || event.metaKey) return;
     // 한글 조합 중의 Enter 는 조합 확정이지 칩 추가가 아니다.
@@ -330,8 +338,10 @@ const KnowledgeNoteForm = ({ options, pasteHandlerRef, contentRef, onDone }: Kno
           id="knowledge-note-title"
           value={title}
           maxLength={MAX_NOTE_TITLE_LENGTH}
+          enterKeyHint="next"
           {...NO_SUGGESTION_PROPS}
           onChange={(event) => setTitle(event.target.value)}
+          onKeyDown={handleTitleKeyDown}
         />
       </div>
 

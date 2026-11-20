@@ -124,6 +124,15 @@ export const KnowledgeNoteCard = ({
           onClick={() => setExpanded((v) => !v)}
           className="flex w-full min-w-0 items-center gap-2 rounded-md text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
+          {/* 이미지만 있는 메모는 문구가 모두 "이미지 메모" 라 첫 이미지를 작게 보여 구분하게 한다. */}
+          {headline.kind === 'image' && note.images.length > 0 && (
+            <img
+              src={note.images[0]}
+              alt=""
+              loading="lazy"
+              className="h-6 w-6 shrink-0 rounded object-cover"
+            />
+          )}
           <span
             className={cn(
               'min-w-0 flex-1 truncate',
