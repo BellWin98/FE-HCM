@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { KNOWLEDGE_CATEGORY_LABELS, type KnowledgeNote } from '@/types/knowledgeNote';
 import { cn } from '@/lib/utils';
+import { NoteContent } from '@/components/knowledge/NoteContent';
 import NoteImageStrip from '@/components/knowledge/NoteImageStrip';
 import NoteImageViewer from '@/components/knowledge/NoteImageViewer';
 import { noteHeadline } from '@/components/knowledge/noteHeadline';
@@ -158,7 +159,7 @@ export const KnowledgeNoteCard = ({
 
         {expanded && (
           <div id={bodyId} className="space-y-3">
-            {note.content && <p className="whitespace-pre-wrap break-words text-sm">{note.content}</p>}
+            {note.content && <NoteContent content={note.content} />}
 
             <NoteImageStrip images={note.images} size="md" onOpen={handleOpenImage} />
 
