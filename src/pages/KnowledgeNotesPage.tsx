@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
@@ -12,6 +12,7 @@ import { useQuickNote } from '@/contexts/QuickNoteContext';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { KNOWLEDGE_NOTES_QUERY_KEY, useKnowledgeAccess } from '@/hooks/useKnowledgeAccess';
 import { api } from '@/lib/api';
+import { ensureFcmToken } from '@/lib/firebase';
 import {
   KNOWLEDGE_CATEGORIES,
   KNOWLEDGE_CATEGORY_LABELS,
@@ -29,6 +30,12 @@ const KnowledgeNotesPage = () => {
   const { openQuickNote } = useQuickNote();
   const { member } = useAuth();
   const { canWrite, isAdmin, isPending: isAccessPending } = useKnowledgeAccess();
+
+  // 운동방에 속하지 않은 메모 독자도 새 메모 푸시를 받도록 진입 시 토큰을 등록한다.
+  // 이 화면은 목록을 보고 있으므로 포그라운드 토스트 콜백은 넘기지 않고, 실패해도 화면에는 영향을 주지 않는다.
+  useEffect(() => {
+    ensureFcmToken().catch(() => {});
+  }, []);
 
   const [keywordInput, setKeywordInput] = useState(searchParams.get('q') ?? '');
   const [category, setCategory] = useState<KnowledgeCategory | undefined>();

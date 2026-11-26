@@ -20,6 +20,8 @@ vi.mock('@/contexts/QuickNoteContext', () => ({
   useQuickNote: () => ({ openQuickNote }),
 }));
 
+vi.mock('@/lib/firebase', () => ({ ensureFcmToken: vi.fn() }));
+
 const accessState = { canRead: true, canWrite: false, isAdmin: false, isPending: false };
 vi.mock('@/hooks/useKnowledgeAccess', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/useKnowledgeAccess')>()),
@@ -31,6 +33,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 
 const { api } = await import('@/lib/api');
 const { toast } = await import('sonner');
+const { ensureFcmToken } = await import('@/lib/firebase');
 const { default: KnowledgeNotesPage } = await import('@/pages/KnowledgeNotesPage');
 
 const makeNote = (over: Partial<KnowledgeNote> = {}): KnowledgeNote => ({
@@ -102,6 +105,7 @@ describe('KnowledgeNotesPage', () => {
     Object.assign(accessState, { canRead: true, canWrite: false, isAdmin: false, isPending: false });
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([makeNote()]));
     vi.mocked(api.deleteKnowledgeNote).mockResolvedValue(undefined);
+    vi.mocked(ensureFcmToken).mockResolvedValue('token');
   });
 
   it('검색어 입력 300ms 뒤 keyword 로 조회한다', async () => {
@@ -304,6 +308,21 @@ describe('KnowledgeNotesPage', () => {
     vi.mocked(api.searchKnowledgeNotes).mockResolvedValue(page([]));
     renderPage();
     expect(await screen.findByText('메모가 없습니다')).toBeInTheDocument();
+  });
+
+  it('notesPage_registersFcmToken', async () => {
+    renderPage();
+    await screen.findByText('첫 메모');
+
+    expect(ensureFcmToken).toHaveBeenCalledTimes(1);
+  });
+
+  it('notesPage_tokenRegistrationFails_stillRenders', async () => {
+    vi.mocked(ensureFcmToken).mockRejectedValue(new Error('permission denied'));
+    renderPage();
+
+    expect(await screen.findByText('첫 메모')).toBeInTheDocument();
+    expect(ensureFcmToken).toHaveBeenCalledTimes(1);
   });
 
   it('이미지가 있는 메모는 썸네일을 보이고 누르면 뷰어가 열린다', async () => {
