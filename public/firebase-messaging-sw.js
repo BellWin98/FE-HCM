@@ -67,9 +67,15 @@ self.addEventListener("notificationclick", (event) => {
           sameOrigin.find((c) => c.visibilityState === "visible") ||
           sameOrigin[0];
         if (!client) return clients.openWindow(targetUrl);
-        return client.focus().then((focused) => {
-          (focused || client).postMessage({ type: PUSH_NAVIGATE, url: targetUrl });
-        });
+        return client
+          .focus()
+          .then((focused) => {
+            (focused || client).postMessage({
+              type: PUSH_NAVIGATE,
+              url: targetUrl,
+            });
+          })
+          .catch(() => clients.openWindow(targetUrl));
       }),
   );
 });
