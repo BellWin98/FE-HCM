@@ -22,6 +22,7 @@ import { useRestDay } from '@/hooks/useRestDay';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
 import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
+import { pushToastOptions } from '@/lib/pushNavigation';
 import { WorkoutRoom, WorkoutRoomDetail } from '@/types';
 import { initializeApp } from 'firebase/app';
 import { onMessage } from 'firebase/messaging';
@@ -100,11 +101,7 @@ export const DashboardPage = () => {
         if (isFromMe || isChatNotification) return;
 
         const title = data?.title ?? '알림';
-        const body = data?.body;
-        toast(title, {
-          description: body ?? undefined,
-          duration: 2000,
-        });
+        toast(title, pushToastOptions(data, navigate));
       });
 
       return () => unsubscribe();
