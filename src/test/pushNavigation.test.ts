@@ -15,6 +15,7 @@ describe('toPushUrl', () => {
   it('toPushUrl_rejectsExternal', () => {
     expect(toPushUrl('https://evil.com')).toBe('/');
     expect(toPushUrl('//evil.com')).toBe('/');
+    expect(toPushUrl('/\\evil.com')).toBe('/');
     expect(toPushUrl('notes')).toBe('/');
   });
 });
