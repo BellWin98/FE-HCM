@@ -10,7 +10,8 @@ interface PushToastOptions {
 
 // 푸시 data.path 를 앱 내부 경로로 정규화한다. 비었거나 외부/상대 경로면 루트로 보낸다.
 export const toPushUrl = (path: string | undefined | null): string => {
-  if (!path || !path.startsWith('/') || path.startsWith('//')) return '/';
+  // `/\` 는 일부 URL 파서가 `//` 처럼 취급하므로 함께 막는다.
+  if (!path || !path.startsWith('/') || path.startsWith('//') || path.startsWith('/\\')) return '/';
   return path;
 };
 

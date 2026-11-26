@@ -14,6 +14,7 @@ import { InAppBrowserNotice } from '@/components/common/InAppBrowserNotice';
 import { usePwaUpdater } from '@/hooks/usePwaUpdater';
 import { usePwaInstallPrompt } from '@/hooks/usePwaInstallPrompt';
 import { useInAppBrowserExit } from '@/hooks/useInAppBrowserExit';
+import { useServiceWorkerNavigation } from '@/hooks/useServiceWorkerNavigation';
 import Index from './pages/Index';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -49,6 +50,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
+// 알림 클릭 시 서비스워커가 보낸 이동 요청을 처리한다(Router 안쪽에서만 동작).
+const ServiceWorkerNavigation = () => {
+  useServiceWorkerNavigation();
+  return null;
 };
 
 const AppRoutes = () => (
@@ -149,6 +156,7 @@ const App = () => {
         <Toaster />
         <AuthProvider>
           <BrowserRouter>
+            <ServiceWorkerNavigation />
             <QuickNoteProvider>
               <AppRoutes />
             </QuickNoteProvider>
