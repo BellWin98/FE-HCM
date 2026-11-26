@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useServiceWorkerNavigation } from '@/hooks/useServiceWorkerNavigation';
 
 const Probe = () => {
@@ -48,12 +48,16 @@ describe('useServiceWorkerNavigation', () => {
 
   it('removesListenerOnUnmount', () => {
     const sw = new EventTarget();
+    const added: EventListenerOrEventListenerObject[] = [];
+    const addSpy = vi.spyOn(sw, 'addEventListener').mockImplementation((_t, l) => {
+      if (l) added.push(l);
+    });
+    const removeSpy = vi.spyOn(sw, 'removeEventListener');
     stubServiceWorker(sw);
     const { unmount } = renderProbe();
+    expect(addSpy).toHaveBeenCalledWith('message', expect.any(Function));
     unmount();
-    expect(() =>
-      sw.dispatchEvent(new MessageEvent('message', { data: { type: 'PUSH_NAVIGATE', url: '/notes' } })),
-    ).not.toThrow();
+    expect(removeSpy).toHaveBeenCalledWith('message', added[0]);
   });
 
   it('noServiceWorker_noop', () => {
