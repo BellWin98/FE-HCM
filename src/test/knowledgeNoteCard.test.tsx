@@ -105,9 +105,22 @@ describe('KnowledgeNoteCard', () => {
     renderCard({ title: 'HBM 메모', content: '본문 전체', tags: ['반도체'] });
 
     expect(headline(/HBM 메모/)).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.getByText('HBM 메모')).toHaveClass('truncate');
     expect(screen.queryByText('본문 전체')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '수정' })).toBeNull();
+  });
+
+  it('card_longTitle_wrapsInsteadOfTruncating', () => {
+    renderCard({ title: '아주 긴 제목'.repeat(10), content: '본문 전체' });
+
+    const title = screen.getByText('아주 긴 제목'.repeat(10));
+    expect(title).not.toHaveClass('truncate');
+    expect(title).toHaveClass('break-words');
+  });
+
+  it('card_contentHeadline_staysOneLine', () => {
+    renderCard({ title: null, content: '첫 줄 내용\n둘째 줄' });
+
+    expect(screen.getByText('첫 줄 내용')).toHaveClass('truncate');
   });
 
   it('card_toggle_expandsAndCollapses', async () => {

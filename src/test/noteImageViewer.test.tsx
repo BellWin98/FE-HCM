@@ -39,6 +39,12 @@ describe('NoteImageViewer', () => {
     expect(screen.getByText('2/5')).toBeInTheDocument();
   });
 
+  it('이미지가 1장이면 이전/다음 버튼을 보이지 않는다', () => {
+    render(<NoteImageViewer images={[images[0]]} startIndex={0} open onOpenChange={() => {}} />);
+    expect(screen.queryByRole('button', { name: '이전 이미지' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '다음 이미지' })).toBeNull();
+  });
+
   it('다음 버튼과 ArrowRight로 이동한다', () => {
     render(<NoteImageViewer images={images} startIndex={1} open onOpenChange={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: '다음 이미지' }));

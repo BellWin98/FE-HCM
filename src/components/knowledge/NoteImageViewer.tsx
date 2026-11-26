@@ -22,6 +22,7 @@ const NoteImageViewer = ({ images, startIndex, open, onOpenChange }: NoteImageVi
   onOpenChangeRef.current = onOpenChange;
 
   const lastIndex = images.length - 1;
+  const hasMultiple = images.length > 1;
 
   // 열릴 때마다 시작 위치로 맞춘다.
   useEffect(() => {
@@ -112,24 +113,29 @@ const NoteImageViewer = ({ images, startIndex, open, onOpenChange }: NoteImageVi
             </CarouselContent>
           </Carousel>
 
-          <button
-            type="button"
-            aria-label="이전 이미지"
-            onClick={handlePrev}
-            disabled={index === 0}
-            className={`${iconButtonClass} left-3 top-1/2 -translate-y-1/2`}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            aria-label="다음 이미지"
-            onClick={handleNext}
-            disabled={index === lastIndex}
-            className={`${iconButtonClass} right-3 top-1/2 -translate-y-1/2`}
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
+          {/* 한 장뿐이면 넘길 곳이 없으므로 화살표를 그리지 않는다. */}
+          {hasMultiple && (
+            <>
+              <button
+                type="button"
+                aria-label="이전 이미지"
+                onClick={handlePrev}
+                disabled={index === 0}
+                className={`${iconButtonClass} left-3 top-1/2 -translate-y-1/2`}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                aria-label="다음 이미지"
+                onClick={handleNext}
+                disabled={index === lastIndex}
+                className={`${iconButtonClass} right-3 top-1/2 -translate-y-1/2`}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </>
+          )}
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

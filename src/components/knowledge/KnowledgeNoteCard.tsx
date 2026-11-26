@@ -134,10 +134,11 @@ export const KnowledgeNoteCard = ({
               className="h-6 w-6 shrink-0 rounded object-cover"
             />
           )}
+          {/* 제목은 끝까지 읽혀야 하므로 줄바꿈하고, 내용 첫 줄·"이미지 메모"는 한 줄로 줄인다. */}
           <span
             className={cn(
-              'min-w-0 flex-1 truncate',
-              headline.kind === 'title' && 'font-semibold',
+              'min-w-0 flex-1',
+              headline.kind === 'title' ? 'whitespace-normal break-words font-semibold' : 'truncate',
               headline.kind === 'image' && 'text-muted-foreground'
             )}
           >
